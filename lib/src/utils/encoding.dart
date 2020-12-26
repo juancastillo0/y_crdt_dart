@@ -204,7 +204,7 @@ Map<int, List<AbstractStruct>> readClientsStructRefs(
             cantCopyParentInfo && (info & binary.BIT6) == binary.BIT6
                 ? decoder.readString()
                 : null, // parentSub
-            readItemContent(decoder, info) // item content
+            readItemContent(decoder, info) as AbstractContent // item content
             );
         /* A non-optimized implementation of the above algorithm:
 
@@ -274,7 +274,7 @@ void _resumeStructIntegration(Transaction transaction, StructStore store) {
       store.pendingStack; // @todo don't forget to append stackhead at the end
   final clientsStructRefs = store.pendingClientsStructRefs;
   // sort them so that we take the higher id first, in case of conflicts the lower id will probably not conflict with the id from the higher user.
-  final clientsStructRefsIds = List.from(clientsStructRefs.keys);
+  final clientsStructRefsIds = clientsStructRefs.keys.toList();
   clientsStructRefsIds.sort((a, b) => a - b);
   if (clientsStructRefsIds.length == 0) {
     return;
@@ -343,7 +343,7 @@ void _resumeStructIntegration(Transaction transaction, StructStore store) {
       stack.add(stackHead);
       return;
     }
-    var missing;
+    int? missing;
     if (stackHead is Item) {
       missing = stackHead.getMissing(transaction, store);
     } else if (stackHead is GC) {
@@ -605,8 +605,11 @@ void writeStateAsUpdate(AbstractUpdateEncoder encoder, Doc doc,
  *
  * @function
  */
-Uint8List encodeStateAsUpdateV2(doc, encodedTargetStateVector,
-    [AbstractUpdateEncoder? encoder]) {
+Uint8List encodeStateAsUpdateV2(
+  Doc doc,
+  Uint8List encodedTargetStateVector, [
+  AbstractUpdateEncoder? encoder,
+]) {
   final _encoder = encoder ?? UpdateEncoderV2();
   final targetStateVector = encodedTargetStateVector == null
       ? const <int, int>{}

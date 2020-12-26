@@ -102,4 +102,4 @@ class ContentEmbed implements AbstractContent {
  * @return {ContentEmbed}
  */
 ContentEmbed readContentEmbed (AbstractUpdateDecoder decoder) =>
-  ContentEmbed(decoder.readJSON());
+  ContentEmbed(decoder.readJSON() as Map<String, dynamic>);

@@ -103,7 +103,7 @@ class TestYInstance extends Y.Doc {
    * @param {Uint8Array} message
    * @param {TestYInstance} remoteClient
    */
-  void _receive(message, remoteClient) {
+  void _receive(Uint8List message, TestYInstance remoteClient) {
     var messages = this.receiving.get(remoteClient);
     if (messages == null) {
       messages = [];
@@ -245,8 +245,11 @@ class TestConnector {
  * @param {InitTestObjectCallback<T>} [initTestObject]
  * @return {{testObjects:Array<any>,testConnector:TestConnector,users:Array<TestYInstance>,array0:Y.YArray<any>,array1:Y.YArray<any>,array2:Y.YArray<any>,map0:Y.YMap<any>,map1:Y.YMap<any>,map2:Y.YMap<any>,map3:Y.YMap<any>,text0:Y.YText,text1:Y.YText,text2:Y.YText,xml0:Y.YXmlElement,xml1:Y.YXmlElement,xml2:Y.YXmlElement}}
  */
-_TestData init<T>(t.TestCase tc,
-    {int users = 5, T Function(TestYInstance)? initTestObject}) {
+_TestData<T> init<T>(
+  t.TestCase tc, {
+  int users = 5,
+  T Function(TestYInstance)? initTestObject,
+}) {
   final gen = tc.prng;
   // choose an encoding approach at random
   if (gen.nextBool()) {
@@ -277,18 +280,18 @@ _TestData init<T>(t.TestCase tc,
   _testConnector.syncAll();
   Y.useV1Encoding();
 
-  return _TestData(
+  return _TestData<T>(
     users: _users,
     testConnector: _testConnector,
     testObjects: _users
         .map((u) => u.instance)
         .map(initTestObject ?? ((_) => null))
-        .toList(),
+        .toList() as List<T>,
   );
 }
 
-class _TestData {
-  final List<dynamic> testObjects;
+class _TestData<T> {
+  final List<T> testObjects;
   final TestConnector testConnector;
   final List<_UserTestData> users;
 
@@ -342,7 +345,6 @@ void compare(List<TestYInstance> users) {
     t.check(u.store.pendingStack.length == 0);
     t.check(u.store.pendingClientsStructRefs.length == 0);
   }
-  print("users");
   // Test Array iterator
   t.compare(users[0].getArray("array").toArray(),
       List.from(users[0].getArray("array")));
@@ -468,10 +470,13 @@ void compareDS(Y.DeleteSet ds1, Y.DeleteSet ds2) {
  * @param {InitTestObjectCallback<T>} [initTestObject]
  */
 _TestData applyRandomTests<T>(
-    t.TestCase tc, List<void Function(Y.Doc, Random, T)> mods, int iterations,
-    [T Function(TestYInstance)? initTestObject]) {
+  t.TestCase tc,
+  List<void Function(Y.Doc, Random, T)> mods,
+  int iterations, [
+  T Function(TestYInstance)? initTestObject,
+]) {
   final gen = tc.prng;
-  final result = init(tc, users: 5, initTestObject: initTestObject);
+  final result = init<T>(tc, users: 5, initTestObject: initTestObject);
   final testConnector = result.testConnector;
   final users = result.users;
   for (var i = 0; i < iterations; i++) {

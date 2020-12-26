@@ -416,8 +416,8 @@ void groupAsync(String description, Future Function() f) async {
  * @param {function():void} f
  * @return {number} Returns a promise that resolves the measured duration to apply f
  */
-double measureTime(String message, void Function() f) {
-  var duration;
+int measureTime(String message, void Function() f) {
+  int duration;
   final start = performance.now();
   try {
     f();
@@ -447,8 +447,8 @@ double measureTime(String message, void Function() f) {
  * @param {function():Promise<any>} f
  * @return {Promise<number>} Returns a promise that resolves the measured duration to apply f
  */
-void measureTimeAsync(String message, Future<void> Function() f) async {
-  var duration;
+Future<int> measureTimeAsync(String message, Future<void> Function() f) async {
+  int duration;
   final start = performance.now();
   try {
     await f();
@@ -631,7 +631,14 @@ void compare<T>(
   String? message,
   bool Function(dynamic, T, T, String, dynamic) customCompare = compareValues,
 ]) =>
-    _compare(a, b, "obj", message, customCompare as dynamic);
+    _compare(
+      a,
+      b,
+      "obj",
+      message,
+      customCompare as bool Function(
+          dynamic, dynamic, dynamic, String, dynamic),
+    );
 
 /* istanbul ignore next */
 /**

@@ -321,8 +321,9 @@ void cleanupTransactions(List<Transaction> transactionCleanups, int i) {
             }));
         fs.add(() => doc.emit('afterTransaction', [transaction, doc]));
       });
-      // TODO:
-      [...fs].forEach((f) => f());
+      for (var i = 0; i < fs.length; i++) {
+        fs[i]();
+      }
     } finally {
       // Replace deleted items with ItemDeleted / GC.
       // This is where content is actually remove from the Yjs Doc.

@@ -78,9 +78,7 @@ class ContentAny implements AbstractContent {
   /**
    * @param {Transaction} transaction
    */
-  void delete(Transaction transaction) {
-    print("delete ContentAny");
-  }
+  void delete(Transaction transaction) {}
   /**
    * @param {StructStore} store
    */
@@ -89,7 +87,7 @@ class ContentAny implements AbstractContent {
    * @param {AbstractUpdateEncoder} encoder
    * @param {number} offset
    */
-  void write(AbstractUpdateEncoder encoder,int offset) {
+  void write(AbstractUpdateEncoder encoder, int offset) {
     final len = this.arr.length;
     encoder.writeLen(len - offset);
     for (var i = offset; i < len; i++) {

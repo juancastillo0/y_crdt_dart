@@ -43,7 +43,7 @@ class ContentDeleted implements AbstractContent {
    * @return {ContentDeleted}
    */
   copy() {
-    return new ContentDeleted(this.len);
+    return ContentDeleted(this.len);
   }
 
   /**

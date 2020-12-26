@@ -91,7 +91,10 @@ class PermanentUserData {
     // observe users
     this.yusers.observe((event, _) {
       event.keysChanged.forEach((userDescription) => initUser(
-          this.yusers.get(userDescription)!, userDescription, this.yusers));
+            this.yusers.get(userDescription!)!,
+            userDescription,
+            this.yusers,
+          ));
     });
     // add intial data
     this.yusers.forEach(initUser);

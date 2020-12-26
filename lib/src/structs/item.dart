@@ -48,7 +48,7 @@ import 'package:y_crdt/src/utils/update_encoder.dart';
 import 'package:y_crdt/src/utils/y_event.dart';
 import 'package:y_crdt/src/y_crdt_base.dart';
 
-import '../lib0/binary.dart' as binary;
+import 'package:y_crdt/src/lib0/binary.dart' as binary;
 
 /**
  * @todo This should return several items
@@ -173,17 +173,17 @@ Item? redoItem(Transaction transaction, Item item, Set<Item> redoitems) {
   if (redone != null) {
     return getItemCleanStart(transaction, redone);
   }
-  var parentItem = /** @type {AbstractType<any>} */ (item.parent
+  Item? parentItem = /** @type {AbstractType<any>} */ (item.parent
           as AbstractType)
       .innerItem;
   /**
    * @type {Item|null}
    */
-  var left;
+  Item? left;
   /**
    * @type {Item|null}
    */
-  var right;
+  Item? right;
   if (item.parentSub == null) {
     // Is an array item. Insert at the old position
     left = item.left;
@@ -191,9 +191,9 @@ Item? redoItem(Transaction transaction, Item item, Set<Item> redoitems) {
   } else {
     // Is a map item. Insert as current value
     left = item;
-    while (left.right != null) {
+    while (left!.right != null) {
       left = left.right;
-      if (left.id.client != ownClientID) {
+      if (left!.id.client != ownClientID) {
         // It is not possible to redo this item because it conflicts with a
         // change from another client
         return null;
@@ -226,20 +226,16 @@ Item? redoItem(Transaction transaction, Item item, Set<Item> redoitems) {
       /**
        * @type {Item|null}
        */
-      var leftTrace = left;
+      Item? leftTrace = left;
       // trace redone until parent matches
-      while (leftTrace != null && /** @type {AbstractType<any>} */ (leftTrace
-                  .parent)
-              ._item !=
-          parentItem) {
+      while (leftTrace != null &&
+          (leftTrace.parent as AbstractType).innerItem != parentItem) {
         leftTrace = leftTrace.redone == null
             ? null
-            : getItemCleanStart(transaction, leftTrace.redone);
+            : getItemCleanStart(transaction, leftTrace.redone!);
       }
-      if (leftTrace != null && /** @type {AbstractType<any>} */ (leftTrace
-                  .parent)
-              ._item ==
-          parentItem) {
+      if (leftTrace != null &&
+          (leftTrace.parent as AbstractType).innerItem == parentItem) {
         left = leftTrace;
         break;
       }
@@ -249,20 +245,16 @@ Item? redoItem(Transaction transaction, Item item, Set<Item> redoitems) {
       /**
        * @type {Item|null}
        */
-      var rightTrace = right;
+      Item? rightTrace = right;
       // trace redone until parent matches
-      while (rightTrace != null && /** @type {AbstractType<any>} */ (rightTrace
-                  .parent)
-              ._item !=
-          parentItem) {
+      while (rightTrace != null &&
+          (rightTrace.parent as AbstractType).innerItem != parentItem) {
         rightTrace = rightTrace.redone == null
             ? null
-            : getItemCleanStart(transaction, rightTrace.redone);
+            : getItemCleanStart(transaction, rightTrace.redone!);
       }
-      if (rightTrace != null && /** @type {AbstractType<any>} */ (rightTrace
-                  .parent)
-              ._item ==
-          parentItem) {
+      if (rightTrace != null &&
+          (rightTrace.parent as AbstractType).innerItem == parentItem) {
         right = rightTrace;
         break;
       }
@@ -481,8 +473,11 @@ class Item extends AbstractStruct {
   void integrate(Transaction transaction, int offset) {
     if (offset > 0) {
       this.id.clock += offset;
-      this.left = getItemCleanEnd(transaction, transaction.doc.store,
-          createID(this.id.client, this.id.clock - 1));
+      this.left = getItemCleanEnd(
+        transaction,
+        transaction.doc.store,
+        createID(this.id.client, this.id.clock - 1),
+      );
       this.origin = this.left!.lastId;
       this.content = this.content.splice(offset);
       this.length -= offset;
@@ -495,12 +490,12 @@ class Item extends AbstractStruct {
         /**
          * @type {Item|null}
          */
-        var left = this.left;
+        Item? left = this.left;
 
         /**
          * @type {Item|null}
          */
-        var o;
+        Item? o;
         // set o to the first conflicting item
         if (left != null) {
           o = left.right;
@@ -543,11 +538,11 @@ class Item extends AbstractStruct {
             } // else, o might be integrated before an item that this conflicts with. If so, we will find it in the next iterations
           } else if (o.origin != null &&
               itemsBeforeOrigin
-                  .contains(getItem(transaction.doc.store, o.origin))) {
+                  .contains(getItem(transaction.doc.store, o.origin!))) {
             // use getItem instead of getItemCleanEnd because we don't want / need to split items.
             // case 2
             if (!conflictingItems
-                .contains(getItem(transaction.doc.store, o.origin))) {
+                .contains(getItem(transaction.doc.store, o.origin!))) {
               left = o;
               conflictingItems.clear();
             }
@@ -565,7 +560,7 @@ class Item extends AbstractStruct {
         this.right = right;
         _left.right = this;
       } else {
-        var r;
+        Item? r;
         if (this.parentSub != null) {
           r = /** @type {AbstractType<any>} */ (this.parent as AbstractType)
               .innerMap
@@ -695,19 +690,15 @@ class Item extends AbstractStruct {
         parent.innerLength -= this.length;
       }
       this.markDeleted();
-      try {
-        addToDeleteSet(
-          transaction.deleteSet,
-          this.id.client,
-          this.id.clock,
-          this.length,
-        );
+      addToDeleteSet(
+        transaction.deleteSet,
+        this.id.client,
+        this.id.clock,
+        this.length,
+      );
 
-        addChangedTypeToTransaction(transaction, parent, this.parentSub);
-        this.content.delete(transaction);
-      } catch (e, s) {
-        print("$e $s");
-      }
+      addChangedTypeToTransaction(transaction, parent, this.parentSub);
+      this.content.delete(transaction);
     }
   }
 

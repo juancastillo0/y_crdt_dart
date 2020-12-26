@@ -102,7 +102,7 @@ class YEvent {
       /**
        * @type {Map<string,{ action: 'add' | 'update' | 'delete', oldValue: any}>}
        */
-      final keys = <String, _Change>{};
+      final keys = <String, YChange>{};
       changes = YChanges(
         added: added,
         deleted: deleted,
@@ -164,8 +164,8 @@ class YEvent {
           /**
            * @type {'delete' | 'add' | 'update'}
            */
-          _ChangeType action;
-          var oldValue;
+          YChangeType action;
+          Object? oldValue;
           if (this.adds(item!)) {
             var prev = item.left;
             while (prev != null && this.adds(prev)) {
@@ -173,30 +173,30 @@ class YEvent {
             }
             if (this.deletes(item)) {
               if (prev != null && this.deletes(prev)) {
-                action = _ChangeType.delete;
+                action = YChangeType.delete;
                 oldValue = prev.content.getContent().last;
               } else {
                 return;
               }
             } else {
               if (prev != null && this.deletes(prev)) {
-                action = _ChangeType.update;
+                action = YChangeType.update;
                 oldValue = prev.content.getContent().last;
               } else {
-                action = _ChangeType.add;
+                action = YChangeType.add;
                 oldValue = null;
               }
             }
           } else {
             if (this.deletes(item)) {
-              action = _ChangeType.delete;
+              action = YChangeType.delete;
               oldValue =
                   /** @type {Item} */ item.content.getContent().last;
             } else {
               return; // nop
             }
           }
-          keys.set(key, _Change(action, oldValue));
+          keys.set(key, YChange(action, oldValue));
         }
       });
       this._changes = changes;
@@ -208,7 +208,7 @@ class YEvent {
 class YChanges {
   final Set<Item> added;
   final Set<Item> deleted;
-  final Map<String, _Change> keys;
+  final Map<String, YChange> keys;
   final List<YDelta> delta;
 
   YChanges({
@@ -219,13 +219,13 @@ class YChanges {
   });
 }
 
-enum _ChangeType { add, update, delete }
+enum YChangeType { add, update, delete }
 
-class _Change {
-  final _ChangeType action;
-  final Object oldValue;
+class YChange {
+  final YChangeType action;
+  final Object? oldValue;
 
-  _Change(this.action, this.oldValue);
+  YChange(this.action, this.oldValue);
 }
 
 enum _DeltaType { insert, retain, delete }

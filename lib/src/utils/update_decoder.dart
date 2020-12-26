@@ -34,7 +34,7 @@ abstract class AbstractDSDecoder {
 }
 
 abstract class AbstractUpdateDecoder extends AbstractDSDecoder {
-  AbstractUpdateDecoder(decoder) : super(decoder);
+  AbstractUpdateDecoder(Decoder decoder) : super(decoder);
 
   /**
    * @return {ID}
@@ -132,7 +132,7 @@ class DSDecoderV1 implements AbstractDSDecoder {
 }
 
 class UpdateDecoderV1 extends DSDecoderV1 implements AbstractUpdateDecoder {
-  UpdateDecoderV1(decoder) : super(decoder);
+  UpdateDecoderV1(Decoder decoder) : super(decoder);
   static UpdateDecoderV1 create(decoding.Decoder decoder) =>
       UpdateDecoderV1(decoder);
 
@@ -260,7 +260,7 @@ class UpdateDecoderV2 extends DSDecoderV2 implements AbstractUpdateDecoder {
   /**
    * @param {decoding.Decoder} decoder
    */
-  UpdateDecoderV2(decoder) : super(decoder) {
+  UpdateDecoderV2(Decoder decoder) : super(decoder) {
     decoding.readUint8(decoder); // read feature flag - currently unused
     this.keyClockDecoder =
         decoding.IntDiffOptRleDecoder(decoding.readVarUint8Array(decoder));

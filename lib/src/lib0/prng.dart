@@ -132,7 +132,7 @@ String letter(Random gen) => String.fromCharCode(int32(gen, 97, 122));
  * @param {number} [maxLen=20]
  * @return {string} A random word (0-20 characters) without spaces consisting of letters (a-z)
  */
-String word(gen, [int minLen = 0, int maxLen = 20]) {
+String word(Random gen, [int minLen = 0, int maxLen = 20]) {
   final len = int32(gen, minLen, maxLen);
   var str = "";
   for (var i = 0; i < len; i++) {

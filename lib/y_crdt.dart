@@ -59,7 +59,7 @@ export 'src/utils/delete_set.dart'
         DeleteSet;
 export 'src/utils/transaction.dart' show transact, Transaction, tryGc;
 export 'src/utils/doc.dart' show Doc;
-export 'src/utils/y_event.dart' show YEvent, YChanges, YDelta;
+export 'src/utils/y_event.dart' show YEvent, YChanges, YDelta, YChange, YChangeType;
 export 'src/utils/id.dart' show ID, compareIDs, createID, findRootTypeKey;
 export 'src/utils/snapshot.dart'
     show

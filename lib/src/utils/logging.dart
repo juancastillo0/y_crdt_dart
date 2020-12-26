@@ -2,6 +2,7 @@
 //   AbstractType, // eslint-disable-line
 // } from "../internals.js";
 
+import 'package:y_crdt/src/structs/item.dart';
 import 'package:y_crdt/src/types/abstract_type.dart';
 
 /**
@@ -12,7 +13,7 @@ import 'package:y_crdt/src/types/abstract_type.dart';
  * @param {AbstractType<any>} type
  */
 void logType(AbstractType type) {
-  final res = [];
+  final res = <Item>[];
   var n = type.innerStart;
   while (n != null) {
     res.add(n);

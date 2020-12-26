@@ -78,7 +78,7 @@ class ItemTextListPosition {
   Item? left;
   Item? right;
   int index;
-  final Map<String, dynamic> currentAttributes;
+  final Map<String, Map<String, dynamic>> currentAttributes;
 
   /**
    * Only call this if you know that this.right is defined
@@ -154,7 +154,7 @@ ItemTextListPosition findNextPosition(
  */
 ItemTextListPosition findPosition(
     Transaction transaction, AbstractType parent, int index) {
-  final currentAttributes = <String, dynamic>{};
+  final currentAttributes = <String, Map<String, dynamic>>{};
   final marker = findMarker(parent, index);
   if (marker != null) {
     final pos = ItemTextListPosition(
@@ -178,8 +178,12 @@ ItemTextListPosition findPosition(
  * @private
  * @function
  */
-void insertNegatedAttributes(Transaction transaction, AbstractType parent,
-    ItemTextListPosition currPos, Map<String, dynamic> negatedAttributes) {
+void insertNegatedAttributes(
+  Transaction transaction,
+  AbstractType parent,
+  ItemTextListPosition currPos,
+  Map<String, Map<String, dynamic>> negatedAttributes,
+) {
   // check if we really need to remove attributes
   var _right = currPos.right;
   while (_right != null &&
@@ -204,15 +208,16 @@ void insertNegatedAttributes(Transaction transaction, AbstractType parent,
   var left = currPos.left;
   final right = currPos.right;
   negatedAttributes.forEach((key, val) {
-    left = new Item(
-        createID(ownClientId, getState(doc.store, ownClientId)),
-        left,
-        left?.lastId,
-        right,
-        right?.id,
-        parent,
-        null,
-        ContentFormat(key, val));
+    left = Item(
+      createID(ownClientId, getState(doc.store, ownClientId)),
+      left,
+      left?.lastId,
+      right,
+      right?.id,
+      parent,
+      null,
+      ContentFormat(key, val),
+    );
     left!.integrate(transaction, 0);
   });
 }
@@ -276,32 +281,33 @@ void minimizeAttributeChanges(
  * @private
  * @function
  **/
-Map<String, dynamic> insertAttributes(
+Map<String, Map<String, dynamic>> insertAttributes(
     Transaction transaction,
     AbstractType parent,
     ItemTextListPosition currPos,
-    Map<String, dynamic> attributes) {
+    Map<String, Map<String, dynamic>> attributes) {
   final doc = transaction.doc;
   final ownClientId = doc.clientID;
-  final negatedAttributes = <String, dynamic>{};
+  final negatedAttributes = <String, Map<String, dynamic>>{};
   // insert format-start items
   for (final key in attributes.keys) {
     final val = attributes[key];
     final currentVal = currPos.currentAttributes.get(key);
     if (!equalAttrs(currentVal, val)) {
       // save negated attribute (set null if currentVal undefined)
-      negatedAttributes.set(key, currentVal);
+      negatedAttributes.set(key, currentVal!);
       final left = currPos.left;
       final right = currPos.right;
       currPos.right = Item(
-          createID(ownClientId, getState(doc.store, ownClientId)),
-          left,
-          left?.lastId,
-          right,
-          right?.id,
-          parent,
-          null,
-          ContentFormat(key, val));
+        createID(ownClientId, getState(doc.store, ownClientId)),
+        left,
+        left?.lastId,
+        right,
+        right?.id,
+        parent,
+        null,
+        ContentFormat(key, val!),
+      );
       currPos.right!.integrate(transaction, 0);
       currPos.forward();
     }
@@ -323,8 +329,8 @@ void insertText(
     Transaction transaction,
     AbstractType parent,
     ItemTextListPosition currPos,
-    dynamic text,
-    Map<String, dynamic> attributes) {
+    Object text,
+    Map<String, Map<String, dynamic>> attributes) {
   // currPos.currentAttributes.forEach((key, val) {
   //   if (attributes[key] == null) {
   //     attributes[key] = null;
@@ -338,7 +344,7 @@ void insertText(
   // insert content
   final content = text is String
       ? ContentString(/** @type {string} */ (text))
-      : ContentEmbed(text);
+      : ContentEmbed(text as Map<String, dynamic>);
   var index = currPos.index;
   var right = currPos.right;
   var left = currPos.left;
@@ -365,8 +371,13 @@ void insertText(
  * @private
  * @function
  */
-void formatText(Transaction transaction, AbstractType parent,
-    ItemTextListPosition currPos, int length, Map<String, dynamic> attributes) {
+void formatText(
+  Transaction transaction,
+  AbstractType parent,
+  ItemTextListPosition currPos,
+  int length,
+  Map<String, Map<String, dynamic>> attributes,
+) {
   final doc = transaction.doc;
   final ownClientId = doc.clientID;
   minimizeAttributeChanges(currPos, attributes);
@@ -1000,33 +1011,45 @@ class YText extends AbstractType<YTextEvent> {
    *
    * @public
    */
-  void applyDelta(dynamic delta, {bool sanitize = true}) {
+  void applyDelta(List<Map<String, Object>> delta, {bool sanitize = true}) {
     if (this.doc != null) {
       transact(this.doc!, (transaction) {
         final currPos = ItemTextListPosition(null, this.innerStart, 0, {});
         for (var i = 0; i < delta.length; i++) {
           final op = delta[i];
-          if (op.insert != null) {
+          if (op["insert"] != null) {
             // Quill assumes that the content starts with an empty paragraph.
             // Yjs/Y.Text assumes that it starts empty. We always hide that
             // there is a newline at the end of the content.
             // If we omit this step, clients will see a different number of
             // paragraphs, but nothing bad will happen.
+            final _insert = op["insert"];
             final ins = !sanitize &&
-                    op.insert is String &&
                     i == delta.length - 1 &&
                     currPos.right == null &&
-                    op.insert.slice(-1) == "\n"
-                ? op.insert.slice(0, -1)
-                : op.insert;
+                    _insert is String &&
+                    _insert[_insert.length - 1] == "\n"
+                ? _insert.substring(0, _insert.length - 1)
+                : _insert;
             if (ins is! String || ins.length > 0) {
-              insertText(transaction, this, currPos, ins, op.attributes ?? {});
+              insertText(
+                transaction,
+                this,
+                currPos,
+                ins!,
+                (op["attributes"] as Map<String, Map<String, dynamic>>?) ?? {},
+              );
             }
-          } else if (op.retain != null) {
+          } else if (op["retain"] != null) {
             formatText(
-                transaction, this, currPos, op.retain, op.attributes ?? {});
-          } else if (op.delete != null) {
-            deleteText(transaction, currPos, op.delete);
+              transaction,
+              this,
+              currPos,
+              op["retain"] as int,
+              (op["attributes"] as Map<String, Map<String, dynamic>>?) ?? {},
+            );
+          } else if (op["delete"] != null) {
+            deleteText(transaction, currPos, op["delete"] as int);
           }
         }
       });
@@ -1046,15 +1069,16 @@ class YText extends AbstractType<YTextEvent> {
    *
    * @public
    */
-  List<Map<String, Object>> toDelta(
-      [Snapshot? snapshot,
-      Snapshot? prevSnapshot,
-      dynamic Function(String, ID)? computeYChange]) {
+  List<Map<String, Object>> toDelta([
+    Snapshot? snapshot,
+    Snapshot? prevSnapshot,
+    Map<String, dynamic> Function(String, ID)? computeYChange,
+  ]) {
     /**
      * @type{List<any>}
      */
     final ops = <Map<String, Object>>[];
-    final currentAttributes = <String, dynamic>{};
+    final currentAttributes = <String, Map<String, dynamic>>{};
     final doc = /** @type {Doc} */ (this.doc);
     var str = "";
     var n = this.innerStart;
@@ -1064,7 +1088,7 @@ class YText extends AbstractType<YTextEvent> {
         /**
          * @type {Object<string,any>}
          */
-        final attributes = <String, dynamic>{};
+        final attributes = <String, Map<String, dynamic>>{};
         var addAttributes = false;
         currentAttributes.forEach((key, value) {
           addAttributes = true;
@@ -1099,8 +1123,8 @@ class YText extends AbstractType<YTextEvent> {
             final cur = currentAttributes.get("ychange");
             if (snapshot != null && !isVisible(_n, snapshot)) {
               if (cur == null ||
-                  cur.user != _n.id.client ||
-                  cur.state != "removed") {
+                  cur["user"] != _n.id.client ||
+                  cur["state"] != "removed") {
                 packStr();
                 currentAttributes.set(
                     "ychange",
@@ -1110,8 +1134,8 @@ class YText extends AbstractType<YTextEvent> {
               }
             } else if (prevSnapshot != null && !isVisible(_n, prevSnapshot)) {
               if (cur == null ||
-                  cur.user != _n.id.client ||
-                  cur.state != "added") {
+                  cur["user"] != _n.id.client ||
+                  cur["state"] != "added") {
                 packStr();
                 currentAttributes.set(
                     "ychange",
@@ -1168,7 +1192,11 @@ class YText extends AbstractType<YTextEvent> {
    *                                    Text.
    * @public
    */
-  void insert(int index, String text, [Map<String, dynamic>? _attributes]) {
+  void insert(
+    int index,
+    String text, [
+    Map<String, Map<String, dynamic>>? _attributes,
+  ]) {
     if (text.length <= 0) {
       return;
     }
@@ -1176,7 +1204,7 @@ class YText extends AbstractType<YTextEvent> {
     if (y != null) {
       transact(y, (transaction) {
         final pos = findPosition(transaction, this, index);
-        final Map<String, dynamic> attributes;
+        final Map<String, Map<String, dynamic>> attributes;
         if (_attributes == null) {
           attributes = {};
           // @ts-ignore
@@ -1205,7 +1233,7 @@ class YText extends AbstractType<YTextEvent> {
    * @public
    */
   void insertEmbed(int index, Map<String, dynamic> embed,
-      [Map<String, dynamic> attributes = const {}]) {
+      [Map<String, Map<String, dynamic>> attributes = const {}]) {
     // if (embed.constructor != Object) {
     //   throw  Exception("Embed must be an Object");
     // }
@@ -1254,7 +1282,7 @@ class YText extends AbstractType<YTextEvent> {
    *
    * @public
    */
-  format(int index, int length, Map<String, dynamic> attributes) {
+  format(int index, int length, Map<String, Map<String, dynamic>> attributes) {
     if (length == 0) {
       return;
     }

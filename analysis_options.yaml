@@ -10,7 +10,13 @@ linter:
     unnecessary_this: false
     prefer_single_quotes: false
     slash_for_doc_comments: false
+    omit_local_variable_types: false
+    
 
 analyzer:
+  strong-mode:
+    implicit-casts: false
+  errors:
+    unrelated_type_equality_checks: error
 #   exclude:
 #     - path/to/excluded/files/**

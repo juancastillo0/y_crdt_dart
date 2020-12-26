@@ -286,7 +286,7 @@ void testObserveDeepEventOrder(t.TestCase tc) {
   /**
    * @type {Array<any>}
    */
-  var events = [];
+  var events = <Y.YEvent>[];
   _data.users[0].array.observeDeep((e, _) {
     events = e;
   });
@@ -461,13 +461,13 @@ final getUniqueNumber = () => _uniqueNumber++;
 
 void __insert(Y.Doc user, Random gen, dynamic _) {
   final yarray = user.getArray("array");
-  var uniqueNumber = getUniqueNumber();
-  var content = [];
-  var len = prng.int32(gen, 1, 4);
+  final uniqueNumber = getUniqueNumber();
+  final content = <int>[];
+  final len = prng.int32(gen, 1, 4);
   for (var i = 0; i < len; i++) {
     content.add(uniqueNumber);
   }
-  var pos = prng.int32(gen, 0, yarray.length);
+  final pos = prng.int32(gen, 0, yarray.length);
   final oldContent = yarray.toArray();
   yarray.insert(pos, content);
   oldContent.insertAll(pos, content);
@@ -485,9 +485,9 @@ void __insertTypeArray(Y.Doc user, Random gen, dynamic _) {
 
 void __insertTypeMap(Y.Doc user, Random gen, dynamic _) {
   final yarray = user.getArray("array");
-  var pos = prng.int32(gen, 0, yarray.length);
+  final pos = prng.int32(gen, 0, yarray.length);
   yarray.insert(pos, [Y.YMap()]);
-  var map = yarray.get(pos);
+  final map = yarray.get(pos);
   map.set("someprop", 42);
   map.set("someprop", 43);
   map.set("someprop", 44);
@@ -495,15 +495,16 @@ void __insertTypeMap(Y.Doc user, Random gen, dynamic _) {
 
 void __delete(Y.Doc user, Random gen, dynamic _) {
   final yarray = user.getArray("array");
-  var length = yarray.length;
+  final length = yarray.length;
   if (length > 0) {
     var somePos = prng.int32(gen, 0, length - 1);
     var delLength = prng.int32(gen, 1, math.min(2, length - somePos));
     if (gen.nextBool()) {
       var type = yarray.get(somePos);
-      if (type.length > 0) {
-        somePos = prng.int32(gen, 0, type.length - 1);
-        delLength = prng.int32(gen, 0, math.min(2, type.length - somePos));
+      final _typeLength = type.length as int;
+      if (_typeLength > 0) {
+        somePos = prng.int32(gen, 0, _typeLength - 1);
+        delLength = prng.int32(gen, 0, math.min(2, _typeLength - somePos));
         type.delete(somePos, delLength);
       }
     } else {

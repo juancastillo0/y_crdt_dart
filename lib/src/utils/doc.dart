@@ -40,7 +40,6 @@ final _random = math.Random();
 final _uuid = Uuid();
 int generateNewClientId() => _random.nextInt(4294967295);
 
-bool _defaultGcFilter(Item _) => true;
 /**
  * @typedef {Object} DocOpts
  * @property {boolean} [DocOpts.gc=true] Disable garbage collection (default: gc=true)
@@ -55,13 +54,14 @@ bool _defaultGcFilter(Item _) => true;
  * @extends Observable<string>
  */
 class Doc extends Observable<String> {
+  static bool defaultGcFilter(Item _) => true;
   /**
    * @param {DocOpts} [opts] configuration
    */
   Doc({
     String? guid,
     bool? gc,
-    this.gcFilter = _defaultGcFilter,
+    this.gcFilter = Doc.defaultGcFilter,
     this.meta,
     bool? autoLoad,
   })  : autoLoad = autoLoad ?? false,
@@ -110,10 +110,11 @@ class Doc extends Observable<String> {
     final item = this.item;
     if (item != null && !this.shouldLoad) {
       globalTransact(
-          /** @type {any} */ (item.parent as dynamic).doc, (transaction) {
+          /** @type {any} */ (item.parent as dynamic).doc as Doc,
+          (transaction) {
         transaction.subdocsLoaded.add(this);
       }, null, true);
-    }
+    } 
     this.shouldLoad = true;
   }
 
@@ -172,7 +173,7 @@ class Doc extends Observable<String> {
   ]) {
     if (typeConstructor == null) {
       if (T.toString() == "AbstractType<YEvent>") {
-        typeConstructor = () => AbstractType.create<YEvent>() as dynamic;
+        typeConstructor = () => AbstractType.create<YEvent>() as T;
       } else {
         throw Exception();
       }
@@ -299,7 +300,8 @@ class Doc extends Observable<String> {
         content.doc!.item = item;
       }
       globalTransact(
-          /** @type {any} */ (item.parent as dynamic).doc, (transaction) {
+          /** @type {any} */ (item.parent as dynamic).doc as Doc,
+          (transaction) {
         if (!item.deleted) {
           transaction.subdocsAdded.add(content.doc!);
         }

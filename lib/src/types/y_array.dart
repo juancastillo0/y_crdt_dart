@@ -203,7 +203,7 @@ class YArray<T> extends AbstractType<YArrayEvent<T>> with IterableMixin<T> {
    * @return {T}
    */
   T get(int index) {
-    return typeListGet(this, index);
+    return typeListGet(this, index) as T;
   }
 
   /**

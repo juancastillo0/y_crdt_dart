@@ -44,7 +44,7 @@ class YMapEvent<T> extends YEvent {
    */
   YMapEvent(YMap<T> ymap, Transaction transaction, this.keysChanged)
       : super(ymap, transaction);
-  final Set<dynamic> keysChanged;
+  final Set<String?> keysChanged;
 }
 
 /**
@@ -60,9 +60,11 @@ class YMap<T> extends AbstractType<YMapEvent<T>> {
    *
    * @param {Iterable<readonly [string, any]>=} entries - an optional iterable to initialize the YMap
    */
-  YMap([this._prelimContent]) {
+  YMap([Iterable<MapEntry<String, T>>? _prelimContent]) {
     if (_prelimContent == null) {
       this._prelimContent = {};
+    } else {
+      this._prelimContent = Map.fromEntries(_prelimContent);
     }
   }
 
@@ -70,7 +72,7 @@ class YMap<T> extends AbstractType<YMapEvent<T>> {
      * @type {Map<string,any>?}
      * @private
      */
-  Map<String, dynamic>? _prelimContent;
+  Map<String, T>? _prelimContent;
 
   /**
    * Integrate this type into the Yjs instance.
@@ -114,7 +116,10 @@ class YMap<T> extends AbstractType<YMapEvent<T>> {
    */
   void innerCallObserver(Transaction transaction, Set<String?> parentSubs) {
     callTypeObservers<YMapEvent>(
-        this, transaction, YMapEvent(this, transaction, parentSubs));
+      this,
+      transaction,
+      YMapEvent(this, transaction, parentSubs),
+    );
   }
 
   /**
@@ -122,14 +127,14 @@ class YMap<T> extends AbstractType<YMapEvent<T>> {
    *
    * @return {Object<string,T>}
    */
-  Map<String, T> toJSON() {
+  Map<String, Object?> toJSON() {
     /**
      * @type {Object<string,T>}
      */
-    final map = <String, T>{};
+    final map = <String, Object?>{};
     this.innerMap.forEach((key, item) {
       if (!item.deleted) {
-        final v = item.content.getContent()[item.length - 1];
+        final v = item.content.getContent()[item.length - 1] as T;
         map[key] = v is AbstractType ? v.toJSON() : v;
       }
     });
@@ -160,8 +165,9 @@ class YMap<T> extends AbstractType<YMapEvent<T>> {
    * @return {IterableIterator<any>}
    */
   Iterable<T> values() {
-    return createMapIterator(this.innerMap)
-        .map((v) => v.value.content.getContent()[v.value.length - 1]);
+    return createMapIterator(this.innerMap).map(
+      (v) => v.value.content.getContent()[v.value.length - 1] as T,
+    );
   }
 
   /**
@@ -171,10 +177,11 @@ class YMap<T> extends AbstractType<YMapEvent<T>> {
    */
   Iterable<MapEntry<String, T>> entries() {
     return createMapIterator(this.innerMap).map(
-        /** @param {any} v */ (v) => MapEntry(
-              v.key,
-              v.value.content.getContent()[v.value.length - 1],
-            ));
+      /** @param {any} v */ (v) => MapEntry(
+        v.key,
+        v.value.content.getContent()[v.value.length - 1] as T,
+      ),
+    );
   }
 
   /**
@@ -185,7 +192,7 @@ class YMap<T> extends AbstractType<YMapEvent<T>> {
   void forEach(void Function(T, String, YMap<T>) f) {
     this.innerMap.forEach((key, item) {
       if (!item.deleted) {
-        f(item.content.getContent()[item.length - 1], key, this);
+        f(item.content.getContent()[item.length - 1] as T, key, this);
       }
     });
   }
@@ -238,7 +245,7 @@ class YMap<T> extends AbstractType<YMapEvent<T>> {
    * @return {T|undefined}
    */
   T? get(String key) {
-    return /** @type {any} */ (typeMapGet(this, key));
+    return /** @type {any} */ (typeMapGet(this, key) as T?);
   }
 
   /**

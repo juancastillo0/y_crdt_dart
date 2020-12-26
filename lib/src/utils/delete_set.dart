@@ -190,8 +190,9 @@ DeleteSet mergeDeleteSets(List<DeleteSet> dss) {
  * @function
  */
 void addToDeleteSet(DeleteSet ds, int client, int clock, int length) {
-  print("addToDeleteSet !!");
-  ds.clients.putIfAbsent(client, () => []).add(DeleteItem(clock, length));
+  ds.clients.putIfAbsent(client, () => []).add(
+        DeleteItem(clock, length),
+      );
 }
 
 DeleteSet createDeleteSet() => DeleteSet();
@@ -215,13 +216,12 @@ DeleteSet createDeleteSetFromStructStore(StructStore ss) {
       if (struct.deleted) {
         final clock = struct.id.clock;
         var len = struct.length;
-        if (i + 1 < structs.length) {
-          for (var next = structs[i + 1];
-              i + 1 < structs.length &&
-                  next.id.clock == clock + len &&
-                  next.deleted;
-              next = structs[++i + 1]) {
+        for (; i + 1 < structs.length; i++) {
+          final next = structs[i + 1];
+          if (next.id.clock == clock + len && next.deleted) {
             len += next.length;
+          } else {
+            break;
           }
         }
         dsitems.add(DeleteItem(clock, len));
@@ -328,7 +328,7 @@ void readAndApplyDeleteSet(
           if (struct.id.clock < clockEnd) {
             if (!struct.deleted) {
               if (clockEnd < struct.id.clock + struct.length) {
-                structs.insert(index, 
+                structs.insert(index,
                     splitItem(transaction, struct, clockEnd - struct.id.clock));
               }
               struct.delete(transaction);

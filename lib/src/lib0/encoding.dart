@@ -510,7 +510,7 @@ void writeAny(Encoder encoder, dynamic _data) {
   } else if (data is Map) {
     // TYPE 118: Object
     write(encoder, 118);
-    final keys = data.keys.toList();
+    final keys = data.keys.toList().cast<String>();
     writeVarUint(encoder, keys.length);
     for (var i = 0; i < keys.length; i++) {
       final key = keys[i];

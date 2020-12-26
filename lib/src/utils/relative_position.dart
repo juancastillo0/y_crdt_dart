@@ -133,8 +133,8 @@ AbsolutePosition createAbsolutePosition(AbstractType type, int index) =>
  * @function
  */
 RelativePosition createRelativePosition(AbstractType type, ID? item) {
-  var typeid;
-  var tname;
+  ID? typeid;
+  String? tname;
   final typeItem = type.innerItem;
   if (typeItem == null) {
     tname = findRootTypeKey(type);
@@ -215,9 +215,9 @@ Uint8List encodeRelativePosition(RelativePosition rpos) {
  * @function
  */
 RelativePosition readRelativePosition(decoding.Decoder decoder) {
-  var type;
-  var tname;
-  var itemID;
+  ID? type;
+  String? tname;
+  ID? itemID;
   switch (decoding.readVarUint(decoder)) {
     case 0:
       // case 1: found position somewhere in the linked list
@@ -228,10 +228,8 @@ RelativePosition readRelativePosition(decoding.Decoder decoder) {
       tname = decoding.readVarString(decoder);
       break;
     case 2:
-      {
-        // case 3: found position at the end of the list and type is attached to an item
-        type = readID(decoder);
-      }
+      // case 3: found position at the end of the list and type is attached to an item
+      type = readID(decoder);
   }
   return RelativePosition(type, tname, itemID);
 }

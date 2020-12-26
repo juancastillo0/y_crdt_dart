@@ -543,7 +543,7 @@ void typeListForEach<L, R extends AbstractType>(
     if (n.countable && !n.deleted) {
       final c = n.content.getContent();
       for (var i = 0; i < c.length; i++) {
-        f(c[i], index++, type);
+        f(c[i] as L, index++, type);
       }
     }
     n = n.right;
@@ -764,7 +764,11 @@ void typeListInsertGenericsAfter(
  * @function
  */
 void typeListInsertGenerics(
-    Transaction transaction, AbstractType parent, int index, dynamic content) {
+  Transaction transaction,
+  AbstractType parent,
+  int index,
+  List<dynamic> content,
+) {
   if (index == 0) {
     if (parent.innerSearchMarker != null) {
       updateMarkerChanges(parent.innerSearchMarker!, index, content.length);
@@ -839,7 +843,6 @@ void typeListDelete(
   }
   // delete all items until done
   while (length > 0 && n != null) {
-    print("length $length");
     if (!n.deleted) {
       if (length < n.length) {
         getItemCleanStart(
@@ -850,7 +853,6 @@ void typeListDelete(
     }
     n = n.right;
   }
-  print("out length $length");
   if (length > 0) {
     throw Exception('array length exceeded');
   }
@@ -889,7 +891,7 @@ void typeMapSet(
   final left = parent.innerMap.get(key);
   final doc = transaction.doc;
   final ownClientId = doc.clientID;
-  var content;
+  final AbstractContent content;
   if (value == null) {
     content = ContentAny([value]);
   } else {
@@ -913,9 +915,16 @@ void typeMapSet(
       }
     }
   }
-  Item(createID(ownClientId, getState(doc.store, ownClientId)), left,
-          left?.lastId, null, null, parent, key, content)
-      .integrate(transaction, 0);
+  Item(
+    createID(ownClientId, getState(doc.store, ownClientId)),
+    left,
+    left?.lastId,
+    null,
+    null,
+    parent,
+    key,
+    content,
+  ).integrate(transaction, 0);
 }
 
 /**

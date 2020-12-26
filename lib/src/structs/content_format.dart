@@ -108,4 +108,4 @@ class ContentFormat implements AbstractContent {
  * @return {ContentFormat}
  */
 ContentFormat readContentFormat(AbstractUpdateDecoder decoder) =>
-    ContentFormat(decoder.readString(), decoder.readJSON());
+    ContentFormat(decoder.readString(), decoder.readJSON() as Map<String, dynamic>);

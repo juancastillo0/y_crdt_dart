@@ -170,10 +170,10 @@ bool isVisible(Item item, Snapshot? snapshot) => snapshot == null
  */
 void splitSnapshotAffectedStructs(Transaction transaction, Snapshot snapshot) {
   final meta =
-      transaction.meta.putIfAbsent(splitSnapshotAffectedStructs, () => {});
+      transaction.meta.putIfAbsent(splitSnapshotAffectedStructs, () => {}) as Set;
   final store = transaction.doc.store;
   // check if we already split for this snapshot
-  if (!meta.has(snapshot)) {
+  if (!meta.contains(snapshot)) {
     snapshot.sv.forEach((client, clock) {
       if (clock < getState(store, client)) {
         getItemCleanStart(transaction, createID(client, clock));

@@ -336,7 +336,7 @@ class UndoManager extends Observable {
    */
   StackItem? undo() {
     this.undoing = true;
-    final res;
+    StackItem? res;
     try {
       res = popStackItem(this, this.undoStack, "undo");
     } finally {
@@ -352,7 +352,7 @@ class UndoManager extends Observable {
    */
   StackItem? redo() {
     this.redoing = true;
-    var res;
+    StackItem? res;
     try {
       res = popStackItem(this, this.redoStack, "redo");
     } finally {

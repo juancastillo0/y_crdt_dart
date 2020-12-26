@@ -168,9 +168,9 @@ ContentDoc readContentDoc(AbstractUpdateDecoder decoder) {
   return ContentDoc(
     Doc(
       guid: guid,
-      autoLoad: params["autoLoad"],
-      gc: params["gc"],
-      gcFilter: params["gcFilter"],
+      autoLoad: params["autoLoad"] as bool?,
+      gc: params["gc"] as bool?,
+      gcFilter: (params["gcFilter"] ?? Doc.defaultGcFilter) as bool Function(Item),
       meta: params["meta"],
     ),
   );
