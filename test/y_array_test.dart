@@ -25,7 +25,7 @@ import 'package:y_crdt/y_crdt.dart' as Y;
 import 'package:y_crdt/src/lib0/testing.dart' as t;
 import 'test_helper.dart';
 
-void main(List<String> args) async {
+void main() async {
   await t.runTests(
     {
       "array": {
