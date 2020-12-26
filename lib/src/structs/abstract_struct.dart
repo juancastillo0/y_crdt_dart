@@ -1,36 +1,38 @@
+// import {
+//   AbstractUpdateEncoder,
+//   ID,
+//   Transaction, // eslint-disable-line
+// } from "../internals.js";
 
-import {
-  AbstractUpdateEncoder, ID, Transaction // eslint-disable-line
-} from '../internals.js'
+// import * as error from "lib0/error.js";
 
-import * as error from 'lib0/error.js'
+import 'package:y_crdt/src/utils/id.dart' show ID;
+import 'package:y_crdt/src/utils/transaction.dart' show Transaction;
+import 'package:y_crdt/src/utils/update_encoder.dart' show AbstractUpdateEncoder;
 
-export class AbstractStruct {
+abstract class AbstractStruct {
   /**
    * @param {ID} id
    * @param {number} length
    */
-  constructor (id, length) {
-    this.id = id
-    this.length = length
-  }
+  AbstractStruct(this.id, this.length);
+  ID id;
+  int length;
 
   /**
    * @type {boolean}
    */
-  get deleted () {
-    throw error.methodUnimplemented()
-  }
+  bool get deleted;
 
   /**
    * Merge this struct with the item to the right.
-   * This method is already assuming that `this.id.clock + this.length === this.id.clock`.
+   * This method is already assuming that `this.id.clock + this.length == this.id.clock`.
    * Also this method does *not* remove right from StructStore!
    * @param {AbstractStruct} right
    * @return {boolean} wether this merged with right
    */
-  mergeWith (right) {
-    return false
+  bool mergeWith(AbstractStruct right) {
+    return false;
   }
 
   /**
@@ -38,15 +40,11 @@ export class AbstractStruct {
    * @param {number} offset
    * @param {number} encodingRef
    */
-  write (encoder, offset, encodingRef) {
-    throw error.methodUnimplemented()
-  }
+  void write(AbstractUpdateEncoder encoder, int offset);
 
   /**
    * @param {Transaction} transaction
    * @param {number} offset
    */
-  integrate (transaction, offset) {
-    throw error.methodUnimplemented()
-  }
+  void integrate(Transaction transaction, int offset);
 }

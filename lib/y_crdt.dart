@@ -58,7 +58,7 @@ export 'src/utils/DeleteSet.dart'
         isDeleted,
         DeleteSet;
 export 'src/utils/transaction.dart' show transact, Transaction, tryGc;
-export 'src/utils/Doc.dart' show Doc;
+export 'src/utils/doc.dart' show Doc;
 export 'src/utils/YEvent.dart' show YEvent, YChanges, YDelta;
 export 'src/utils/id.dart' show ID, compareIDs, createID, findRootTypeKey;
 export 'src/utils/snapshot.dart'

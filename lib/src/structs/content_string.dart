@@ -1,105 +1,115 @@
-import {
-  AbstractUpdateDecoder, AbstractUpdateEncoder, Transaction, Item, StructStore // eslint-disable-line
-} from '../internals.js'
+// import {
+//   AbstractUpdateDecoder,
+//   AbstractUpdateEncoder,
+//   Transaction,
+//   Item,
+//   StructStore, // eslint-disable-line
+// } from "../internals.js";
+
+import 'package:y_crdt/src/structs/item.dart';
+import 'package:y_crdt/src/utils/update_decoder.dart';
 
 /**
  * @private
  */
-export class ContentString {
+class ContentString implements AbstractContent {
   /**
    * @param {string} str
    */
-  constructor (str) {
-    /**
+  ContentString(this.str);
+  /**
      * @type {string}
      */
-    this.str = str
-  }
+  String str;
 
   /**
    * @return {number}
    */
-  getLength () {
-    return this.str.length
+  getLength() {
+    return this.str.length;
   }
 
   /**
-   * @return {Array<any>}
+   * @return {List<any>}
    */
-  getContent () {
-    return this.str.split('')
+  getContent() {
+    return this.str.split("");
   }
 
   /**
    * @return {boolean}
    */
-  isCountable () {
-    return true
+  isCountable() {
+    return true;
   }
 
   /**
    * @return {ContentString}
    */
-  copy () {
-    return new ContentString(this.str)
+  copy() {
+    return new ContentString(this.str);
   }
 
   /**
    * @param {number} offset
    * @return {ContentString}
    */
-  splice (offset) {
-    const right = new ContentString(this.str.slice(offset))
-    this.str = this.str.slice(0, offset)
+  splice(offset) {
+    final right = ContentString(this.str.substring(offset));
+    this.str = this.str.substring(0, offset);
 
     // Prevent encoding invalid documents because of splitting of surrogate pairs: https://github.com/yjs/yjs/issues/248
-    const firstCharCode = this.str.charCodeAt(offset - 1)
-    if (firstCharCode >= 0xD800 && firstCharCode <= 0xDBFF) {
+    final firstCharCode = this.str.codeUnitAt(offset - 1);
+    if (firstCharCode >= 0xd800 && firstCharCode <= 0xdbff) {
       // Last character of the left split is the start of a surrogate utf16/ucs2 pair.
       // We don't support splitting of surrogate pairs because this may lead to invalid documents.
       // Replace the invalid character with a unicode replacement character (� / U+FFFD)
-      this.str = this.str.slice(0, offset - 1) + '�'
+      this.str = this.str.substring(0, offset - 1) + "�";
       // replace right as well
-      right.str = '�' + right.str.slice(1)
+      right.str = "�" + right.str.substring(1);
     }
-    return right
+    return right;
   }
 
   /**
    * @param {ContentString} right
    * @return {boolean}
    */
-  mergeWith (right) {
-    this.str += right.str
-    return true
+  mergeWith(right) {
+    if (right is ContentString) {
+      this.str += right.str;
+      return true;
+    } else {
+      return false;
+    }
   }
 
   /**
    * @param {Transaction} transaction
    * @param {Item} item
    */
-  integrate (transaction, item) {}
+  integrate(transaction, item) {}
   /**
    * @param {Transaction} transaction
    */
-  delete (transaction) {}
+  delete(transaction) {}
   /**
    * @param {StructStore} store
    */
-  gc (store) {}
+  gc(store) {}
   /**
    * @param {AbstractUpdateEncoder} encoder
    * @param {number} offset
    */
-  write (encoder, offset) {
-    encoder.writeString(offset === 0 ? this.str : this.str.slice(offset))
+  write(encoder, offset) {
+    encoder.writeString(offset == 0 ? this.str : this.str.substring(offset));
   }
 
   /**
    * @return {number}
    */
-  getRef () {
-    return 4
+  getRef() {
+    return 4;
   }
 }
 
@@ -109,4 +119,5 @@ export class ContentString {
  * @param {AbstractUpdateDecoder} decoder
  * @return {ContentString}
  */
-export const readContentString = decoder => new ContentString(decoder.readString())
+ContentString readContentString(AbstractUpdateDecoder decoder) =>
+    ContentString(decoder.readString());

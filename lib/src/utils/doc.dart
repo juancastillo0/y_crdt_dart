@@ -1,25 +1,46 @@
+import 'dart:math' as math;
+import 'package:uuid/uuid.dart';
+import 'package:y_crdt/src/structs/content_doc.dart';
+import 'package:y_crdt/src/structs/item.dart';
+import 'package:y_crdt/src/types/abstract_type.dart';
+import 'package:y_crdt/src/types/y_array.dart';
+import 'package:y_crdt/src/types/y_map.dart';
+import 'package:y_crdt/src/types/y_text.dart';
+import 'package:y_crdt/src/utils/struct_store.dart';
+import 'package:y_crdt/src/utils/transaction.dart' show Transaction, transact;
+import 'package:y_crdt/src/utils/y_event.dart';
+import 'package:y_crdt/src/utils/observable.dart';
+import 'package:y_crdt/src/y_crdt_base.dart';
+
+const globalTransact = transact;
 /**
  * @module Y
  */
 
-import {
-  StructStore,
-  AbstractType,
-  YArray,
-  YText,
-  YMap,
-  YXmlFragment,
-  transact,
-  ContentDoc, Item, Transaction, YEvent // eslint-disable-line
-} from '../internals.js'
+// import {
+//   StructStore,
+//   AbstractType,
+//   YArray,
+//   YText,
+//   YMap,
+//   YXmlFragment,
+//   transact,
+//   ContentDoc,
+//   Item,
+//   Transaction,
+//   YEvent, // eslint-disable-line
+// } from "../internals.js";
 
-import { Observable } from 'lib0/observable.js'
-import * as random from 'lib0/random.js'
-import * as map from 'lib0/map.js'
-import * as array from 'lib0/array.js'
+// import { Observable } from "lib0/observable.js";
+// import * as random from "lib0/random.js";
+// import * as map from "lib0/map.js";
+// import * as array from "lib0/array.js";
 
-export const generateNewClientId = random.uint32
+final _random = math.Random();
+final _uuid = Uuid();
+int generateNewClientId() => _random.nextInt(4294967295);
 
+bool _defaultGcFilter(Item _) => true;
 /**
  * @typedef {Object} DocOpts
  * @property {boolean} [DocOpts.gc=true] Disable garbage collection (default: gc=true)
@@ -33,42 +54,50 @@ export const generateNewClientId = random.uint32
  * A Yjs instance handles the state of shared data.
  * @extends Observable<string>
  */
-export class Doc extends Observable {
+class Doc extends Observable<String> {
   /**
    * @param {DocOpts} [opts] configuration
    */
-  constructor ({ guid = random.uuidv4(), gc = true, gcFilter = () => true, meta = null, autoLoad = false } = {}) {
-    super()
-    this.gc = gc
-    this.gcFilter = gcFilter
-    this.clientID = generateNewClientId()
-    this.guid = guid
-    /**
+  Doc({
+    String? guid,
+    bool? gc,
+    this.gcFilter = _defaultGcFilter,
+    this.meta,
+    bool? autoLoad,
+  })  : autoLoad = autoLoad ?? false,
+        shouldLoad = autoLoad ?? false,
+        gc = gc ?? true {
+    this.guid = guid ?? _uuid.v4();
+  }
+  final bool gc;
+  final bool Function(Item) gcFilter;
+  int clientID = generateNewClientId();
+  late final String guid;
+  /**
      * @type {Map<string, AbstractType<YEvent>>}
      */
-    this.share = new Map()
-    this.store = new StructStore()
-    /**
+  final share = <String, AbstractType<YEvent>>{};
+  final StructStore store = StructStore();
+  /**
      * @type {Transaction | null}
      */
-    this._transaction = null
-    /**
-     * @type {Array<Transaction>}
+  Transaction? transaction;
+  /**
+     * @type {List<Transaction>}
      */
-    this._transactionCleanups = []
-    /**
+  List<Transaction> transactionCleanups = [];
+  /**
      * @type {Set<Doc>}
      */
-    this.subdocs = new Set()
-    /**
+  final subdocs = <Doc>{};
+  /**
      * If this document is a subdocument - a document integrated into another document - then _item is defined.
      * @type {Item?}
      */
-    this._item = null
-    this.shouldLoad = autoLoad
-    this.autoLoad = autoLoad
-    this.meta = meta
-  }
+  Item? item;
+  bool shouldLoad;
+  final bool autoLoad;
+  final dynamic meta;
 
   /**
    * Notify the parent document that you request to load data into this subdocument (if it is a subdocument).
@@ -77,22 +106,23 @@ export class Doc extends Observable {
    *
    * It is safe to call `load()` multiple times.
    */
-  load () {
-    const item = this._item
-    if (item !== null && !this.shouldLoad) {
-      transact(/** @type {any} */ (item.parent).doc, transaction => {
-        transaction.subdocsLoaded.add(this)
-      }, null, true)
+  void load() {
+    final item = this.item;
+    if (item != null && !this.shouldLoad) {
+      globalTransact(
+          /** @type {any} */ (item.parent as dynamic).doc, (transaction) {
+        transaction.subdocsLoaded.add(this);
+      }, null, true);
     }
-    this.shouldLoad = true
+    this.shouldLoad = true;
   }
 
-  getSubdocs () {
-    return this.subdocs
+  Set<Doc> getSubdocs() {
+    return this.subdocs;
   }
 
-  getSubdocGuids () {
-    return new Set(Array.from(this.subdocs).map(doc => doc.guid))
+  Set<dynamic> getSubdocGuids() {
+    return Set.from(this.subdocs.map((doc) => doc.guid));
   }
 
   /**
@@ -106,8 +136,8 @@ export class Doc extends Observable {
    *
    * @public
    */
-  transact (f, origin = null) {
-    transact(this, f, origin)
+  void transact(void Function(Transaction) f, [dynamic origin]) {
+    globalTransact(this, f, origin);
   }
 
   /**
@@ -115,7 +145,7 @@ export class Doc extends Observable {
    *
    * Multiple calls of `y.get(name, TypeConstructor)` yield the same result
    * and do not overwrite each other. I.e.
-   * `y.define(name, Y.Array) === y.define(name, Y.Array)`
+   * `y.define(name, Y.Array) == y.define(name, Y.Array)`
    *
    * After this method is called, the type is also available on `y.share.get(name)`.
    *
@@ -136,50 +166,62 @@ export class Doc extends Observable {
    *
    * @public
    */
-  get (name, TypeConstructor = AbstractType) {
-    const type = map.setIfUndefined(this.share, name, () => {
-      // @ts-ignore
-      const t = new TypeConstructor()
-      t._integrate(this, null)
-      return t
-    })
-    const Constr = type.constructor
-    if (TypeConstructor !== AbstractType && Constr !== TypeConstructor) {
-      if (Constr === AbstractType) {
-        // @ts-ignore
-        const t = new TypeConstructor()
-        t._map = type._map
-        type._map.forEach(/** @param {Item?} n */ n => {
-          for (; n !== null; n = n.left) {
-            // @ts-ignore
-            n.parent = t
-          }
-        })
-        t._start = type._start
-        for (let n = t._start; n !== null; n = n.right) {
-          n.parent = t
-        }
-        t._length = type._length
-        this.share.set(name, t)
-        t._integrate(this, null)
-        return t
+  AbstractType<YEvent> get<T extends AbstractType<YEvent>>(
+    String name, [
+    T Function()? typeConstructor,
+  ]) {
+    if (typeConstructor == null) {
+      if (T.toString() == "AbstractType<YEvent>") {
+        typeConstructor = () => AbstractType.create<YEvent>() as dynamic;
       } else {
-        throw new Error(`Type with the name ${name} has already been defined with a different constructor`)
+        throw Exception();
       }
     }
-    return type
+    final type = this.share.putIfAbsent(name, () {
+      // @ts-ignore
+      final t = typeConstructor!();
+      t.innerIntegrate(this, null);
+      return t;
+    });
+    if (type is AbstractType && type is! T) {
+      if (T.toString() == "AbstractType<YEvent>") {
+        // @ts-ignore
+        final t = typeConstructor();
+        t.innerMap = type.innerMap;
+        type.innerMap.forEach(
+            /** @param {Item?} n */ (_, n) {
+          Item? item = n;
+          for (; item != null; item = item.left) {
+            // @ts-ignore
+            item.parent = t;
+          }
+        });
+        t.innerStart = type.innerStart;
+        for (var n = t.innerStart; n != null; n = n.right) {
+          n.parent = t;
+        }
+        t.innerLength = type.innerLength;
+        this.share.set(name, t);
+        t.innerIntegrate(this, null);
+        return t;
+      } else {
+        throw Exception(
+            "Type with the name ${name} has already been defined with a different constructor");
+      }
+    }
+    return type;
   }
 
   /**
    * @template T
    * @param {string} [name]
-   * @return {YArray<T>}
+   * @return {YList<T>}
    *
    * @public
    */
-  getArray (name = '') {
+  YArray<T> getArray<T>([String name = ""]) {
     // @ts-ignore
-    return this.get(name, YArray)
+    return this.get<YArray<T>>(name, YArray.create) as YArray<T>;
   }
 
   /**
@@ -188,9 +230,9 @@ export class Doc extends Observable {
    *
    * @public
    */
-  getText (name = '') {
+  YText getText([String name = ""]) {
     // @ts-ignore
-    return this.get(name, YText)
+    return this.get<YText>(name, YText.create) as YText;
   }
 
   /**
@@ -199,9 +241,9 @@ export class Doc extends Observable {
    *
    * @public
    */
-  getMap (name = '') {
+  YMap<T> getMap<T>([String name = ""]) {
     // @ts-ignore
-    return this.get(name, YMap)
+    return this.get<YMap<T>>(name, YMap.create) as YMap<T>;
   }
 
   /**
@@ -210,70 +252,78 @@ export class Doc extends Observable {
    *
    * @public
    */
-  getXmlFragment (name = '') {
-    // @ts-ignore
-    return this.get(name, YXmlFragment)
-  }
+  // TODO
+  // YXmlFragment getXmlFragment([String name = ""]) {
+  //   // @ts-ignore
+  //   return this.get(name, YXmlFragment.create) as YXmlFragment;
+  // }
 
   /**
    * Converts the entire document into a js object, recursively traversing each yjs type
    *
    * @return {Object<string, any>}
    */
-  toJSON () {
+  Map<String, dynamic> toJSON() {
     /**
      * @type {Object<string, any>}
      */
-    const doc = {}
+    const doc = <String, dynamic>{};
 
-    this.share.forEach((value, key) => {
-      doc[key] = value.toJSON()
-    })
+    // TODO: use Map.map
+    this.share.forEach((key, value) {
+      doc[key] = value.toJSON();
+    });
 
-    return doc
+    return doc;
   }
 
   /**
    * Emit `destroy` event and unregister all event handlers.
    */
-  destroy () {
-    array.from(this.subdocs).forEach(subdoc => subdoc.destroy())
-    const item = this._item
-    if (item !== null) {
-      this._item = null
-      const content = /** @type {ContentDoc} */ (item.content)
+  void destroy() {
+    this.subdocs.toList().forEach((subdoc) => subdoc.destroy());
+    final item = this.item;
+    if (item != null) {
+      this.item = null;
+      final content = /** @type {ContentDoc} */ (item.content) as ContentDoc;
       if (item.deleted) {
         // @ts-ignore
-        content.doc = null
+        content.doc = null;
       } else {
-        content.doc = new Doc({ guid: this.guid, ...content.opts })
-        content.doc._item = item
+        content.doc = Doc(
+          guid: this.guid,
+          autoLoad: content.opts.autoLoad,
+          gc: content.opts.gc,
+          meta: content.opts.meta,
+        );
+        content.doc!.item = item;
       }
-      transact(/** @type {any} */ (item).parent.doc, transaction => {
+      globalTransact(
+          /** @type {any} */ (item.parent as dynamic).doc, (transaction) {
         if (!item.deleted) {
-          transaction.subdocsAdded.add(content.doc)
+          transaction.subdocsAdded.add(content.doc!);
         }
-        transaction.subdocsRemoved.add(this)
-      }, null, true)
+        transaction.subdocsRemoved.add(this);
+      }, null, true);
     }
-    this.emit('destroyed', [true])
-    this.emit('destroy', [this])
-    super.destroy()
+    this.emit("destroyed", [true]);
+    this.emit("destroy", [this]);
+    super.destroy();
   }
 
   /**
    * @param {string} eventName
    * @param {function(...any):any} f
    */
-  on (eventName, f) {
-    super.on(eventName, f)
+  void on(String eventName, void Function(List<dynamic>) f) {
+    super.on(eventName, f);
   }
 
   /**
    * @param {string} eventName
    * @param {function} f
    */
-  off (eventName, f) {
-    super.off(eventName, f)
+  void off(String eventName, void Function(List<dynamic>) f) {
+    super.off(eventName, f);
   }
 }

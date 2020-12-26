@@ -1,50 +1,50 @@
-import '.'* as buffer from 'lib0/buffer.js'
-import '.'* as error from 'lib0/error.js'
-import '.'* as decoding from 'lib0/decoding.js'
-import '.'{
-  ID, createID
-} from '../internals.js'
+// import * as buffer from "lib0/buffer.js";
+// import * as error from "lib0/error.js";
+// import * as decoding from "lib0/decoding.js";
+// import { ID, createID } from "../internals.js";
 
-export '.'class AbstractDSDecoder {
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:y_crdt/src/lib0/decoding.dart';
+import 'package:y_crdt/src/utils/id.dart';
+
+import '../lib0/decoding.dart' as decoding;
+
+abstract class AbstractDSDecoder {
   /**
    * @param {decoding.Decoder} decoder
    */
-  constructor (decoder) {
-    this.restDecoder = decoder
-    error.methodUnimplemented()
+  AbstractDSDecoder(this.restDecoder) {
+    UnimplementedError();
   }
+  final decoding.Decoder restDecoder;
 
-  resetDsCurVal () { }
-
-  /**
-   * @return {number}
-   */
-  readDsClock () {
-    error.methodUnimplemented()
-  }
+  resetDsCurVal() {}
 
   /**
    * @return {number}
    */
-  readDsLen () {
-    error.methodUnimplemented()
-  }
+  int readDsClock();
+
+  /**
+   * @return {number}
+   */
+  int readDsLen();
 }
 
-export '.'class AbstractUpdateDecoder extends AbstractDSDecoder {
-  /**
-   * @return {ID}
-   */
-  readLeftID () {
-    error.methodUnimplemented()
-  }
+abstract class AbstractUpdateDecoder extends AbstractDSDecoder {
+  AbstractUpdateDecoder(decoder) : super(decoder);
 
   /**
    * @return {ID}
    */
-  readRightID () {
-    error.methodUnimplemented()
-  }
+  ID readLeftID();
+
+  /**
+   * @return {ID}
+   */
+  ID readRightID();
 
   /**
    * Read the next client id.
@@ -52,154 +52,140 @@ export '.'class AbstractUpdateDecoder extends AbstractDSDecoder {
    *
    * @return {number}
    */
-  readClient () {
-    error.methodUnimplemented()
-  }
+  int readClient();
 
   /**
    * @return {number} info An unsigned 8-bit integer
    */
-  readInfo () {
-    error.methodUnimplemented()
-  }
+  int readInfo();
 
   /**
    * @return {string}
    */
-  readString () {
-    error.methodUnimplemented()
-  }
+  String readString();
 
   /**
    * @return {boolean} isKey
    */
-  readParentInfo () {
-    error.methodUnimplemented()
-  }
+  bool readParentInfo();
 
   /**
    * @return {number} info An unsigned 8-bit integer
    */
-  readTypeRef () {
-    error.methodUnimplemented()
-  }
+  int readTypeRef();
 
   /**
    * Write len of a struct - well suited for Opt RLE encoder.
    *
    * @return {number} len
    */
-  readLen () {
-    error.methodUnimplemented()
-  }
+  int readLen();
 
   /**
    * @return {any}
    */
-  readAny () {
-    error.methodUnimplemented()
-  }
+  dynamic readAny();
 
   /**
    * @return {Uint8Array}
    */
-  readBuf () {
-    error.methodUnimplemented()
-  }
+  Uint8List readBuf();
 
   /**
    * Legacy implementation uses JSON parse. We use any-decoding in v2.
    *
    * @return {any}
    */
-  readJSON () {
-    error.methodUnimplemented()
-  }
+  dynamic readJSON();
 
   /**
    * @return {string}
    */
-  readKey () {
-    error.methodUnimplemented()
-  }
+  String readKey();
 }
 
-export '.'class DSDecoderV1 {
+class DSDecoderV1 implements AbstractDSDecoder {
   /**
    * @param {decoding.Decoder} decoder
    */
-  constructor (decoder) {
-    this.restDecoder = decoder
-  }
+  DSDecoderV1(this.restDecoder);
+  final decoding.Decoder restDecoder;
+  static DSDecoderV1 create(decoding.Decoder decoder) => DSDecoderV1(decoder);
 
-  resetDsCurVal () {
+  resetDsCurVal() {
     // nop
   }
 
   /**
    * @return {number}
    */
-  readDsClock () {
-    return decoding.readVarUint(this.restDecoder)
+  int readDsClock() {
+    return decoding.readVarUint(this.restDecoder);
   }
 
   /**
    * @return {number}
    */
-  readDsLen () {
-    return decoding.readVarUint(this.restDecoder)
+  int readDsLen() {
+    return decoding.readVarUint(this.restDecoder);
   }
 }
 
-export '.'class UpdateDecoderV1 extends DSDecoderV1 {
+class UpdateDecoderV1 extends DSDecoderV1 implements AbstractUpdateDecoder {
+  UpdateDecoderV1(decoder) : super(decoder);
+  static UpdateDecoderV1 create(decoding.Decoder decoder) =>
+      UpdateDecoderV1(decoder);
+
   /**
    * @return {ID}
    */
-  readLeftID () {
-    return createID(decoding.readVarUint(this.restDecoder), decoding.readVarUint(this.restDecoder))
+  ID readLeftID() {
+    return createID(decoding.readVarUint(this.restDecoder),
+        decoding.readVarUint(this.restDecoder));
   }
 
   /**
    * @return {ID}
    */
-  readRightID () {
-    return createID(decoding.readVarUint(this.restDecoder), decoding.readVarUint(this.restDecoder))
+  ID readRightID() {
+    return createID(decoding.readVarUint(this.restDecoder),
+        decoding.readVarUint(this.restDecoder));
   }
 
   /**
    * Read the next client id.
    * Use this in favor of readID whenever possible to reduce the number of objects created.
    */
-  readClient () {
-    return decoding.readVarUint(this.restDecoder)
+  int readClient() {
+    return decoding.readVarUint(this.restDecoder);
   }
 
   /**
    * @return {number} info An unsigned 8-bit integer
    */
-  readInfo () {
-    return decoding.readUint8(this.restDecoder)
+  int readInfo() {
+    return decoding.readUint8(this.restDecoder);
   }
 
   /**
    * @return {string}
    */
-  readString () {
-    return decoding.readVarString(this.restDecoder)
+  String readString() {
+    return decoding.readVarString(this.restDecoder);
   }
 
   /**
    * @return {boolean} isKey
    */
-  readParentInfo () {
-    return decoding.readVarUint(this.restDecoder) === 1
+  bool readParentInfo() {
+    return decoding.readVarUint(this.restDecoder) == 1;
   }
 
   /**
    * @return {number} info An unsigned 8-bit integer
    */
-  readTypeRef () {
-    return decoding.readVarUint(this.restDecoder)
+  int readTypeRef() {
+    return decoding.readVarUint(this.restDecoder);
   }
 
   /**
@@ -207,22 +193,23 @@ export '.'class UpdateDecoderV1 extends DSDecoderV1 {
    *
    * @return {number} len
    */
-  readLen () {
-    return decoding.readVarUint(this.restDecoder)
+  int readLen() {
+    return decoding.readVarUint(this.restDecoder);
   }
 
   /**
    * @return {any}
    */
-  readAny () {
-    return decoding.readAny(this.restDecoder)
+  dynamic readAny() {
+    return decoding.readAny(this.restDecoder);
   }
 
   /**
    * @return {Uint8Array}
    */
-  readBuf () {
-    return buffer.copyUint8Array(decoding.readVarUint8Array(this.restDecoder))
+  Uint8List readBuf() {
+    // TODO:
+    return Uint8List.fromList(decoding.readVarUint8Array(this.restDecoder));
   }
 
   /**
@@ -230,116 +217,135 @@ export '.'class UpdateDecoderV1 extends DSDecoderV1 {
    *
    * @return {any}
    */
-  readJSON () {
-    return JSON.parse(decoding.readVarString(this.restDecoder))
+  dynamic readJSON() {
+    return jsonDecode(decoding.readVarString(this.restDecoder));
   }
 
   /**
    * @return {string}
    */
-  readKey () {
-    return decoding.readVarString(this.restDecoder)
+  String readKey() {
+    return decoding.readVarString(this.restDecoder);
   }
 }
 
-export '.'class DSDecoderV2 {
+class DSDecoderV2 implements AbstractDSDecoder {
   /**
    * @param {decoding.Decoder} decoder
    */
-  constructor (decoder) {
-    this.dsCurrVal = 0
-    this.restDecoder = decoder
+  DSDecoderV2(this.restDecoder);
+  int dsCurrVal = 0;
+  final decoding.Decoder restDecoder;
+  static DSDecoderV2 create(decoding.Decoder decoder) => DSDecoderV2(decoder);
+
+  void resetDsCurVal() {
+    this.dsCurrVal = 0;
   }
 
-  resetDsCurVal () {
-    this.dsCurrVal = 0
+  int readDsClock() {
+    this.dsCurrVal += decoding.readVarUint(this.restDecoder);
+    return this.dsCurrVal;
   }
 
-  readDsClock () {
-    this.dsCurrVal += decoding.readVarUint(this.restDecoder)
-    return this.dsCurrVal
-  }
-
-  readDsLen () {
-    const diff = decoding.readVarUint(this.restDecoder) + 1
-    this.dsCurrVal += diff
-    return diff
+  int readDsLen() {
+    final diff = decoding.readVarUint(this.restDecoder) + 1;
+    this.dsCurrVal += diff;
+    return diff;
   }
 }
 
-export '.'class UpdateDecoderV2 extends DSDecoderV2 {
+class UpdateDecoderV2 extends DSDecoderV2 implements AbstractUpdateDecoder {
+  static UpdateDecoderV2 create(decoding.Decoder decoder) =>
+      UpdateDecoderV2(decoder);
   /**
    * @param {decoding.Decoder} decoder
    */
-  constructor (decoder) {
-    super(decoder)
-    /**
+  UpdateDecoderV2(decoder) : super(decoder) {
+    decoding.readUint8(decoder); // read feature flag - currently unused
+    this.keyClockDecoder =
+        decoding.IntDiffOptRleDecoder(decoding.readVarUint8Array(decoder));
+    this.clientDecoder =
+        decoding.UintOptRleDecoder(decoding.readVarUint8Array(decoder));
+    this.leftClockDecoder =
+        decoding.IntDiffOptRleDecoder(decoding.readVarUint8Array(decoder));
+    this.rightClockDecoder =
+        decoding.IntDiffOptRleDecoder(decoding.readVarUint8Array(decoder));
+    this.infoDecoder = decoding.RleDecoder(
+        decoding.readVarUint8Array(decoder), decoding.readUint8);
+    this.stringDecoder =
+        decoding.StringDecoder(decoding.readVarUint8Array(decoder));
+    this.parentInfoDecoder = decoding.RleDecoder(
+        decoding.readVarUint8Array(decoder), decoding.readUint8);
+    this.typeRefDecoder =
+        decoding.UintOptRleDecoder(decoding.readVarUint8Array(decoder));
+    this.lenDecoder =
+        decoding.UintOptRleDecoder(decoding.readVarUint8Array(decoder));
+  }
+  /**
      * List of cached keys. If the keys[id] does not exist, we read a new key
      * from stringEncoder and push it to keys.
      *
-     * @type {Array<string>}
+     * @type {List<string>}
      */
-    this.keys = []
-    decoding.readUint8(decoder) // read feature flag - currently unused
-    this.keyClockDecoder = new decoding.IntDiffOptRleDecoder(decoding.readVarUint8Array(decoder))
-    this.clientDecoder = new decoding.UintOptRleDecoder(decoding.readVarUint8Array(decoder))
-    this.leftClockDecoder = new decoding.IntDiffOptRleDecoder(decoding.readVarUint8Array(decoder))
-    this.rightClockDecoder = new decoding.IntDiffOptRleDecoder(decoding.readVarUint8Array(decoder))
-    this.infoDecoder = new decoding.RleDecoder(decoding.readVarUint8Array(decoder), decoding.readUint8)
-    this.stringDecoder = new decoding.StringDecoder(decoding.readVarUint8Array(decoder))
-    this.parentInfoDecoder = new decoding.RleDecoder(decoding.readVarUint8Array(decoder), decoding.readUint8)
-    this.typeRefDecoder = new decoding.UintOptRleDecoder(decoding.readVarUint8Array(decoder))
-    this.lenDecoder = new decoding.UintOptRleDecoder(decoding.readVarUint8Array(decoder))
+  final keys = <String>[];
+  late final IntDiffOptRleDecoder keyClockDecoder;
+  late final UintOptRleDecoder clientDecoder;
+  late final IntDiffOptRleDecoder leftClockDecoder;
+  late final IntDiffOptRleDecoder rightClockDecoder;
+  late final RleDecoder infoDecoder;
+  late final StringDecoder stringDecoder;
+  late final RleDecoder parentInfoDecoder;
+  late final UintOptRleDecoder typeRefDecoder;
+  late final UintOptRleDecoder lenDecoder;
+
+  /**
+   * @return {ID}
+   */
+  ID readLeftID() {
+    return ID(this.clientDecoder.read(), this.leftClockDecoder.read());
   }
 
   /**
    * @return {ID}
    */
-  readLeftID () {
-    return new ID(this.clientDecoder.read(), this.leftClockDecoder.read())
-  }
-
-  /**
-   * @return {ID}
-   */
-  readRightID () {
-    return new ID(this.clientDecoder.read(), this.rightClockDecoder.read())
+  ID readRightID() {
+    return ID(this.clientDecoder.read(), this.rightClockDecoder.read());
   }
 
   /**
    * Read the next client id.
    * Use this in favor of readID whenever possible to reduce the number of objects created.
    */
-  readClient () {
-    return this.clientDecoder.read()
+  readClient() {
+    return this.clientDecoder.read();
   }
 
   /**
    * @return {number} info An unsigned 8-bit integer
    */
-  readInfo () {
-    return /** @type {number} */ (this.infoDecoder.read())
+  int readInfo() {
+    return /** @type {number} */ (this.infoDecoder.read() as int);
   }
 
   /**
    * @return {string}
    */
-  readString () {
-    return this.stringDecoder.read()
+  String readString() {
+    return this.stringDecoder.read();
   }
 
   /**
    * @return {boolean}
    */
-  readParentInfo () {
-    return this.parentInfoDecoder.read() === 1
+  bool readParentInfo() {
+    return this.parentInfoDecoder.read() == 1;
   }
 
   /**
    * @return {number} An unsigned 8-bit integer
    */
-  readTypeRef () {
-    return this.typeRefDecoder.read()
+  int readTypeRef() {
+    return this.typeRefDecoder.read();
   }
 
   /**
@@ -347,22 +353,22 @@ export '.'class UpdateDecoderV2 extends DSDecoderV2 {
    *
    * @return {number}
    */
-  readLen () {
-    return this.lenDecoder.read()
+  int readLen() {
+    return this.lenDecoder.read();
   }
 
   /**
    * @return {any}
    */
-  readAny () {
-    return decoding.readAny(this.restDecoder)
+  dynamic readAny() {
+    return decoding.readAny(this.restDecoder);
   }
 
   /**
    * @return {Uint8Array}
    */
-  readBuf () {
-    return decoding.readVarUint8Array(this.restDecoder)
+  Uint8List readBuf() {
+    return decoding.readVarUint8Array(this.restDecoder);
   }
 
   /**
@@ -372,21 +378,21 @@ export '.'class UpdateDecoderV2 extends DSDecoderV2 {
    *
    * @return {any}
    */
-  readJSON () {
-    return decoding.readAny(this.restDecoder)
+  dynamic readJSON() {
+    return decoding.readAny(this.restDecoder);
   }
 
   /**
    * @return {string}
    */
-  readKey () {
-    const keyClock = this.keyClockDecoder.read()
+  String readKey() {
+    final keyClock = this.keyClockDecoder.read();
     if (keyClock < this.keys.length) {
-      return this.keys[keyClock]
+      return this.keys[keyClock];
     } else {
-      const key = this.stringDecoder.read()
-      this.keys.push(key)
-      return key
+      final key = this.stringDecoder.read();
+      this.keys.add(key);
+      return key;
     }
   }
 }

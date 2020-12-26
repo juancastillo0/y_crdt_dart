@@ -1,24 +1,37 @@
+// import {
+//   getState,
+//   writeStructsFromTransaction,
+//   writeDeleteSet,
+//   DeleteSet,
+//   sortAndMergeDeleteSet,
+//   getStateVector,
+//   findIndexSS,
+//   callEventHandlerListeners,
+//   Item,
+//   generateNewClientId,
+//   createID,
+//   AbstractUpdateEncoder, GC, StructStore, UpdateEncoderV2, DefaultUpdateEncoder, AbstractType, AbstractStruct, YEvent, Doc // eslint-disable-line
+// } from '../internals.js'
 
-import '.'{
-  getState,
-  writeStructsFromTransaction,
-  writeDeleteSet,
-  DeleteSet,
-  sortAndMergeDeleteSet,
-  getStateVector,
-  findIndexSS,
-  callEventHandlerListeners,
-  Item,
-  generateNewClientId,
-  createID,
-  AbstractUpdateEncoder, GC, StructStore, UpdateEncoderV2, DefaultUpdateEncoder, AbstractType, AbstractStruct, YEvent, Doc // eslint-disable-line
-} from '../internals.js'
+// import * as map from 'lib0/map.js'
+// import * as math from 'lib0/math.js'
+// import * as set from 'lib0/set.js'
+// import * as logging from 'lib0/logging.js'
+// import { callAll } from 'lib0/function.js'
 
-import '.'* as map from 'lib0/map.js'
-import '.'* as math from 'lib0/math.js'
-import '.'* as set from 'lib0/set.js'
-import '.'* as logging from 'lib0/logging.js'
-import '.'{ callAll } from 'lib0/function.js'
+import 'dart:math' as math;
+import 'package:y_crdt/src/structs/abstract_struct.dart';
+import 'package:y_crdt/src/structs/item.dart';
+import 'package:y_crdt/src/types/abstract_type.dart';
+import 'package:y_crdt/src/utils/delete_set.dart';
+import 'package:y_crdt/src/utils/doc.dart';
+import 'package:y_crdt/src/utils/event_handler.dart';
+import 'package:y_crdt/src/utils/id.dart';
+import 'package:y_crdt/src/utils/struct_store.dart';
+import 'package:y_crdt/src/utils/update_encoder.dart';
+import 'package:y_crdt/src/utils/y_event.dart';
+import 'package:y_crdt/src/utils/encoding.dart';
+import 'package:y_crdt/src/y_crdt_base.dart';
 
 /**
  * A transaction is created for every change on the Yjs model. It is possible
@@ -44,77 +57,77 @@ import '.'{ callAll } from 'lib0/function.js'
  *
  * @public
  */
-export '.'class Transaction {
+class Transaction {
   /**
    * @param {Doc} doc
    * @param {any} origin
    * @param {boolean} local
    */
-  constructor (doc, origin, local) {
-    /**
+  Transaction(this.doc, this.origin, this.local)
+      : beforeState = getStateVector(doc.store);
+  /**
      * The Yjs instance.
      * @type {Doc}
      */
-    this.doc = doc
-    /**
+  final Doc doc;
+  /**
      * Describes the set of deleted items by ids
      * @type {DeleteSet}
      */
-    this.deleteSet = new DeleteSet()
-    /**
+  final deleteSet = DeleteSet();
+  /**
      * Holds the state before the transaction started.
      * @type {Map<Number,Number>}
      */
-    this.beforeState = getStateVector(doc.store)
-    /**
+  late Map<int, int> beforeState;
+  /**
      * Holds the state after the transaction.
      * @type {Map<Number,Number>}
      */
-    this.afterState = new Map()
-    /**
+  var afterState = <int, int>{};
+  /**
      * All types that were directly modified (property added or child
      * inserted/deleted). New types are not included in this Set.
      * Maps from type to parentSubs (`item.parentSub = null` for YArray)
      * @type {Map<AbstractType<YEvent>,Set<String|null>>}
      */
-    this.changed = new Map()
-    /**
+  final changed = <AbstractType<YEvent>, Set<String?>>{};
+  /**
      * Stores the events for the types that observe also child elements.
      * It is mainly used by `observeDeep`.
-     * @type {Map<AbstractType<YEvent>,Array<YEvent>>}
+     * @type {Map<AbstractType<YEvent>,List<YEvent>>}
      */
-    this.changedParentTypes = new Map()
-    /**
-     * @type {Array<AbstractStruct>}
+  final changedParentTypes = <AbstractType<YEvent>, List<YEvent>>{};
+  /**
+     * @type {List<AbstractStruct>}
      */
-    this._mergeStructs = []
-    /**
+  final mergeStructs = <AbstractStruct>[];
+  /**
      * @type {any}
      */
-    this.origin = origin
-    /**
+  final Object? origin;
+  /**
      * Stores meta information on the transaction
      * @type {Map<any,any>}
      */
-    this.meta = new Map()
-    /**
+  final meta = <Object, dynamic>{};
+  /**
      * Whether this change originates from this doc.
      * @type {boolean}
      */
-    this.local = local
-    /**
+  final bool local;
+  /**
      * @type {Set<Doc>}
      */
-    this.subdocsAdded = new Set()
-    /**
+  final subdocsAdded = <Doc>{};
+  /**
      * @type {Set<Doc>}
      */
-    this.subdocsRemoved = new Set()
-    /**
+  final subdocsRemoved = <Doc>{};
+  /**
      * @type {Set<Doc>}
      */
-    this.subdocsLoaded = new Set()
-  }
+  final subdocsLoaded = <Doc>{};
 }
 
 /**
@@ -122,14 +135,17 @@ export '.'class Transaction {
  * @param {Transaction} transaction
  * @return {boolean} Whether data was written.
  */
-export '.'const writeUpdateMessageFromTransaction = (encoder, transaction) => {
-  if (transaction.deleteSet.clients.size === 0 && !map.any(transaction.afterState, (clock, client) => transaction.beforeState.get(client) !== clock)) {
-    return false
+bool writeUpdateMessageFromTransaction(
+    AbstractUpdateEncoder encoder, Transaction transaction) {
+  if (transaction.deleteSet.clients.length == 0 &&
+      !transaction.afterState.entries.any(
+          (entry) => transaction.beforeState.get(entry.key) != entry.value)) {
+    return false;
   }
-  sortAndMergeDeleteSet(transaction.deleteSet)
-  writeStructsFromTransaction(encoder, transaction)
-  writeDeleteSet(encoder, transaction.deleteSet)
-  return true
+  sortAndMergeDeleteSet(transaction.deleteSet);
+  writeStructsFromTransaction(encoder, transaction);
+  writeDeleteSet(encoder, transaction.deleteSet);
+  return true;
 }
 
 /**
@@ -138,9 +154,9 @@ export '.'const writeUpdateMessageFromTransaction = (encoder, transaction) => {
  * @private
  * @function
  */
-export '.'const nextID = transaction => {
-  const y = transaction.doc
-  return createID(y.clientID, getState(y.store, y.clientID))
+ID nextID(Transaction transaction) {
+  final y = transaction.doc;
+  return createID(y.clientID, getState(y.store, y.clientID));
 }
 
 /**
@@ -151,25 +167,33 @@ export '.'const nextID = transaction => {
  * @param {AbstractType<YEvent>} type
  * @param {string|null} parentSub
  */
-export '.'const addChangedTypeToTransaction = (transaction, type, parentSub) => {
-  const item = type._item
-  if (item === null || (item.id.clock < (transaction.beforeState.get(item.id.client) || 0) && !item.deleted)) {
-    map.setIfUndefined(transaction.changed, type, set.create).add(parentSub)
+void addChangedTypeToTransaction(
+    Transaction transaction, AbstractType<YEvent> type, String? parentSub) {
+  final item = type.innerItem;
+  if (item == null ||
+      (item.id.clock < (transaction.beforeState.get(item.id.client) ?? 0) &&
+          !item.deleted)) {
+    transaction.changed.putIfAbsent(type, () => {}).add(parentSub);
   }
 }
 
 /**
- * @param {Array<AbstractStruct>} structs
+ * @param {List<AbstractStruct>} structs
  * @param {number} pos
  */
-const tryToMergeWithLeft = (structs, pos) => {
-  const left = structs[pos - 1]
-  const right = structs[pos]
-  if (left.deleted === right.deleted && left.constructor === right.constructor) {
+void tryToMergeWithLeft(List<AbstractStruct> structs, int pos) {
+  final left = structs[pos - 1];
+  final right = structs[pos];
+  if (left.deleted == right.deleted && left.runtimeType == right.runtimeType) {
     if (left.mergeWith(right)) {
-      structs.splice(pos, 1)
-      if (right instanceof Item && right.parentSub !== null && /** @type {AbstractType<any>} */ (right.parent)._map.get(right.parentSub) === right) {
-        /** @type {AbstractType<any>} */ (right.parent)._map.set(right.parentSub, /** @type {Item} */ (left))
+      structs.removeAt(pos);
+      if (right is Item &&
+          right.parentSub != null &&
+          (right.parent as AbstractType).innerMap.get(right.parentSub!) ==
+              right) {
+        (right.parent as AbstractType)
+            .innerMap
+            .set(right.parentSub!, /** @type {Item} */ (left as Item));
       }
     }
   }
@@ -180,23 +204,28 @@ const tryToMergeWithLeft = (structs, pos) => {
  * @param {StructStore} store
  * @param {function(Item):boolean} gcFilter
  */
-const tryGcDeleteSet = (ds, store, gcFilter) => {
-  for (const [client, deleteItems] of ds.clients.entries()) {
-    const structs = /** @type {Array<GC|Item>} */ (store.clients.get(client))
-    for (let di = deleteItems.length - 1; di >= 0; di--) {
-      const deleteItem = deleteItems[di]
-      const endDeleteItemClock = deleteItem.clock + deleteItem.len
-      for (
-        let si = findIndexSS(structs, deleteItem.clock), struct = structs[si];
-        si < structs.length && struct.id.clock < endDeleteItemClock;
-        struct = structs[++si]
-      ) {
-        const struct = structs[si]
+void tryGcDeleteSet(
+    DeleteSet ds, StructStore store, bool Function(Item) gcFilter) {
+  for (final entry in ds.clients.entries) {
+    final client = entry.key;
+    final deleteItems = entry.value;
+    final structs = store.clients.get(client)!;
+    for (var di = deleteItems.length - 1; di >= 0; di--) {
+      final deleteItem = deleteItems[di];
+      final endDeleteItemClock = deleteItem.clock + deleteItem.len;
+
+      for (var si = findIndexSS(structs, deleteItem.clock);
+          si < structs.length && structs[si].id.clock < endDeleteItemClock;
+          si++) {
+        final struct = structs[si];
         if (deleteItem.clock + deleteItem.len <= struct.id.clock) {
-          break
+          break;
         }
-        if (struct instanceof Item && struct.deleted && !struct.keep && gcFilter(struct)) {
-          struct.gc(store, false)
+        if (struct is Item &&
+            struct.deleted &&
+            !struct.keep &&
+            gcFilter(struct)) {
+          struct.gc(store, false);
         }
       }
     }
@@ -207,24 +236,25 @@ const tryGcDeleteSet = (ds, store, gcFilter) => {
  * @param {DeleteSet} ds
  * @param {StructStore} store
  */
-const tryMergeDeleteSet = (ds, store) => {
+void tryMergeDeleteSet(DeleteSet ds, StructStore store) {
   // try to merge deleted / gc'd items
   // merge from right to left for better efficiecy and so we don't miss any merge targets
-  ds.clients.forEach((deleteItems, client) => {
-    const structs = /** @type {Array<GC|Item>} */ (store.clients.get(client))
-    for (let di = deleteItems.length - 1; di >= 0; di--) {
-      const deleteItem = deleteItems[di]
-      // start with merging the item next to the last deleted item
-      const mostRightIndexToCheck = math.min(structs.length - 1, 1 + findIndexSS(structs, deleteItem.clock + deleteItem.len - 1))
-      for (
-        let si = mostRightIndexToCheck, struct = structs[si];
-        si > 0 && struct.id.clock >= deleteItem.clock;
-        struct = structs[--si]
-      ) {
-        tryToMergeWithLeft(structs, si)
+  ds.clients.forEach((client, deleteItems) {
+    final structs = /** @type {List<GC|Item>} */ (store.clients.get(client));
+    if (structs != null) {
+      for (var di = deleteItems.length - 1; di >= 0; di--) {
+        final deleteItem = deleteItems[di];
+        // start with merging the item next to the last deleted item
+        final mostRightIndexToCheck = math.min(structs.length - 1,
+            1 + findIndexSS(structs, deleteItem.clock + deleteItem.len - 1));
+        for (var si = mostRightIndexToCheck, struct = structs[si];
+            si > 0 && struct.id.clock >= deleteItem.clock;
+            struct = structs[--si]) {
+          tryToMergeWithLeft(structs, si);
+        }
       }
     }
-  })
+  });
 }
 
 /**
@@ -232,135 +262,153 @@ const tryMergeDeleteSet = (ds, store) => {
  * @param {StructStore} store
  * @param {function(Item):boolean} gcFilter
  */
-export '.'const tryGc = (ds, store, gcFilter) => {
-  tryGcDeleteSet(ds, store, gcFilter)
-  tryMergeDeleteSet(ds, store)
+void tryGc(DeleteSet ds, StructStore store, bool Function(Item) gcFilter) {
+  tryGcDeleteSet(ds, store, gcFilter);
+  tryMergeDeleteSet(ds, store);
 }
 
 /**
- * @param {Array<Transaction>} transactionCleanups
+ * @param {List<Transaction>} transactionCleanups
  * @param {number} i
  */
-const cleanupTransactions = (transactionCleanups, i) => {
+void cleanupTransactions(List<Transaction> transactionCleanups, int i) {
   if (i < transactionCleanups.length) {
-    const transaction = transactionCleanups[i]
-    const doc = transaction.doc
-    const store = doc.store
-    const ds = transaction.deleteSet
-    const mergeStructs = transaction._mergeStructs
+    final transaction = transactionCleanups[i];
+    final doc = transaction.doc;
+    final store = doc.store;
+    final ds = transaction.deleteSet;
+    final mergeStructs = transaction.mergeStructs;
     try {
-      sortAndMergeDeleteSet(ds)
-      transaction.afterState = getStateVector(transaction.doc.store)
-      doc._transaction = null
-      doc.emit('beforeObserverCalls', [transaction, doc])
+      sortAndMergeDeleteSet(ds);
+      transaction.afterState = getStateVector(transaction.doc.store);
+      doc.transaction = null;
+      doc.emit('beforeObserverCalls', [transaction, doc]);
       /**
        * An array of event callbacks.
        *
        * Each callback is called even if the other ones throw errors.
        *
-       * @type {Array<function():void>}
+       * @type {List<function():void>}
        */
-      const fs = []
+      final fs = <void Function()>[];
       // observe events on changed types
-      transaction.changed.forEach((subs, itemtype) =>
-        fs.push(() => {
-          if (itemtype._item === null || !itemtype._item.deleted) {
-            itemtype._callObserver(transaction, subs)
-          }
-        })
-      )
-      fs.push(() => {
-        // deep observe events
-        transaction.changedParentTypes.forEach((events, type) =>
-          fs.push(() => {
-            // We need to think about the possibility that the user transforms the
-            // Y.Doc in the event.
-            if (type._item === null || !type._item.deleted) {
-              events = events
-                .filter(event =>
-                  event.target._item === null || !event.target._item.deleted
-                )
-              events
-                .forEach(event => {
-                  event.currentTarget = type
-                })
-              // sort events by path length so that top-level events are fired first.
-              events
-                .sort((event1, event2) => event1.path.length - event2.path.length)
-              // We don't need to check for events.length
-              // because we know it has at least one element
-              callEventHandlerListeners(type._dEH, events, transaction)
+      transaction.changed.forEach((itemtype, subs) => fs.add(() {
+            if (itemtype.innerItem == null || !itemtype.innerItem!.deleted) {
+              itemtype.innerCallObserver(transaction, subs);
             }
-          })
-        )
-        fs.push(() => doc.emit('afterTransaction', [transaction, doc]))
-      })
-      callAll(fs, [])
+          }));
+      fs.add(() {
+        // deep observe events
+        transaction.changedParentTypes.forEach((type, events) => fs.add(() {
+              // We need to think about the possibility that the user transforms the
+              // Y.Doc in the event.
+              if (type.innerItem == null || !type.innerItem!.deleted) {
+                events = events
+                    .where((event) =>
+                        event.target.innerItem == null ||
+                        !event.target.innerItem!.deleted)
+                    .toList();
+                events.forEach((event) {
+                  event.currentTarget = type;
+                });
+                // sort events by path length so that top-level events are fired first.
+                events.sort((event1, event2) =>
+                    event1.path.length - event2.path.length);
+                // We don't need to check for events.length
+                // because we know it has at least one element
+                callEventHandlerListeners(type.innerdEH, events, transaction);
+              }
+            }));
+        fs.add(() => doc.emit('afterTransaction', [transaction, doc]));
+      });
+      // TODO:
+      [...fs].forEach((f) => f());
     } finally {
       // Replace deleted items with ItemDeleted / GC.
       // This is where content is actually remove from the Yjs Doc.
       if (doc.gc) {
-        tryGcDeleteSet(ds, store, doc.gcFilter)
+        tryGcDeleteSet(ds, store, doc.gcFilter);
       }
-      tryMergeDeleteSet(ds, store)
+      tryMergeDeleteSet(ds, store);
 
       // on all affected store.clients props, try to merge
-      transaction.afterState.forEach((clock, client) => {
-        const beforeClock = transaction.beforeState.get(client) || 0
-        if (beforeClock !== clock) {
-          const structs = /** @type {Array<GC|Item>} */ (store.clients.get(client))
+      transaction.afterState.forEach((client, clock) {
+        final beforeClock = transaction.beforeState.get(client) ?? 0;
+        if (beforeClock != clock) {
+          final structs = /** @type {List<GC|Item>} */ (store.clients
+              .get(client));
           // we iterate from right to left so we can safely remove entries
-          const firstChangePos = math.max(findIndexSS(structs, beforeClock), 1)
-          for (let i = structs.length - 1; i >= firstChangePos; i--) {
-            tryToMergeWithLeft(structs, i)
+          if (structs != null) {
+            final firstChangePos =
+                math.max(findIndexSS(structs, beforeClock), 1);
+            for (var i = structs.length - 1; i >= firstChangePos; i--) {
+              tryToMergeWithLeft(structs, i);
+            }
           }
         }
-      })
+      });
       // try to merge mergeStructs
       // @todo: it makes more sense to transform mergeStructs to a DS, sort it, and merge from right to left
       //        but at the moment DS does not handle duplicates
-      for (let i = 0; i < mergeStructs.length; i++) {
-        const { client, clock } = mergeStructs[i].id
-        const structs = /** @type {Array<GC|Item>} */ (store.clients.get(client))
-        const replacedStructPos = findIndexSS(structs, clock)
-        if (replacedStructPos + 1 < structs.length) {
-          tryToMergeWithLeft(structs, replacedStructPos + 1)
-        }
-        if (replacedStructPos > 0) {
-          tryToMergeWithLeft(structs, replacedStructPos)
+      for (var i = 0; i < mergeStructs.length; i++) {
+        final client = mergeStructs[i].id.client;
+        final clock = mergeStructs[i].id.clock;
+        final structs = /** @type {List<GC|Item>} */ (store.clients
+            .get(client));
+        if (structs != null) {
+          final replacedStructPos = findIndexSS(structs, clock);
+          if (replacedStructPos + 1 < structs.length) {
+            tryToMergeWithLeft(structs, replacedStructPos + 1);
+          }
+          if (replacedStructPos > 0) {
+            tryToMergeWithLeft(structs, replacedStructPos);
+          }
         }
       }
-      if (!transaction.local && transaction.afterState.get(doc.clientID) !== transaction.beforeState.get(doc.clientID)) {
-        doc.clientID = generateNewClientId()
-        logging.print(logging.ORANGE, logging.BOLD, '[yjs] ', logging.UNBOLD, logging.RED, 'Changed the client-id because another client seems to be using it.')
+      if (!transaction.local &&
+          transaction.afterState.get(doc.clientID) !=
+              transaction.beforeState.get(doc.clientID)) {
+        doc.clientID = generateNewClientId();
+        logger.w(
+            'Changed the client-id because another client seems to be using it.');
       }
       // @todo Merge all the transactions into one and provide send the data as a single update message
-      doc.emit('afterTransactionCleanup', [transaction, doc])
-      if (doc._observers.has('update')) {
-        const encoder = new DefaultUpdateEncoder()
-        const hasContent = writeUpdateMessageFromTransaction(encoder, transaction)
+      doc.emit('afterTransactionCleanup', [transaction, doc]);
+      if (doc.innerObservers.containsKey('update')) {
+        final encoder = DefaultUpdateEncoder();
+        final hasContent =
+            writeUpdateMessageFromTransaction(encoder, transaction);
         if (hasContent) {
-          doc.emit('update', [encoder.toUint8Array(), transaction.origin, doc])
+          doc.emit('update', [encoder.toUint8Array(), transaction.origin, doc]);
         }
       }
-      if (doc._observers.has('updateV2')) {
-        const encoder = new UpdateEncoderV2()
-        const hasContent = writeUpdateMessageFromTransaction(encoder, transaction)
+      if (doc.innerObservers.containsKey('updateV2')) {
+        final encoder = UpdateEncoderV2();
+        final hasContent =
+            writeUpdateMessageFromTransaction(encoder, transaction);
         if (hasContent) {
-          doc.emit('updateV2', [encoder.toUint8Array(), transaction.origin, doc])
+          doc.emit(
+              'updateV2', [encoder.toUint8Array(), transaction.origin, doc]);
         }
       }
-      transaction.subdocsAdded.forEach(subdoc => doc.subdocs.add(subdoc))
-      transaction.subdocsRemoved.forEach(subdoc => doc.subdocs.delete(subdoc))
+      transaction.subdocsAdded.forEach((subdoc) => doc.subdocs.add(subdoc));
+      transaction.subdocsRemoved
+          .forEach((subdoc) => doc.subdocs.remove(subdoc));
 
-      doc.emit('subdocs', [{ loaded: transaction.subdocsLoaded, added: transaction.subdocsAdded, removed: transaction.subdocsRemoved }])
-      transaction.subdocsRemoved.forEach(subdoc => subdoc.destroy())
+      doc.emit('subdocs', [
+        {
+          "loaded": transaction.subdocsLoaded,
+          "added": transaction.subdocsAdded,
+          "removed": transaction.subdocsRemoved
+        },
+      ]);
+      transaction.subdocsRemoved.forEach((subdoc) => subdoc.destroy());
 
       if (transactionCleanups.length <= i + 1) {
-        doc._transactionCleanups = []
-        doc.emit('afterAllTransactions', [doc, transactionCleanups])
+        doc.transactionCleanups = [];
+        doc.emit('afterAllTransactions', [doc, transactionCleanups]);
       } else {
-        cleanupTransactions(transactionCleanups, i + 1)
+        cleanupTransactions(transactionCleanups, i + 1);
       }
     }
   }
@@ -375,22 +423,23 @@ const cleanupTransactions = (transactionCleanups, i) => {
  *
  * @function
  */
-export '.'const transact = (doc, f, origin = null, local = true) => {
-  const transactionCleanups = doc._transactionCleanups
-  let initialCall = false
-  if (doc._transaction === null) {
-    initialCall = true
-    doc._transaction = new Transaction(doc, origin, local)
-    transactionCleanups.push(doc._transaction)
-    if (transactionCleanups.length === 1) {
-      doc.emit('beforeAllTransactions', [doc])
+void transact(Doc doc, void Function(Transaction) f,
+    [Object? origin, bool local = true]) {
+  final transactionCleanups = doc.transactionCleanups;
+  var initialCall = false;
+  if (doc.transaction == null) {
+    initialCall = true;
+    doc.transaction = Transaction(doc, origin, local);
+    transactionCleanups.add(doc.transaction!);
+    if (transactionCleanups.length == 1) {
+      doc.emit('beforeAllTransactions', [doc]);
     }
-    doc.emit('beforeTransaction', [doc._transaction, doc])
+    doc.emit('beforeTransaction', [doc.transaction, doc]);
   }
   try {
-    f(doc._transaction)
+    f(doc.transaction!);
   } finally {
-    if (initialCall && transactionCleanups[0] === doc._transaction) {
+    if (initialCall && transactionCleanups[0] == doc.transaction) {
       // The first transaction ended, now process observer calls.
       // Observer call may create new transactions for which we need to call the observers and do cleanup.
       // We don't want to nest these calls, so we execute these calls one after
@@ -399,7 +448,7 @@ export '.'const transact = (doc, f, origin = null, local = true) => {
       // observes throw errors.
       // This file is full of hacky try {} finally {} blocks to ensure that an
       // event can throw errors and also that the cleanup is called.
-      cleanupTransactions(transactionCleanups, 0)
+      cleanupTransactions(transactionCleanups, 0);
     }
   }
 }

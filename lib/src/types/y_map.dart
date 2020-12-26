@@ -1,38 +1,50 @@
-
+import 'package:y_crdt/src/structs/content_type.dart';
+import 'package:y_crdt/src/structs/item.dart';
+import 'package:y_crdt/src/types/abstract_type.dart';
+import 'package:y_crdt/src/utils/doc.dart';
+import 'package:y_crdt/src/utils/transaction.dart';
+import 'package:y_crdt/src/utils/update_decoder.dart';
+import 'package:y_crdt/src/utils/update_encoder.dart';
 /**
  * @module YMap
  */
 
-import {
-  YEvent,
-  AbstractType,
-  typeMapDelete,
-  typeMapSet,
-  typeMapGet,
-  typeMapHas,
-  createMapIterator,
-  YMapRefID,
-  callTypeObservers,
-  transact,
-  AbstractUpdateDecoder, AbstractUpdateEncoder, Doc, Transaction, Item // eslint-disable-line
-} from '../internals.js'
+// import {
+//   YEvent,
+//   AbstractType,
+//   typeMapDelete,
+//   typeMapSet,
+//   typeMapGet,
+//   typeMapHas,
+//   createMapIterator,
+//   YMapRefID,
+//   callTypeObservers,
+//   transact,
+//   AbstractUpdateDecoder,
+//   AbstractUpdateEncoder,
+//   Doc,
+//   Transaction,
+//   Item, // eslint-disable-line
+// } from "../internals.js";
 
-import * as iterator from 'lib0/iterator.js'
+// import * as iterator from "lib0/iterator.js";
+
+import 'package:y_crdt/src/utils/y_event.dart';
+import 'package:y_crdt/src/y_crdt_base.dart';
 
 /**
  * @template T
  * Event that describes the changes on a YMap.
  */
-export class YMapEvent extends YEvent {
+class YMapEvent<T> extends YEvent {
   /**
    * @param {YMap<T>} ymap The YArray that changed.
    * @param {Transaction} transaction
    * @param {Set<any>} subs The keys that changed.
    */
-  constructor (ymap, transaction, subs) {
-    super(ymap, transaction)
-    this.keysChanged = subs
-  }
+  YMapEvent(YMap<T> ymap, Transaction transaction, this.keysChanged)
+      : super(ymap, transaction);
+  final Set<dynamic> keysChanged;
 }
 
 /**
@@ -42,25 +54,23 @@ export class YMapEvent extends YEvent {
  * @extends AbstractType<YMapEvent<T>>
  * @implements {Iterable<T>}
  */
-export class YMap extends AbstractType {
+class YMap<T> extends AbstractType<YMapEvent<T>> {
+  static YMap<T> create<T>() => YMap<T>();
   /**
    *
    * @param {Iterable<readonly [string, any]>=} entries - an optional iterable to initialize the YMap
    */
-  constructor (entries) {
-    super()
-    /**
+  YMap([this._prelimContent]) {
+    if (_prelimContent == null) {
+      this._prelimContent = {};
+    }
+  }
+
+  /**
      * @type {Map<string,any>?}
      * @private
      */
-    this._prelimContent = null
-
-    if (entries === undefined) {
-      this._prelimContent = new Map()
-    } else {
-      this._prelimContent = new Map(entries)
-    }
-  }
+  Map<String, dynamic>? _prelimContent;
 
   /**
    * Integrate this type into the Yjs instance.
@@ -72,27 +82,28 @@ export class YMap extends AbstractType {
    * @param {Doc} y The Yjs instance
    * @param {Item} item
    */
-  _integrate (y, item) {
-    super._integrate(y, item)
-    ;/** @type {Map<string, any>} */ (this._prelimContent).forEach((value, key) => {
-      this.set(key, value)
-    })
-    this._prelimContent = null
+  void innerIntegrate(Doc y, Item? item) {
+    super.innerIntegrate(y, item);
+    /** @type {Map<string, any>} */ (this._prelimContent!)
+        .forEach((key, value) {
+      this.set(key, value);
+    });
+    this._prelimContent = null;
   }
 
-  _copy () {
-    return new YMap()
+  YMap<T> innerCopy() {
+    return YMap<T>();
   }
 
   /**
    * @return {YMap<T>}
    */
-  clone () {
-    const map = new YMap()
-    this.forEach((value, key) => {
-      map.set(key, value instanceof AbstractType ? value.clone() : value)
-    })
-    return map
+  YMap<T> clone() {
+    final map = YMap<T>();
+    this.forEach((value, key, _) {
+      map.set(key, value is AbstractType ? value.clone() as T : value);
+    });
+    return map;
   }
 
   /**
@@ -101,8 +112,9 @@ export class YMap extends AbstractType {
    * @param {Transaction} transaction
    * @param {Set<null|string>} parentSubs Keys changed on this type. `null` if list was modified.
    */
-  _callObserver (transaction, parentSubs) {
-    callTypeObservers(this, transaction, new YMapEvent(this, transaction, parentSubs))
+  void innerCallObserver(Transaction transaction, Set<String?> parentSubs) {
+    callTypeObservers<YMapEvent>(
+        this, transaction, YMapEvent(this, transaction, parentSubs));
   }
 
   /**
@@ -110,18 +122,18 @@ export class YMap extends AbstractType {
    *
    * @return {Object<string,T>}
    */
-  toJSON () {
+  Map<String, T> toJSON() {
     /**
      * @type {Object<string,T>}
      */
-    const map = {}
-    this._map.forEach((item, key) => {
+    final map = <String, T>{};
+    this.innerMap.forEach((key, item) {
       if (!item.deleted) {
-        const v = item.content.getContent()[item.length - 1]
-        map[key] = v instanceof AbstractType ? v.toJSON() : v
+        final v = item.content.getContent()[item.length - 1];
+        map[key] = v is AbstractType ? v.toJSON() : v;
       }
-    })
-    return map
+    });
+    return map;
   }
 
   /**
@@ -129,8 +141,8 @@ export class YMap extends AbstractType {
    *
    * @return {number}
    */
-  get size () {
-    return [...createMapIterator(this._map)].length
+  int get size {
+    return [...createMapIterator(this.innerMap)].length;
   }
 
   /**
@@ -138,8 +150,8 @@ export class YMap extends AbstractType {
    *
    * @return {IterableIterator<string>}
    */
-  keys () {
-    return iterator.iteratorMap(createMapIterator(this._map), /** @param {any} v */ v => v[0])
+  Iterable<String> keys() {
+    return createMapIterator(this.innerMap).map((e) => e.key);
   }
 
   /**
@@ -147,8 +159,9 @@ export class YMap extends AbstractType {
    *
    * @return {IterableIterator<any>}
    */
-  values () {
-    return iterator.iteratorMap(createMapIterator(this._map), /** @param {any} v */ v => v[1].content.getContent()[v[1].length - 1])
+  Iterable<T> values() {
+    return createMapIterator(this.innerMap)
+        .map((v) => v.value.content.getContent()[v.value.length - 1]);
   }
 
   /**
@@ -156,8 +169,12 @@ export class YMap extends AbstractType {
    *
    * @return {IterableIterator<any>}
    */
-  entries () {
-    return iterator.iteratorMap(createMapIterator(this._map), /** @param {any} v */ v => [v[0], v[1].content.getContent()[v[1].length - 1]])
+  Iterable<MapEntry<String, T>> entries() {
+    return createMapIterator(this.innerMap).map(
+        /** @param {any} v */ (v) => MapEntry(
+              v.key,
+              v.value.content.getContent()[v.value.length - 1],
+            ));
   }
 
   /**
@@ -165,38 +182,34 @@ export class YMap extends AbstractType {
    *
    * @param {function(T,string,YMap<T>):void} f A function to execute on every element of this YArray.
    */
-  forEach (f) {
-    /**
-     * @type {Object<string,T>}
-     */
-    const map = {}
-    this._map.forEach((item, key) => {
+  void forEach(void Function(T, String, YMap<T>) f) {
+    this.innerMap.forEach((key, item) {
       if (!item.deleted) {
-        f(item.content.getContent()[item.length - 1], key, this)
+        f(item.content.getContent()[item.length - 1], key, this);
       }
-    })
-    return map
+    });
   }
 
   /**
    * @return {IterableIterator<T>}
    */
-  [Symbol.iterator] () {
-    return this.entries()
-  }
+  // [Symbol.iterator]() {
+  //   return this.entries();
+  // }
 
   /**
    * Remove a specified element from this YMap.
    *
    * @param {string} key The key of the element to remove.
    */
-  delete (key) {
-    if (this.doc !== null) {
-      transact(this.doc, transaction => {
-        typeMapDelete(transaction, this, key)
-      })
+  void delete(String key) {
+    final doc = this.doc;
+    if (doc != null) {
+      transact(doc, (transaction) {
+        typeMapDelete(transaction, this, key);
+      });
     } else {
-      /** @type {Map<string, any>} */ (this._prelimContent).delete(key)
+      /** @type {Map<string, any>} */ (this._prelimContent!).remove(key);
     }
   }
 
@@ -206,15 +219,16 @@ export class YMap extends AbstractType {
    * @param {string} key The key of the element to add to this YMap
    * @param {T} value The value of the element to add
    */
-  set (key, value) {
-    if (this.doc !== null) {
-      transact(this.doc, transaction => {
-        typeMapSet(transaction, this, key, value)
-      })
+  T set(String key, T value) {
+    final doc = this.doc;
+    if (doc != null) {
+      transact(doc, (transaction) {
+        typeMapSet(transaction, this, key, value);
+      });
     } else {
-      /** @type {Map<string, any>} */ (this._prelimContent).set(key, value)
+      /** @type {Map<string, any>} */ (this._prelimContent!).set(key, value);
     }
-    return value
+    return value;
   }
 
   /**
@@ -223,8 +237,8 @@ export class YMap extends AbstractType {
    * @param {string} key
    * @return {T|undefined}
    */
-  get (key) {
-    return /** @type {any} */ (typeMapGet(this, key))
+  T? get(String key) {
+    return /** @type {any} */ (typeMapGet(this, key));
   }
 
   /**
@@ -233,15 +247,15 @@ export class YMap extends AbstractType {
    * @param {string} key The key to test.
    * @return {boolean}
    */
-  has (key) {
-    return typeMapHas(this, key)
+  bool has(String key) {
+    return typeMapHas(this, key);
   }
 
   /**
    * @param {AbstractUpdateEncoder} encoder
    */
-  _write (encoder) {
-    encoder.writeTypeRef(YMapRefID)
+  void innerWrite(AbstractUpdateEncoder encoder) {
+    encoder.writeTypeRef(YMapRefID);
   }
 }
 
@@ -251,4 +265,4 @@ export class YMap extends AbstractType {
  * @private
  * @function
  */
-export const readYMap = decoder => new YMap()
+YMap readYMap(AbstractUpdateDecoder decoder) => YMap();

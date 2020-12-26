@@ -1,71 +1,115 @@
+// import {
+//   YArray,
+//   YMap,
+//   readDeleteSet,
+//   writeDeleteSet,
+//   createDeleteSet,
+//   DSEncoderV1,
+//   DSDecoderV1,
+//   ID,
+//   DeleteSet,
+//   YArrayEvent,
+//   Transaction,
+//   Doc, // eslint-disable-line
+// } from "../internals.js";
 
-import '.'{
-  YArray,
-  YMap,
-  readDeleteSet,
-  writeDeleteSet,
-  createDeleteSet,
-  DSEncoderV1, DSDecoderV1, ID, DeleteSet, YArrayEvent, Transaction, Doc // eslint-disable-line
-} from '../internals.js'
+// import * as decoding from "lib0/decoding.js";
 
-import '.'* as decoding from 'lib0/decoding.js'
+// import { mergeDeleteSets, isDeleted } from "./DeleteSet.js";
 
-import '.'{ mergeDeleteSets, isDeleted } from './DeleteSet.js'
+import 'dart:typed_data';
 
-export '.'class PermanentUserData {
+import 'package:y_crdt/src/types/y_array.dart';
+import 'package:y_crdt/src/types/y_map.dart';
+import 'package:y_crdt/src/utils/delete_set.dart';
+import 'package:y_crdt/src/utils/doc.dart';
+import 'package:y_crdt/src/utils/id.dart';
+import 'package:y_crdt/src/utils/transaction.dart';
+import 'package:y_crdt/src/utils/update_decoder.dart';
+import 'package:y_crdt/src/utils/update_encoder.dart';
+import 'package:y_crdt/src/y_crdt_base.dart';
+
+import '../lib0/decoding.dart' as decoding;
+
+bool _defaultFilter(_, __) => true;
+
+class PermanentUserData {
   /**
    * @param {Doc} doc
    * @param {YMap<any>} [storeType]
    */
-  constructor (doc, storeType = doc.getMap('users')) {
-    /**
-     * @type {Map<string,DeleteSet>}
-     */
-    const dss = new Map()
-    this.yusers = storeType
-    this.doc = doc
-    /**
-     * Maps from clientid to userDescription
-     *
-     * @type {Map<number,string>}
-     */
-    this.clients = new Map()
-    this.dss = dss
+  PermanentUserData(this.doc, [YMap<YMap<dynamic>>? storeType]) {
+    this.yusers = storeType ?? doc.getMap("users");
+
     /**
      * @param {YMap<any>} user
      * @param {string} userDescription
      */
-    const initUser = (user, userDescription) => {
+    void initUser(YMap<dynamic> user, String userDescription, YMap<dynamic> _) {
       /**
-       * @type {YArray<Uint8Array>}
+       * @type {YList<Uint8Array>}
        */
-      const ds = user.get('ds')
-      const ids = user.get('ids')
-      const addClientId = /** @param {number} clientid */ clientid => this.clients.set(clientid, userDescription)
-      ds.observe(/** @param {YArrayEvent<any>} event */ event => {
-        event.changes.added.forEach(item => {
-          item.content.getContent().forEach(encodedDs => {
-            if (encodedDs instanceof Uint8Array) {
-              this.dss.set(userDescription, mergeDeleteSets([this.dss.get(userDescription) || createDeleteSet(), readDeleteSet(new DSDecoderV1(decoding.createDecoder(encodedDs)))]))
+      final ds = user.get("ds")! as YArray<Uint8List>;
+      final ids = user.get("ids")! as YArray<int>;
+      final addClientId = /** @param {number} clientid */ (int clientid) =>
+          this.clients.set(clientid, userDescription);
+      ds.observe(
+          /** @param {YArrayEvent<any>} event */ (event, _) {
+        event.changes.added.forEach((item) {
+          item.content.getContent().forEach((encodedDs) {
+            if (encodedDs is Uint8List) {
+              this.dss.set(
+                  userDescription,
+                  mergeDeleteSets([
+                    this.dss.get(userDescription) ?? createDeleteSet(),
+                    readDeleteSet(
+                        DSDecoderV1(decoding.createDecoder(encodedDs))),
+                  ]));
             }
-          })
-        })
-      })
-      this.dss.set(userDescription, mergeDeleteSets(ds.map(encodedDs => readDeleteSet(new DSDecoderV1(decoding.createDecoder(encodedDs))))))
-      ids.observe(/** @param {YArrayEvent<any>} event */ event =>
-        event.changes.added.forEach(item => item.content.getContent().forEach(addClientId))
-      )
-      ids.forEach(addClientId)
+          });
+        });
+      });
+      this.dss.set(
+            userDescription,
+            mergeDeleteSets(ds
+                .map(
+                  (encodedDs) => readDeleteSet(DSDecoderV1(
+                    decoding.createDecoder(encodedDs),
+                  )),
+                )
+                .toList()),
+          );
+      ids.observe(
+        /** @param {YArrayEvent<any>} event */ (event, _) =>
+            event.changes.added.forEach(
+          (item) => item.content.getContent().cast<int>().forEach(addClientId),
+        ),
+      );
+      ids.forEach(addClientId);
     }
+
     // observe users
-    storeType.observe(event => {
-      event.keysChanged.forEach(userDescription =>
-        initUser(storeType.get(userDescription), userDescription)
-      )
-    })
+    this.yusers.observe((event, _) {
+      event.keysChanged.forEach((userDescription) => initUser(
+          this.yusers.get(userDescription)!, userDescription, this.yusers));
+    });
     // add intial data
-    storeType.forEach(initUser)
+    this.yusers.forEach(initUser);
   }
+
+  final Doc doc;
+  late final YMap<YMap<dynamic>> yusers;
+  /**
+   * Maps from clientid to userDescription
+   *
+   * @type {Map<number,string>}
+   */
+  final clients = <int, String>{};
+
+  /**
+     * @type {Map<string,DeleteSet>}
+     */
+  final dss = <String, DeleteSet>{};
 
   /**
    * @param {Doc} doc
@@ -74,69 +118,78 @@ export '.'class PermanentUserData {
    * @param {Object} [conf]
    * @param {function(Transaction, DeleteSet):boolean} [conf.filter]
    */
-  setUserMapping (doc, clientid, userDescription, { filter = () => true } = {}) {
-    const users = this.yusers
-    let user = users.get(userDescription)
-    if (!user) {
-      user = new YMap()
-      user.set('ids', new YArray())
-      user.set('ds', new YArray())
-      users.set(userDescription, user)
+  void setUserMapping(
+    Doc doc,
+    int clientid,
+    String userDescription, [
+    bool Function(Transaction, DeleteSet) filter = _defaultFilter,
+  ]) {
+    final users = this.yusers;
+    var user = users.get(userDescription);
+    if (user == null) {
+      user = YMap();
+      user.set("ids", YArray());
+      user.set("ds", YArray());
+      users.set(userDescription, user);
     }
-    user.get('ids').push([clientid])
-    users.observe(event => {
-      setTimeout(() => {
-        const userOverwrite = users.get(userDescription)
-        if (userOverwrite !== user) {
+    user.get("ids").push([clientid]);
+    users.observe((event, _) {
+      Future.delayed(Duration.zero, () {
+        final userOverwrite = users.get(userDescription);
+        if (userOverwrite != user) {
           // user was overwritten, port all data over to the next user object
           // @todo Experiment with Y.Sets here
-          user = userOverwrite
+          user = userOverwrite;
           // @todo iterate over old type
-          this.clients.forEach((_userDescription, clientid) => {
-            if (userDescription === _userDescription) {
-              user.get('ids').push([clientid])
+          this.clients.forEach((clientid, _userDescription) {
+            if (userDescription == _userDescription) {
+              user!.get("ids").push([clientid]);
             }
-          })
-          const encoder = new DSEncoderV1()
-          const ds = this.dss.get(userDescription)
-          if (ds) {
-            writeDeleteSet(encoder, ds)
-            user.get('ds').push([encoder.toUint8Array()])
+          });
+          final encoder = DSEncoderV1();
+          final ds = this.dss.get(userDescription);
+          if (ds != null) {
+            writeDeleteSet(encoder, ds);
+            user!.get("ds").push([encoder.toUint8Array()]);
           }
         }
-      }, 0)
-    })
-    doc.on('afterTransaction', /** @param {Transaction} transaction */ transaction => {
-      setTimeout(() => {
-        const yds = user.get('ds')
-        const ds = transaction.deleteSet
-        if (transaction.local && ds.clients.size > 0 && filter(transaction, ds)) {
-          const encoder = new DSEncoderV1()
-          writeDeleteSet(encoder, ds)
-          yds.push([encoder.toUint8Array()])
+      });
+    });
+    doc.on("afterTransaction",
+        /** @param {Transaction} transaction */ (params) {
+      final transaction = params[0] as Transaction;
+      Future.delayed(Duration.zero, () {
+        final yds = user!.get("ds");
+        final ds = transaction.deleteSet;
+        if (transaction.local &&
+            ds.clients.length > 0 &&
+            filter(transaction, ds)) {
+          final encoder = DSEncoderV1();
+          writeDeleteSet(encoder, ds);
+          yds.push([encoder.toUint8Array()]);
         }
-      })
-    })
+      });
+    });
   }
 
   /**
    * @param {number} clientid
    * @return {any}
    */
-  getUserByClientId (clientid) {
-    return this.clients.get(clientid) || null
+  String? getUserByClientId(int clientid) {
+    return this.clients.get(clientid);
   }
 
   /**
    * @param {ID} id
    * @return {string | null}
    */
-  getUserByDeletedId (id) {
-    for (const [userDescription, ds] of this.dss.entries()) {
-      if (isDeleted(ds, id)) {
-        return userDescription
+  String? getUserByDeletedId(ID id) {
+    for (final entry in this.dss.entries) {
+      if (isDeleted(entry.value, id)) {
+        return entry.key;
       }
     }
-    return null
+    return null;
   }
 }

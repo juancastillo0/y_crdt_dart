@@ -1,37 +1,54 @@
+import 'dart:collection';
+
+import 'package:y_crdt/src/structs/content_type.dart';
+import 'package:y_crdt/src/structs/item.dart';
+import 'package:y_crdt/src/types/abstract_type.dart';
+import 'package:y_crdt/src/utils/doc.dart';
+import 'package:y_crdt/src/utils/transaction.dart';
+import 'package:y_crdt/src/utils/update_decoder.dart';
+import 'package:y_crdt/src/utils/update_encoder.dart';
 /**
  * @module YArray
  */
 
-import {
-  YEvent,
-  AbstractType,
-  typeListGet,
-  typeListToArray,
-  typeListForEach,
-  typeListCreateIterator,
-  typeListInsertGenerics,
-  typeListDelete,
-  typeListMap,
-  YArrayRefID,
-  callTypeObservers,
-  transact,
-  ArraySearchMarker, AbstractUpdateDecoder, AbstractUpdateEncoder, Doc, Transaction, Item // eslint-disable-line
-} from '../internals.js'
-import { typeListSlice } from './AbstractType.js'
+// import {
+//   YEvent,
+//   AbstractType,
+//   typeListGet,
+//   typeListToArray,
+//   typeListForEach,
+//   typeListCreateIterator,
+//   typeListInsertGenerics,
+//   typeListDelete,
+//   typeListMap,
+//   YArrayRefID,
+//   callTypeObservers,
+//   transact,
+//   ArraySearchMarker,
+//   AbstractUpdateDecoder,
+//   AbstractUpdateEncoder,
+//   Doc,
+//   Transaction,
+//   Item, // eslint-disable-line
+// } from "../internals.js";
+// import { typeListSlice } from "./AbstractType.js";
+
+import 'package:y_crdt/src/utils/y_event.dart';
 
 /**
  * Event that describes the changes on a YArray
  * @template T
  */
-export class YArrayEvent extends YEvent {
+class YArrayEvent<T> extends YEvent {
   /**
-   * @param {YArray<T>} yarray The changed type
+   * @param {YList<T>} yarray The changed type
    * @param {Transaction} transaction The transaction object
    */
-  constructor (yarray, transaction) {
-    super(yarray, transaction)
-    this._transaction = transaction
-  }
+  YArrayEvent(YArray<T> target, Transaction transaction)
+      : _transaction = transaction,
+        super(target, transaction);
+
+  Transaction _transaction;
 }
 
 /**
@@ -40,30 +57,30 @@ export class YArrayEvent extends YEvent {
  * @extends AbstractType<YArrayEvent<T>>
  * @implements {Iterable<T>}
  */
-export class YArray extends AbstractType {
-  constructor () {
-    super()
-    /**
-     * @type {Array<any>?}
+class YArray<T> extends AbstractType<YArrayEvent<T>> with IterableMixin<T> {
+  YArray();
+  static YArray<T> create<T>() => YArray<T>();
+
+  /**
+     * @type {List<any>?}
      * @private
      */
-    this._prelimContent = []
-    /**
-     * @type {Array<ArraySearchMarker>}
+  List<T>? _prelimContent = [];
+  /**
+     * @type {List<ArraySearchMarker>}
      */
-    this._searchMarker = []
-  }
+  List<ArraySearchMarker>? innerSearchMarker = [];
 
   /**
    * Construct a new YArray containing the specified items.
    * @template T
-   * @param {Array<T>} items
-   * @return {YArray<T>}
+   * @param {List<T>} items
+   * @return {YList<T>}
    */
-  static from (items) {
-    const a = new YArray()
-    a.push(items)
-    return a
+  static YArray<T> from<T>(List<T> items) {
+    final a = YArray<T>();
+    a.push(items);
+    return a;
   }
 
   /**
@@ -76,29 +93,35 @@ export class YArray extends AbstractType {
    * @param {Doc} y The Yjs instance
    * @param {Item} item
    */
-  _integrate (y, item) {
-    super._integrate(y, item)
-    this.insert(0, /** @type {Array<any>} */ (this._prelimContent))
-    this._prelimContent = null
+  void innerIntegrate(Doc y, Item? item) {
+    super.innerIntegrate(y, item);
+    this.insert(0, /** @type {List<any>} */ (this._prelimContent!));
+    this._prelimContent = null;
   }
 
-  _copy () {
-    return new YArray()
+  YArray<T> innerCopy() {
+    return YArray();
   }
 
   /**
-   * @return {YArray<T>}
+   * @return {YList<T>}
    */
-  clone () {
-    const arr = new YArray()
-    arr.insert(0, this.toArray().map(el =>
-      el instanceof AbstractType ? el.clone() : el
-    ))
-    return arr
+  YArray<T> clone() {
+    final arr = YArray<T>();
+    arr.insert(
+        0,
+        this
+            .toArray()
+            .map((el) => (el is AbstractType ? el.clone() : el))
+            .toList()
+            .cast());
+    return arr;
   }
 
-  get length () {
-    return this._prelimContent === null ? this._length : this._prelimContent.length
+  int get length {
+    return this._prelimContent == null
+        ? this.innerLength
+        : this._prelimContent!.length;
   }
 
   /**
@@ -107,9 +130,9 @@ export class YArray extends AbstractType {
    * @param {Transaction} transaction
    * @param {Set<null|string>} parentSubs Keys changed on this type. `null` if list was modified.
    */
-  _callObserver (transaction, parentSubs) {
-    super._callObserver(transaction, parentSubs)
-    callTypeObservers(this, transaction, new YArrayEvent(this, transaction))
+  void innerCallObserver(Transaction transaction, Set<String?> parentSubs) {
+    super.innerCallObserver(transaction, parentSubs);
+    callTypeObservers(this, transaction, YArrayEvent(this, transaction));
   }
 
   /**
@@ -126,34 +149,34 @@ export class YArray extends AbstractType {
    *  yarray.insert(1, [1, 2])
    *
    * @param {number} index The index to insert content at.
-   * @param {Array<T>} content The array of content
+   * @param {List<T>} content The array of content
    */
-  insert (index, content) {
-    if (this.doc !== null) {
-      transact(this.doc, transaction => {
-        typeListInsertGenerics(transaction, this, index, content)
-      })
+  void insert(int index, List<T> content) {
+    if (this.doc != null) {
+      transact(this.doc!, (transaction) {
+        typeListInsertGenerics(transaction, this, index, content);
+      });
     } else {
-      /** @type {Array<any>} */ (this._prelimContent).splice(index, 0, ...content)
+      /** @type {List<any>} */ (this._prelimContent!).insertAll(index, content);
     }
   }
 
   /**
    * Appends content to this YArray.
    *
-   * @param {Array<T>} content Array of content to append.
+   * @param {List<T>} content Array of content to append.
    */
-  push (content) {
-    this.insert(this.length, content)
+  void push(List<T> content) {
+    this.insert(this.innerLength, content);
   }
 
   /**
    * Preppends content to this YArray.
    *
-   * @param {Array<T>} content Array of content to preppend.
+   * @param {List<T>} content Array of content to preppend.
    */
-  unshift (content) {
-    this.insert(0, content)
+  void unshift(List<T> content) {
+    this.insert(0, content);
   }
 
   /**
@@ -162,13 +185,14 @@ export class YArray extends AbstractType {
    * @param {number} index Index at which to start deleting elements
    * @param {number} length The number of elements to remove. Defaults to 1.
    */
-  delete (index, length = 1) {
-    if (this.doc !== null) {
-      transact(this.doc, transaction => {
-        typeListDelete(transaction, this, index, length)
-      })
+  void delete(int index, [int length = 1]) {
+    if (this.doc != null) {
+      transact(this.doc!, (transaction) {
+        typeListDelete(transaction, this, index, length);
+      });
     } else {
-      /** @type {Array<any>} */ (this._prelimContent).splice(index, length)
+      /** @type {List<any>} */ (this._prelimContent!)
+          .removeRange(index, index + length);
     }
   }
 
@@ -178,17 +202,17 @@ export class YArray extends AbstractType {
    * @param {number} index The index of the element to return from the YArray
    * @return {T}
    */
-  get (index) {
-    return typeListGet(this, index)
+  T get(int index) {
+    return typeListGet(this, index);
   }
 
   /**
    * Transforms this YArray to a JavaScript Array.
    *
-   * @return {Array<T>}
+   * @return {List<T>}
    */
-  toArray () {
-    return typeListToArray(this)
+  List<T> toArray() {
+    return typeListToArray(this).cast();
   }
 
   /**
@@ -196,55 +220,55 @@ export class YArray extends AbstractType {
    *
    * @param {number} [start]
    * @param {number} [end]
-   * @return {Array<T>}
+   * @return {List<T>}
    */
-  slice (start = 0, end = this.length) {
-    return typeListSlice(this, start, end)
+  List<T> slice([int start = 0, int? end]) {
+    return typeListSlice(this, start, end ?? this.innerLength).cast();
   }
 
   /**
    * Transforms this Shared Type to a JSON object.
    *
-   * @return {Array<any>}
+   * @return {List<any>}
    */
-  toJSON () {
-    return this.map(c => c instanceof AbstractType ? c.toJSON() : c)
+  List<dynamic> toJSON() {
+    return this.map((c) => (c is AbstractType ? c.toJSON() : c)).toList();
   }
 
-  /**
-   * Returns an Array with the result of calling a provided function on every
-   * element of this YArray.
-   *
-   * @template T,M
-   * @param {function(T,number,YArray<T>):M} f Function that produces an element of the new Array
-   * @return {Array<M>} A new array with each element being the result of the
-   *                 callback function
-   */
-  map (f) {
-    return typeListMap(this, /** @type {any} */ (f))
-  }
+  // /**
+  //  * Returns an Array with the result of calling a provided function on every
+  //  * element of this YArray.
+  //  *
+  //  * @template T,M
+  //  * @param {function(T,number,YList<T>):M} f Function that produces an element of the new Array
+  //  * @return {List<M>} A new array with each element being the result of the
+  //  *                 callback function
+  //  */
+  // List<M> map<M>(M Function(T, int, YArray<T>) f) {
+  //   return typeListMap<T, M, YArray<T>>(this, /** @type {any} */ (f));
+  // }
 
-  /**
-   * Executes a provided function on once on overy element of this YArray.
-   *
-   * @param {function(T,number,YArray<T>):void} f A function to execute on every element of this YArray.
-   */
-  forEach (f) {
-    typeListForEach(this, f)
-  }
+  // /**
+  //  * Executes a provided function on once on overy element of this YArray.
+  //  *
+  //  * @param {function(T,number,YList<T>):void} f A function to execute on every element of this YArray.
+  //  */
+  // void forEach(void Function(T, int, YArray<T>) f) {
+  //   typeListForEach(this, f);
+  // }
 
   /**
    * @return {IterableIterator<T>}
    */
-  [Symbol.iterator] () {
-    return typeListCreateIterator(this)
+  Iterator<T> get iterator {
+    return typeListCreateIterator<T>(this);
   }
 
   /**
    * @param {AbstractUpdateEncoder} encoder
    */
-  _write (encoder) {
-    encoder.writeTypeRef(YArrayRefID)
+  void innerWrite(AbstractUpdateEncoder encoder) {
+    encoder.writeTypeRef(YArrayRefID);
   }
 }
 
@@ -254,4 +278,4 @@ export class YArray extends AbstractType {
  * @private
  * @function
  */
-export const readYArray = decoder => new YArray()
+YArray readYArray(AbstractUpdateDecoder decoder) => YArray();

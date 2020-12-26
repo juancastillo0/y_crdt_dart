@@ -1,45 +1,67 @@
+// import {
+//   isDeleted,
+//   createDeleteSetFromStructStore,
+//   getStateVector,
+//   getItemCleanStart,
+//   iterateDeletedStructs,
+//   writeDeleteSet,
+//   writeStateVector,
+//   readDeleteSet,
+//   readStateVector,
+//   createDeleteSet,
+//   createID,
+//   getState,
+//   findIndexSS,
+//   UpdateEncoderV2,
+//   DefaultDSEncoder,
+//   applyUpdateV2,
+//   AbstractDSDecoder,
+//   AbstractDSEncoder,
+//   DSEncoderV2,
+//   DSDecoderV1,
+//   DSDecoderV2,
+//   Transaction,
+//   Doc,
+//   DeleteSet,
+//   Item, // eslint-disable-line
+// } from "../internals.js";
 
-import '.'{
-  isDeleted,
-  createDeleteSetFromStructStore,
-  getStateVector,
-  getItemCleanStart,
-  iterateDeletedStructs,
-  writeDeleteSet,
-  writeStateVector,
-  readDeleteSet,
-  readStateVector,
-  createDeleteSet,
-  createID,
-  getState,
-  findIndexSS,
-  UpdateEncoderV2,
-  DefaultDSEncoder,
-  applyUpdateV2,
-  AbstractDSDecoder, AbstractDSEncoder, DSEncoderV2, DSDecoderV1, DSDecoderV2, Transaction, Doc, DeleteSet, Item // eslint-disable-line
-} from '../internals.js'
+// import * as map from "lib0/map.js";
+// import * as set from "lib0/set.js";
+// import * as decoding from "lib0/decoding.js";
+// import * as encoding from "lib0/encoding.js";
 
-import '.'* as map from 'lib0/map.js'
-import '.'* as set from 'lib0/set.js'
-import '.'* as decoding from 'lib0/decoding.js'
-import '.'* as encoding from 'lib0/encoding.js'
+import 'dart:typed_data';
 
-export '.'class Snapshot {
+import 'package:y_crdt/src/structs/item.dart';
+import 'package:y_crdt/src/utils/delete_set.dart';
+import 'package:y_crdt/src/utils/doc.dart';
+import 'package:y_crdt/src/utils/id.dart';
+import 'package:y_crdt/src/utils/struct_store.dart';
+import 'package:y_crdt/src/utils/transaction.dart';
+import 'package:y_crdt/src/utils/update_decoder.dart';
+import 'package:y_crdt/src/utils/update_encoder.dart';
+import 'package:y_crdt/src/utils/encoding.dart';
+import 'package:y_crdt/src/y_crdt_base.dart';
+
+import '../lib0/decoding.dart' as decoding;
+import '../lib0/encoding.dart' as encoding;
+
+class Snapshot {
   /**
    * @param {DeleteSet} ds
    * @param {Map<number,number>} sv state map
    */
-  constructor (ds, sv) {
-    /**
+  Snapshot(this.ds, this.sv);
+  /**
      * @type {DeleteSet}
      */
-    this.ds = ds
-    /**
+  final DeleteSet ds;
+  /**
      * State Map
      * @type {Map<number,number>}
      */
-    this.sv = sv
-  }
+  final Map<int, int> sv;
 }
 
 /**
@@ -47,33 +69,34 @@ export '.'class Snapshot {
  * @param {Snapshot} snap2
  * @return {boolean}
  */
-export '.'const equalSnapshots = (snap1, snap2) => {
-  const ds1 = snap1.ds.clients
-  const ds2 = snap2.ds.clients
-  const sv1 = snap1.sv
-  const sv2 = snap2.sv
-  if (sv1.size !== sv2.size || ds1.size !== ds2.size) {
-    return false
+bool equalSnapshots(Snapshot snap1, Snapshot snap2) {
+  final ds1 = snap1.ds.clients;
+  final ds2 = snap2.ds.clients;
+  final sv1 = snap1.sv;
+  final sv2 = snap2.sv;
+  if (sv1.length != sv2.length || ds1.length != ds2.length) {
+    return false;
   }
-  for (const [key, value] of sv1.entries()) {
-    if (sv2.get(key) !== value) {
-      return false
+  for (final entry in sv1.entries) {
+    if (sv2.get(entry.key) != entry.value) {
+      return false;
     }
   }
-  for (const [client, dsitems1] of ds1.entries()) {
-    const dsitems2 = ds2.get(client) || []
-    if (dsitems1.length !== dsitems2.length) {
-      return false
+  for (final entry in ds1.entries) {
+    final dsitems2 = ds2.get(entry.key) ?? [];
+    final dsitems1 = entry.value;
+    if (dsitems1.length != dsitems2.length) {
+      return false;
     }
-    for (let i = 0; i < dsitems1.length; i++) {
-      const dsitem1 = dsitems1[i]
-      const dsitem2 = dsitems2[i]
-      if (dsitem1.clock !== dsitem2.clock || dsitem1.len !== dsitem2.len) {
-        return false
+    for (var i = 0; i < dsitems1.length; i++) {
+      final dsitem1 = dsitems1[i];
+      final dsitem2 = dsitems2[i];
+      if (dsitem1.clock != dsitem2.clock || dsitem1.len != dsitem2.len) {
+        return false;
       }
     }
   }
-  return true
+  return true;
 }
 
 /**
@@ -81,47 +104,52 @@ export '.'const equalSnapshots = (snap1, snap2) => {
  * @param {AbstractDSEncoder} [encoder]
  * @return {Uint8Array}
  */
-export '.'const encodeSnapshotV2 = (snapshot, encoder = new DSEncoderV2()) => {
-  writeDeleteSet(encoder, snapshot.ds)
-  writeStateVector(encoder, snapshot.sv)
-  return encoder.toUint8Array()
+Uint8List encodeSnapshotV2(Snapshot snapshot, AbstractDSEncoder? encoder) {
+  final _encoder = encoder ?? DSEncoderV2();
+  writeDeleteSet(_encoder, snapshot.ds);
+  writeStateVector(_encoder, snapshot.sv);
+  return _encoder.toUint8Array();
 }
 
 /**
  * @param {Snapshot} snapshot
  * @return {Uint8Array}
  */
-export '.'const encodeSnapshot = snapshot => encodeSnapshotV2(snapshot, new DefaultDSEncoder())
+Uint8List encodeSnapshot(Snapshot snapshot) =>
+    encodeSnapshotV2(snapshot, DefaultDSEncoder());
 
 /**
  * @param {Uint8Array} buf
  * @param {AbstractDSDecoder} [decoder]
  * @return {Snapshot}
  */
-export '.'const decodeSnapshotV2 = (buf, decoder = new DSDecoderV2(decoding.createDecoder(buf))) => {
-  return new Snapshot(readDeleteSet(decoder), readStateVector(decoder))
+Snapshot decodeSnapshotV2(Uint8List buf, [AbstractDSDecoder? decoder]) {
+  final _decoder = decoder ?? DSDecoderV2(decoding.createDecoder(buf));
+  return Snapshot(readDeleteSet(_decoder), readStateVector(_decoder));
 }
 
 /**
  * @param {Uint8Array} buf
  * @return {Snapshot}
  */
-export '.'const decodeSnapshot = buf => decodeSnapshotV2(buf, new DSDecoderV1(decoding.createDecoder(buf)))
+Snapshot decodeSnapshot(Uint8List buf) =>
+    decodeSnapshotV2(buf, DSDecoderV1(decoding.createDecoder(buf)));
 
 /**
  * @param {DeleteSet} ds
  * @param {Map<number,number>} sm
  * @return {Snapshot}
  */
-export '.'const createSnapshot = (ds, sm) => new Snapshot(ds, sm)
+Snapshot createSnapshot(DeleteSet ds, Map<int, int> sm) => Snapshot(ds, sm);
 
-export '.'const emptySnapshot = createSnapshot(createDeleteSet(), new Map())
+final emptySnapshot = createSnapshot(createDeleteSet(), Map());
 
 /**
  * @param {Doc} doc
  * @return {Snapshot}
  */
-export '.'const snapshot = doc => createSnapshot(createDeleteSetFromStructStore(doc.store), getStateVector(doc.store))
+Snapshot snapshot(Doc doc) => createSnapshot(
+    createDeleteSetFromStructStore(doc.store), getStateVector(doc.store));
 
 /**
  * @param {Item} item
@@ -130,26 +158,29 @@ export '.'const snapshot = doc => createSnapshot(createDeleteSetFromStructStore(
  * @protected
  * @function
  */
-export '.'const isVisible = (item, snapshot) => snapshot === undefined ? !item.deleted : (
-  snapshot.sv.has(item.id.client) && (snapshot.sv.get(item.id.client) || 0) > item.id.clock && !isDeleted(snapshot.ds, item.id)
-)
+bool isVisible(Item item, Snapshot? snapshot) => snapshot == null
+    ? !item.deleted
+    : snapshot.sv.containsKey(item.id.client) &&
+        (snapshot.sv.get(item.id.client) ?? 0) > item.id.clock &&
+        !isDeleted(snapshot.ds, item.id);
 
 /**
  * @param {Transaction} transaction
  * @param {Snapshot} snapshot
  */
-export '.'const splitSnapshotAffectedStructs = (transaction, snapshot) => {
-  const meta = map.setIfUndefined(transaction.meta, splitSnapshotAffectedStructs, set.create)
-  const store = transaction.doc.store
+void splitSnapshotAffectedStructs(Transaction transaction, Snapshot snapshot) {
+  final meta =
+      transaction.meta.putIfAbsent(splitSnapshotAffectedStructs, () => {});
+  final store = transaction.doc.store;
   // check if we already split for this snapshot
   if (!meta.has(snapshot)) {
-    snapshot.sv.forEach((clock, client) => {
+    snapshot.sv.forEach((client, clock) {
       if (clock < getState(store, client)) {
-        getItemCleanStart(transaction, createID(client, clock))
+        getItemCleanStart(transaction, createID(client, clock));
       }
-    })
-    iterateDeletedStructs(transaction, snapshot.ds, item => {})
-    meta.add(snapshot)
+    });
+    iterateDeletedStructs(transaction, snapshot.ds, (item) => {});
+    meta.add(snapshot);
   }
 }
 
@@ -159,44 +190,48 @@ export '.'const splitSnapshotAffectedStructs = (transaction, snapshot) => {
  * @param {Doc} [newDoc] Optionally, you may define the Yjs document that receives the data from originDoc
  * @return {Doc}
  */
-export '.'const createDocFromSnapshot = (originDoc, snapshot, newDoc = new Doc()) => {
+Doc createDocFromSnapshot(Doc originDoc, Snapshot snapshot, [Doc? newDoc]) {
   if (originDoc.gc) {
     // we should not try to restore a GC-ed document, because some of the restored items might have their content deleted
-    throw new Error('originDoc must not be garbage collected')
+    throw Exception("originDoc must not be garbage collected");
   }
-  const { sv, ds } = snapshot
+  final ds = snapshot.ds;
+  final sv = snapshot.sv;
 
-  const encoder = new UpdateEncoderV2()
-  originDoc.transact(transaction => {
-    let size = 0
-    sv.forEach(clock => {
+  final encoder = UpdateEncoderV2();
+  originDoc.transact((transaction) {
+    var size = 0;
+    sv.forEach((_, clock) {
       if (clock > 0) {
-        size++
+        size++;
       }
-    })
-    encoding.writeVarUint(encoder.restEncoder, size)
+    });
+    encoding.writeVarUint(encoder.restEncoder, size);
     // splitting the structs before writing them to the encoder
-    for (const [client, clock] of sv) {
-      if (clock === 0) {
-        continue
+    for (final v in sv.entries) {
+      final client = v.key;
+      final clock = v.value;
+
+      if (clock == 0) {
+        continue;
       }
       if (clock < getState(originDoc.store, client)) {
-        getItemCleanStart(transaction, createID(client, clock))
+        getItemCleanStart(transaction, createID(client, clock));
       }
-      const structs = originDoc.store.clients.get(client) || []
-      const lastStructIndex = findIndexSS(structs, clock - 1)
+      final structs = originDoc.store.clients.get(client) ?? [];
+      final lastStructIndex = findIndexSS(structs, clock - 1);
       // write # encoded structs
-      encoding.writeVarUint(encoder.restEncoder, lastStructIndex + 1)
-      encoder.writeClient(client)
+      encoding.writeVarUint(encoder.restEncoder, lastStructIndex + 1);
+      encoder.writeClient(client);
       // first clock written is 0
-      encoding.writeVarUint(encoder.restEncoder, 0)
-      for (let i = 0; i <= lastStructIndex; i++) {
-        structs[i].write(encoder, 0)
+      encoding.writeVarUint(encoder.restEncoder, 0);
+      for (var i = 0; i <= lastStructIndex; i++) {
+        structs[i].write(encoder, 0);
       }
     }
-    writeDeleteSet(encoder, ds)
-  })
-
-  applyUpdateV2(newDoc, encoder.toUint8Array(), 'snapshot')
-  return newDoc
+    writeDeleteSet(encoder, ds);
+  });
+  final _newDoc = newDoc ?? Doc();
+  applyUpdateV2(_newDoc, encoder.toUint8Array(), "snapshot");
+  return _newDoc;
 }

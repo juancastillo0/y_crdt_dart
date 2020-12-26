@@ -1,27 +1,31 @@
+// import { AbstractType } from '../internals.js' // eslint-disable-line
 
-import '.'{ AbstractType } from '../internals.js' // eslint-disable-line
+// import * as decoding from 'lib0/decoding.js'
+// import * as encoding from 'lib0/encoding.js'
+// import * as error from 'lib0/error.js'
 
-import '.'* as decoding from 'lib0/decoding.js'
-import '.'* as encoding from 'lib0/encoding.js'
-import '.'* as error from 'lib0/error.js'
+import 'package:y_crdt/src/types/abstract_type.dart';
+import 'package:y_crdt/src/lib0/encoding.dart' as encoding;
+import 'package:y_crdt/src/lib0/decoding.dart' as decoding;
 
-export '.'class ID {
+class ID {
   /**
    * @param {number} client client id
    * @param {number} clock unique per client id, continuous number
    */
-  constructor (client, clock) {
-    /**
-     * Client id
-     * @type {number}
-     */
-    this.client = client
-    /**
-     * unique per client id, continuous number
-     * @type {number}
-     */
-    this.clock = clock
-  }
+  ID(this.client, this.clock);
+
+  /**
+   * Client id
+   * @type {number}
+   */
+  final int client;
+
+  /**
+   * unique per client id, continuous number
+   * @type {number}
+   */
+  int clock;
 }
 
 /**
@@ -31,7 +35,9 @@ export '.'class ID {
  *
  * @function
  */
-export '.'const compareIDs = (a, b) => a === b || (a !== null && b !== null && a.client === b.client && a.clock === b.clock)
+bool compareIDs(ID? a, ID? b) =>
+    a == b ||
+    (a != null && b != null && a.client == b.client && a.clock == b.clock);
 
 /**
  * @param {number} client
@@ -40,7 +46,7 @@ export '.'const compareIDs = (a, b) => a === b || (a !== null && b !== null && a
  * @private
  * @function
  */
-export '.'const createID = (client, clock) => new ID(client, clock)
+ID createID(int client, int clock) => ID(client, clock);
 
 /**
  * @param {encoding.Encoder} encoder
@@ -49,9 +55,9 @@ export '.'const createID = (client, clock) => new ID(client, clock)
  * @private
  * @function
  */
-export '.'const writeID = (encoder, id) => {
-  encoding.writeVarUint(encoder, id.client)
-  encoding.writeVarUint(encoder, id.clock)
+void writeID(encoding.Encoder encoder, ID id) {
+  encoding.writeVarUint(encoder, id.client);
+  encoding.writeVarUint(encoder, id.clock);
 }
 
 /**
@@ -65,8 +71,8 @@ export '.'const writeID = (encoder, id) => {
  * @private
  * @function
  */
-export '.'const readID = decoder =>
-  createID(decoding.readVarUint(decoder), decoding.readVarUint(decoder))
+ID readID(decoding.Decoder decoder) =>
+    createID(decoding.readVarUint(decoder), decoding.readVarUint(decoder));
 
 /**
  * The top types are mapped from y.share.get(keyname) => type.
@@ -79,12 +85,12 @@ export '.'const readID = decoder =>
  * @private
  * @function
  */
-export '.'const findRootTypeKey = type => {
+String findRootTypeKey(AbstractType type) {
   // @ts-ignore _y must be defined, otherwise unexpected case
-  for (const [key, value] of type.doc.share.entries()) {
-    if (value === type) {
-      return key
+  for (final entrie in type.doc!.share.entries) {
+    if (entrie.value == type) {
+      return entrie.key;
     }
   }
-  throw error.unexpectedCase()
+  throw Exception('Unexpected case');
 }

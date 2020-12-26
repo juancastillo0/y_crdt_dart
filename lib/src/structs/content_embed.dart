@@ -1,91 +1,97 @@
+// import {
+//   AbstractUpdateDecoder,
+//   AbstractUpdateEncoder,
+//   StructStore,
+//   Item,
+//   Transaction, // eslint-disable-line
+// } from "../internals.js";
 
-import {
-  AbstractUpdateDecoder, AbstractUpdateEncoder, StructStore, Item, Transaction // eslint-disable-line
-} from '../internals.js'
+// import * as error from "lib0/error.js";
 
-import * as error from 'lib0/error.js'
+import 'package:y_crdt/src/structs/item.dart';
+import 'package:y_crdt/src/utils/update_decoder.dart';
 
 /**
  * @private
  */
-export class ContentEmbed {
+class ContentEmbed implements AbstractContent {
   /**
    * @param {Object} embed
    */
-  constructor (embed) {
-    this.embed = embed
-  }
+  ContentEmbed(this.embed);
+  final Map<String, dynamic> embed;
+
 
   /**
    * @return {number}
    */
-  getLength () {
-    return 1
+  getLength() {
+    return 1;
   }
 
   /**
-   * @return {Array<any>}
+   * @return {List<any>}
    */
-  getContent () {
-    return [this.embed]
+  getContent() {
+    return [this.embed];
   }
 
   /**
    * @return {boolean}
    */
-  isCountable () {
-    return true
+  isCountable() {
+    return true;
   }
 
   /**
    * @return {ContentEmbed}
    */
-  copy () {
-    return new ContentEmbed(this.embed)
+  copy() {
+    return new ContentEmbed(this.embed);
   }
 
   /**
    * @param {number} offset
    * @return {ContentEmbed}
    */
-  splice (offset) {
-    throw error.methodUnimplemented()
+  splice(offset) {
+    throw UnimplementedError();
   }
 
   /**
    * @param {ContentEmbed} right
    * @return {boolean}
    */
-  mergeWith (right) {
-    return false
+  mergeWith(right) {
+    return false;
   }
 
   /**
    * @param {Transaction} transaction
    * @param {Item} item
    */
-  integrate (transaction, item) {}
+  integrate(transaction, item) {}
   /**
    * @param {Transaction} transaction
    */
-  delete (transaction) {}
+  delete(transaction) {}
   /**
    * @param {StructStore} store
    */
-  gc (store) {}
+  gc(store) {}
   /**
    * @param {AbstractUpdateEncoder} encoder
    * @param {number} offset
    */
-  write (encoder, offset) {
-    encoder.writeJSON(this.embed)
+  write(encoder, offset) {
+    encoder.writeJSON(this.embed);
   }
 
   /**
    * @return {number}
    */
-  getRef () {
-    return 5
+  getRef() {
+    return 5;
   }
 }
 
@@ -95,4 +101,5 @@ export class ContentEmbed {
  * @param {AbstractUpdateDecoder} decoder
  * @return {ContentEmbed}
  */
-export const readContentEmbed = decoder => new ContentEmbed(decoder.readJSON())
+ContentEmbed readContentEmbed (AbstractUpdateDecoder decoder) =>
+  ContentEmbed(decoder.readJSON());

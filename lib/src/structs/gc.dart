@@ -1,50 +1,64 @@
+// import {
+//   AbstractStruct,
+//   addStruct,
+//   AbstractUpdateEncoder,
+//   StructStore,
+//   Transaction,
+//   ID, // eslint-disable-line
+// } from "../internals.js";
 
-import {
-  AbstractStruct,
-  addStruct,
-  AbstractUpdateEncoder, StructStore, Transaction, ID // eslint-disable-line
-} from '../internals.js'
+import 'package:y_crdt/src/structs/abstract_struct.dart';
+import 'package:y_crdt/src/utils/id.dart';
+import 'package:y_crdt/src/utils/struct_store.dart';
+import 'package:y_crdt/src/utils/transaction.dart';
+import 'package:y_crdt/src/utils/update_encoder.dart';
 
-export const structGCRefNumber = 0
+final structGCRefNumber = 0;
 
 /**
  * @private
  */
-export class GC extends AbstractStruct {
-  get deleted () {
-    return true
+class GC extends AbstractStruct {
+  GC(ID id, int length) : super(id, length);
+
+  @override
+  bool get deleted {
+    return true;
   }
 
-  delete () {}
+  void delete() {}
 
   /**
    * @param {GC} right
    * @return {boolean}
    */
-  mergeWith (right) {
-    this.length += right.length
-    return true
+  @override
+  bool mergeWith(AbstractStruct right) {
+    this.length += right.length;
+    return true;
   }
 
   /**
    * @param {Transaction} transaction
    * @param {number} offset
    */
-  integrate (transaction, offset) {
+  @override
+  void integrate(Transaction transaction, int offset) {
     if (offset > 0) {
-      this.id.clock += offset
-      this.length -= offset
+      this.id.clock += offset;
+      this.length -= offset;
     }
-    addStruct(transaction.doc.store, this)
+    addStruct(transaction.doc.store, this);
   }
 
   /**
    * @param {AbstractUpdateEncoder} encoder
    * @param {number} offset
    */
-  write (encoder, offset) {
-    encoder.writeInfo(structGCRefNumber)
-    encoder.writeLen(this.length - offset)
+  @override
+  void write(AbstractUpdateEncoder encoder, int offset) {
+    encoder.writeInfo(structGCRefNumber);
+    encoder.writeLen(this.length - offset);
   }
 
   /**
@@ -52,7 +66,7 @@ export class GC extends AbstractStruct {
    * @param {StructStore} store
    * @return {null | number}
    */
-  getMissing (transaction, store) {
-    return null
+  int? getMissing(Transaction transaction, StructStore store) {
+    return null;
   }
 }

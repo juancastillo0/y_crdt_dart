@@ -1,56 +1,64 @@
+// import {
+//   isDeleted,
+//   Item,
+//   AbstractType,
+//   Transaction,
+//   AbstractStruct, // eslint-disable-line
+// } from "../internals.js";
 
-import {
-  isDeleted,
-  Item, AbstractType, Transaction, AbstractStruct // eslint-disable-line
-} from '../internals.js'
+// import * as set from "lib0/set.js";
+// import * as array from "lib0/array.js";
 
-import * as set from 'lib0/set.js'
-import * as array from 'lib0/array.js'
+import 'package:y_crdt/src/structs/abstract_struct.dart';
+import 'package:y_crdt/src/structs/item.dart';
+import 'package:y_crdt/src/types/abstract_type.dart';
+import 'package:y_crdt/src/utils/delete_set.dart';
+import 'package:y_crdt/src/utils/transaction.dart';
+import 'package:y_crdt/src/y_crdt_base.dart';
 
 /**
  * YEvent describes the changes on a YType.
  */
-export class YEvent {
+class YEvent {
   /**
    * @param {AbstractType<any>} target The changed type.
    * @param {Transaction} transaction
    */
-  constructor (target, transaction) {
-    /**
+  YEvent(this.target, this.transaction) : currentTarget = target;
+  /**
      * The type on which this event was created on.
      * @type {AbstractType<any>}
      */
-    this.target = target
-    /**
+  final AbstractType<YEvent> target;
+  /**
      * The current target on which the observe callback is called.
      * @type {AbstractType<any>}
      */
-    this.currentTarget = target
-    /**
+  AbstractType currentTarget;
+  /**
      * The transaction that triggered this event.
      * @type {Transaction}
      */
-    this.transaction = transaction
-    /**
+  Transaction transaction;
+  /**
      * @type {Object|null}
      */
-    this._changes = null
-  }
+  YChanges? _changes;
 
   /**
    * Computes the path from `y` to the changed type.
    *
    * The following property holds:
    * @example
-   *   let type = y
+   *   var type = y
    *   event.path.forEach(dir => {
    *     type = type.get(dir)
    *   })
-   *   type === event.target // => true
+   *   type == event.target // => true
    */
-  get path () {
+  List get path {
     // @ts-ignore _item is defined because target is integrated
-    return getPathTo(this.currentTarget, this.target)
+    return getPathTo(this.currentTarget, this.target);
   }
 
   /**
@@ -61,8 +69,8 @@ export class YEvent {
    * @param {AbstractStruct} struct
    * @return {boolean}
    */
-  deletes (struct) {
-    return isDeleted(this.transaction.deleteSet, struct.id)
+  bool deletes(AbstractStruct struct) {
+    return isDeleted(this.transaction.deleteSet, struct.id);
   }
 
   /**
@@ -73,116 +81,170 @@ export class YEvent {
    * @param {AbstractStruct} struct
    * @return {boolean}
    */
-  adds (struct) {
-    return struct.id.clock >= (this.transaction.beforeState.get(struct.id.client) || 0)
+  bool adds(AbstractStruct struct) {
+    return (struct.id.clock >=
+        (this.transaction.beforeState.get(struct.id.client) ?? 0));
   }
 
   /**
-   * @return {{added:Set<Item>,deleted:Set<Item>,keys:Map<string,{action:'add'|'update'|'delete',oldValue:any}>,delta:Array<{insert:Array<any>}|{delete:number}|{retain:number}>}}
+   * @return {{added:Set<Item>,deleted:Set<Item>,keys:Map<string,{action:'add'|'update'|'delete',oldValue:any}>,delta:List<{insert:List<any>}|{delete:number}|{retain:number}>}}
    */
-  get changes () {
-    let changes = this._changes
-    if (changes === null) {
-      const target = this.target
-      const added = set.create()
-      const deleted = set.create()
+  YChanges get changes {
+    var changes = this._changes;
+    if (changes == null) {
+      final target = this.target;
+      final added = <Item>{};
+      final deleted = <Item>{};
       /**
-       * @type {Array<{insert:Array<any>}|{delete:number}|{retain:number}>}
+       * @type {List<{insert:List<any>}|{delete:number}|{retain:number}>}
        */
-      const delta = []
+      final delta = <YDelta>[];
       /**
        * @type {Map<string,{ action: 'add' | 'update' | 'delete', oldValue: any}>}
        */
-      const keys = new Map()
-      changes = {
-        added, deleted, delta, keys
-      }
-      const changed = /** @type Set<string|null> */ (this.transaction.changed.get(target))
-      if (changed.has(null)) {
+      final keys = <String, _Change>{};
+      changes = YChanges(
+        added: added,
+        deleted: deleted,
+        delta: delta,
+        keys: keys,
+      );
+      final changed = /** @type Set<string|null> */ (this
+          .transaction
+          .changed
+          .get(target));
+      if (changed!.contains(null)) {
         /**
          * @type {any}
          */
-        let lastOp = null
-        const packOp = () => {
-          if (lastOp) {
-            delta.push(lastOp)
+        YDelta? lastOp;
+        void packOp() {
+          if (lastOp != null) {
+            delta.add(lastOp);
           }
         }
-        for (let item = target._start; item !== null; item = item.right) {
+
+        for (var item = target.innerStart; item != null; item = item.right) {
           if (item.deleted) {
             if (this.deletes(item) && !this.adds(item)) {
-              if (lastOp === null || lastOp.delete === undefined) {
-                packOp()
-                lastOp = { delete: 0 }
+              if (lastOp == null || lastOp.type != _DeltaType.delete) {
+                packOp();
+                lastOp = YDelta.delete(0);
               }
-              lastOp.delete += item.length
-              deleted.add(item)
+              lastOp.amount = lastOp.amount! + item.length;
+              deleted.add(item);
             } // else nop
           } else {
             if (this.adds(item)) {
-              if (lastOp === null || lastOp.insert === undefined) {
-                packOp()
-                lastOp = { insert: [] }
+              if (lastOp == null || lastOp.type != _DeltaType.insert) {
+                packOp();
+                lastOp = YDelta.insert([]);
               }
-              lastOp.insert = lastOp.insert.concat(item.content.getContent())
-              added.add(item)
+              lastOp.inserts = [
+                ...lastOp.inserts!,
+                ...item.content.getContent(),
+              ];
+              added.add(item);
             } else {
-              if (lastOp === null || lastOp.retain === undefined) {
-                packOp()
-                lastOp = { retain: 0 }
+              if (lastOp == null || lastOp.type != _DeltaType.retain) {
+                packOp();
+                lastOp = YDelta.retain(0);
               }
-              lastOp.retain += item.length
+              lastOp.amount = lastOp.amount! + item.length;
             }
           }
         }
-        if (lastOp !== null && lastOp.retain === undefined) {
-          packOp()
+        if (lastOp != null && lastOp.amount == null) {
+          packOp();
         }
       }
-      changed.forEach(key => {
-        if (key !== null) {
-          const item = /** @type {Item} */ (target._map.get(key))
+      changed.forEach((key) {
+        if (key != null) {
+          final item = /** @type {Item} */ (target.innerMap.get(key));
           /**
            * @type {'delete' | 'add' | 'update'}
            */
-          let action
-          let oldValue
-          if (this.adds(item)) {
-            let prev = item.left
-            while (prev !== null && this.adds(prev)) {
-              prev = prev.left
+          _ChangeType action;
+          var oldValue;
+          if (this.adds(item!)) {
+            var prev = item.left;
+            while (prev != null && this.adds(prev)) {
+              prev = prev.left;
             }
             if (this.deletes(item)) {
-              if (prev !== null && this.deletes(prev)) {
-                action = 'delete'
-                oldValue = array.last(prev.content.getContent())
+              if (prev != null && this.deletes(prev)) {
+                action = _ChangeType.delete;
+                oldValue = prev.content.getContent().last;
               } else {
-                return
+                return;
               }
             } else {
-              if (prev !== null && this.deletes(prev)) {
-                action = 'update'
-                oldValue = array.last(prev.content.getContent())
+              if (prev != null && this.deletes(prev)) {
+                action = _ChangeType.update;
+                oldValue = prev.content.getContent().last;
               } else {
-                action = 'add'
-                oldValue = undefined
+                action = _ChangeType.add;
+                oldValue = null;
               }
             }
           } else {
             if (this.deletes(item)) {
-              action = 'delete'
-              oldValue = array.last(/** @type {Item} */ item.content.getContent())
+              action = _ChangeType.delete;
+              oldValue =
+                  /** @type {Item} */ item.content.getContent().last;
             } else {
-              return // nop
+              return; // nop
             }
           }
-          keys.set(key, { action, oldValue })
+          keys.set(key, _Change(action, oldValue));
         }
-      })
-      this._changes = changes
+      });
+      this._changes = changes;
     }
-    return /** @type {any} */ (changes)
+    return /** @type {any} */ (changes);
   }
+}
+
+class YChanges {
+  final Set<Item> added;
+  final Set<Item> deleted;
+  final Map<String, _Change> keys;
+  final List<YDelta> delta;
+
+  YChanges({
+    required this.added,
+    required this.deleted,
+    required this.keys,
+    required this.delta,
+  });
+}
+
+enum _ChangeType { add, update, delete }
+
+class _Change {
+  final _ChangeType action;
+  final Object oldValue;
+
+  _Change(this.action, this.oldValue);
+}
+
+enum _DeltaType { insert, retain, delete }
+
+class YDelta {
+  _DeltaType type;
+  List<dynamic>? inserts;
+  int? amount;
+
+  factory YDelta.insert(List<dynamic> inserts) {
+    return YDelta._(_DeltaType.insert, inserts, null);
+  }
+  factory YDelta.retain(int amount) {
+    return YDelta._(_DeltaType.retain, null, amount);
+  }
+  factory YDelta.delete(int amount) {
+    return YDelta._(_DeltaType.delete, null, amount);
+  }
+  YDelta._(this.type, this.inserts, this.amount);
 }
 
 /**
@@ -191,36 +253,40 @@ export class YEvent {
  * @example
  *   // `child` should be accessible via `type.get(path[0]).get(path[1])..`
  *   const path = type.getPathTo(child)
- *   // assuming `type instanceof YArray`
+ *   // assuming `type is YArray`
  *   console.log(path) // might look like => [2, 'key1']
- *   child === type.get(path[0]).get(path[1])
+ *   child == type.get(path[0]).get(path[1])
  *
  * @param {AbstractType<any>} parent
  * @param {AbstractType<any>} child target
- * @return {Array<string|number>} Path to the target
+ * @return {List<string|number>} Path to the target
  *
  * @private
  * @function
  */
-const getPathTo = (parent, child) => {
-  const path = []
-  while (child._item !== null && child !== parent) {
-    if (child._item.parentSub !== null) {
+List getPathTo(AbstractType parent, AbstractType child) {
+  final path = [];
+  var childItem = child.innerItem;
+  while (childItem != null && child != parent) {
+    if (childItem.parentSub != null) {
       // parent is map-ish
-      path.unshift(child._item.parentSub)
+      path.insert(0, childItem.parentSub);
     } else {
       // parent is array-ish
-      let i = 0
-      let c = /** @type {AbstractType<any>} */ (child._item.parent)._start
-      while (c !== child._item && c !== null) {
+      var i = 0;
+      var c = /** @type {AbstractType<any>} */ (childItem.parent
+              as AbstractType)
+          .innerStart;
+      while (c != childItem && c != null) {
         if (!c.deleted) {
-          i++
+          i++;
         }
-        c = c.right
+        c = c.right;
       }
-      path.unshift(i)
+      path.insert(0, i);
     }
-    child = /** @type {AbstractType<any>} */ (child._item.parent)
+    child = /** @type {AbstractType<any>} */ (childItem.parent as AbstractType);
+    childItem = child.innerItem;
   }
-  return path
+  return path;
 }

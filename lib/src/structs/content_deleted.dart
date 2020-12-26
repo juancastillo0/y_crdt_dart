@@ -1,94 +1,105 @@
+// import {
+//   addToDeleteSet,
+//   AbstractUpdateDecoder,
+//   AbstractUpdateEncoder,
+//   StructStore,
+//   Item,
+//   Transaction, // eslint-disable-line
+// } from "../internals.js";
 
-import {
-  addToDeleteSet,
-  AbstractUpdateDecoder, AbstractUpdateEncoder, StructStore, Item, Transaction // eslint-disable-line
-} from '../internals.js'
+import 'package:y_crdt/src/structs/item.dart';
+import 'package:y_crdt/src/utils/delete_set.dart';
+import 'package:y_crdt/src/utils/update_decoder.dart';
 
-export class ContentDeleted {
+class ContentDeleted implements AbstractContent {
   /**
    * @param {number} len
    */
-  constructor (len) {
-    this.len = len
-  }
+  ContentDeleted(this.len);
+  int len;
 
   /**
    * @return {number}
    */
-  getLength () {
-    return this.len
+  getLength() {
+    return this.len;
   }
 
   /**
-   * @return {Array<any>}
+   * @return {List<any>}
    */
-  getContent () {
-    return []
+  getContent() {
+    return [];
   }
 
   /**
    * @return {boolean}
    */
-  isCountable () {
-    return false
+  isCountable() {
+    return false;
   }
 
   /**
    * @return {ContentDeleted}
    */
-  copy () {
-    return new ContentDeleted(this.len)
+  copy() {
+    return new ContentDeleted(this.len);
   }
 
   /**
    * @param {number} offset
    * @return {ContentDeleted}
    */
-  splice (offset) {
-    const right = new ContentDeleted(this.len - offset)
-    this.len = offset
-    return right
+  splice(offset) {
+    final right = ContentDeleted(this.len - offset);
+    this.len = offset;
+    return right;
   }
 
   /**
    * @param {ContentDeleted} right
    * @return {boolean}
    */
-  mergeWith (right) {
-    this.len += right.len
-    return true
+  mergeWith(right) {
+    if (right is ContentDeleted) {
+      this.len += right.len;
+      return true;
+    } else {
+      return false;
+    }
   }
 
   /**
    * @param {Transaction} transaction
    * @param {Item} item
    */
-  integrate (transaction, item) {
-    addToDeleteSet(transaction.deleteSet, item.id.client, item.id.clock, this.len)
-    item.markDeleted()
+  integrate(transaction, item) {
+    addToDeleteSet(
+        transaction.deleteSet, item.id.client, item.id.clock, this.len);
+    item.markDeleted();
   }
 
   /**
    * @param {Transaction} transaction
    */
-  delete (transaction) {}
+  delete(transaction) {}
   /**
    * @param {StructStore} store
    */
-  gc (store) {}
+  gc(store) {}
   /**
    * @param {AbstractUpdateEncoder} encoder
    * @param {number} offset
    */
-  write (encoder, offset) {
-    encoder.writeLen(this.len - offset)
+  write(encoder, offset) {
+    encoder.writeLen(this.len - offset);
   }
 
   /**
    * @return {number}
    */
-  getRef () {
-    return 1
+  getRef() {
+    return 1;
   }
 }
 
@@ -98,4 +109,5 @@ export class ContentDeleted {
  * @param {AbstractUpdateDecoder} decoder
  * @return {ContentDeleted}
  */
-export const readContentDeleted = decoder => new ContentDeleted(decoder.readLen())
+ContentDeleted readContentDeleted(AbstractUpdateDecoder decoder) =>
+    ContentDeleted(decoder.readLen());

@@ -1,99 +1,111 @@
-import {
-  AbstractUpdateDecoder, AbstractUpdateEncoder, Transaction, Item, StructStore // eslint-disable-line
-} from '../internals.js'
+// import {
+//   AbstractUpdateDecoder,
+//   AbstractUpdateEncoder,
+//   Transaction,
+//   Item,
+//   StructStore, // eslint-disable-line
+// } from "../internals.js";
+
+import 'dart:convert';
+
+import 'package:y_crdt/src/structs/item.dart';
+import 'package:y_crdt/src/utils/update_decoder.dart';
 
 /**
  * @private
  */
-export class ContentJSON {
+class ContentJSON implements AbstractContent {
   /**
-   * @param {Array<any>} arr
+   * @param {List<any>} arr
    */
-  constructor (arr) {
-    /**
-     * @type {Array<any>}
+  ContentJSON(this.arr);
+  /**
+     * @type {List<any>}
      */
-    this.arr = arr
-  }
+  List<dynamic> arr;
 
   /**
    * @return {number}
    */
-  getLength () {
-    return this.arr.length
+  getLength() {
+    return this.arr.length;
   }
 
   /**
-   * @return {Array<any>}
+   * @return {List<any>}
    */
-  getContent () {
-    return this.arr
+  getContent() {
+    return this.arr;
   }
 
   /**
    * @return {boolean}
    */
-  isCountable () {
-    return true
+  isCountable() {
+    return true;
   }
 
   /**
    * @return {ContentJSON}
    */
-  copy () {
-    return new ContentJSON(this.arr)
+  copy() {
+    return new ContentJSON(this.arr);
   }
 
   /**
    * @param {number} offset
    * @return {ContentJSON}
    */
-  splice (offset) {
-    const right = new ContentJSON(this.arr.slice(offset))
-    this.arr = this.arr.slice(0, offset)
-    return right
+  splice(offset) {
+    final right = ContentJSON(this.arr.sublist(offset));
+    this.arr = this.arr.sublist(0, offset);
+    return right;
   }
 
   /**
    * @param {ContentJSON} right
    * @return {boolean}
    */
-  mergeWith (right) {
-    this.arr = this.arr.concat(right.arr)
-    return true
+  mergeWith(right) {
+    if (right is ContentJSON) {
+      this.arr = [...this.arr, ...right.arr];
+      return true;
+    } else {
+      return false;
+    }
   }
 
   /**
    * @param {Transaction} transaction
    * @param {Item} item
    */
-  integrate (transaction, item) {}
+  integrate(transaction, item) {}
   /**
    * @param {Transaction} transaction
    */
-  delete (transaction) {}
+  delete(transaction) {}
   /**
    * @param {StructStore} store
    */
-  gc (store) {}
+  gc(store) {}
   /**
    * @param {AbstractUpdateEncoder} encoder
    * @param {number} offset
    */
-  write (encoder, offset) {
-    const len = this.arr.length
-    encoder.writeLen(len - offset)
-    for (let i = offset; i < len; i++) {
-      const c = this.arr[i]
-      encoder.writeString(c === undefined ? 'undefined' : JSON.stringify(c))
+  write(encoder, offset) {
+    final len = this.arr.length;
+    encoder.writeLen(len - offset);
+    for (var i = offset; i < len; i++) {
+      final c = this.arr[i];
+      encoder.writeString(c == null ? "undefined" : jsonEncode(c));
     }
   }
 
   /**
    * @return {number}
    */
-  getRef () {
-    return 2
+  getRef() {
+    return 2;
   }
 }
 
@@ -103,16 +115,16 @@ export class ContentJSON {
  * @param {AbstractUpdateDecoder} decoder
  * @return {ContentJSON}
  */
-export const readContentJSON = decoder => {
-  const len = decoder.readLen()
-  const cs = []
-  for (let i = 0; i < len; i++) {
-    const c = decoder.readString()
-    if (c === 'undefined') {
-      cs.push(undefined)
+ContentJSON readContentJSON(AbstractUpdateDecoder decoder) {
+  final len = decoder.readLen();
+  final cs = [];
+  for (var i = 0; i < len; i++) {
+    final c = decoder.readString();
+    if (c == "undefined") {
+      cs.add(null);
     } else {
-      cs.push(JSON.parse(c))
+      cs.add(jsonDecode(c));
     }
   }
-  return new ContentJSON(cs)
+  return ContentJSON(cs);
 }

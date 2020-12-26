@@ -1,4 +1,6 @@
-import * as f from 'lib0/function.js'
+// import * as f from "lib0/function.js";
+
+import 'package:y_crdt/src/y_crdt_base.dart';
 
 /**
  * General event handler implementation.
@@ -7,13 +9,11 @@ import * as f from 'lib0/function.js'
  *
  * @private
  */
-export class EventHandler {
-  constructor () {
-    /**
-     * @type {Array<function(ARG0, ARG1):void>}
+class EventHandler<ARG0, ARG1> {
+  /**
+     * @type {List<function(ARG0, ARG1):void>}
      */
-    this.l = []
-  }
+  List<void Function(ARG0, ARG1)> l = [];
 }
 
 /**
@@ -23,7 +23,7 @@ export class EventHandler {
  * @private
  * @function
  */
-export const createEventHandler = () => new EventHandler()
+EventHandler<ARG0, ARG1> createEventHandler<ARG0, ARG1>() => EventHandler();
 
 /**
  * Adds an event listener that is called when
@@ -36,8 +36,9 @@ export const createEventHandler = () => new EventHandler()
  * @private
  * @function
  */
-export const addEventHandlerListener = (eventHandler, f) =>
-  eventHandler.l.push(f)
+void addEventHandlerListener<ARG0, ARG1>(
+        EventHandler<ARG0, ARG1> eventHandler, void Function(ARG0, ARG1) f) =>
+    eventHandler.l.add(f);
 
 /**
  * Removes an event listener.
@@ -50,12 +51,13 @@ export const addEventHandlerListener = (eventHandler, f) =>
  * @private
  * @function
  */
-export const removeEventHandlerListener = (eventHandler, f) => {
-  const l = eventHandler.l
-  const len = l.length
-  eventHandler.l = l.filter(g => f !== g)
-  if (len === eventHandler.l.length) {
-    console.error('[yjs] Tried to remove event handler that doesn\'t exist.')
+void removeEventHandlerListener<ARG0, ARG1>(
+    EventHandler<ARG0, ARG1> eventHandler, void Function(ARG0, ARG1) f) {
+  final l = eventHandler.l;
+  final len = l.length;
+  eventHandler.l = l.where((g) => f != g).toList();
+  if (len == eventHandler.l.length) {
+    logger.e("[yjs] Tried to remove event handler that doesn't exist.");
   }
 }
 
@@ -67,8 +69,9 @@ export const removeEventHandlerListener = (eventHandler, f) => {
  * @private
  * @function
  */
-export const removeAllEventHandlerListeners = eventHandler => {
-  eventHandler.l.length = 0
+void removeAllEventHandlerListeners<ARG0, ARG1>(
+    EventHandler<ARG0, ARG1> eventHandler) {
+  eventHandler.l.length = 0;
 }
 
 /**
@@ -83,5 +86,6 @@ export const removeAllEventHandlerListeners = eventHandler => {
  * @private
  * @function
  */
-export const callEventHandlerListeners = (eventHandler, arg0, arg1) =>
-  f.callAll(eventHandler.l, [arg0, arg1])
+void callEventHandlerListeners<ARG0, ARG1>(
+        EventHandler<ARG0, ARG1> eventHandler, ARG0 arg0, ARG1 arg1) =>
+    eventHandler.l.forEach((f) => f(arg0, arg1));

@@ -1,25 +1,42 @@
+// import {
+//   removeEventHandlerListener,
+//   callEventHandlerListeners,
+//   addEventHandlerListener,
+//   createEventHandler,
+//   getState,
+//   isVisible,
+//   ContentType,
+//   createID,
+//   ContentAny,
+//   ContentBinary,
+//   getItemCleanStart,
+//   ContentDoc, YText, YArray, AbstractUpdateEncoder, Doc, Snapshot, Transaction, EventHandler, YEvent, Item, // eslint-disable-line
+// } from '../internals.js'
 
-import {
-  removeEventHandlerListener,
-  callEventHandlerListeners,
-  addEventHandlerListener,
-  createEventHandler,
-  getState,
-  isVisible,
-  ContentType,
-  createID,
-  ContentAny,
-  ContentBinary,
-  getItemCleanStart,
-  ContentDoc, YText, YArray, AbstractUpdateEncoder, Doc, Snapshot, Transaction, EventHandler, YEvent, Item, // eslint-disable-line
-} from '../internals.js'
+// import * as map from 'lib0/map.js'
+// import * as iterator from 'lib0/iterator.js'
+// import * as error from 'lib0/error.js'
+// import * as math from 'lib0/math.js'
 
-import * as map from 'lib0/map.js'
-import * as iterator from 'lib0/iterator.js'
-import * as error from 'lib0/error.js'
-import * as math from 'lib0/math.js'
+import 'dart:typed_data';
 
-const maxSearchMarker = 80
+import 'package:y_crdt/src/structs/content_any.dart';
+import 'package:y_crdt/src/structs/content_binary.dart';
+import 'package:y_crdt/src/structs/content_doc.dart';
+import 'package:y_crdt/src/structs/content_type.dart';
+import 'package:y_crdt/src/structs/item.dart';
+import 'package:y_crdt/src/utils/doc.dart';
+import 'package:y_crdt/src/utils/event_handler.dart';
+import 'package:y_crdt/src/utils/update_encoder.dart';
+import 'package:y_crdt/src/y_crdt_base.dart';
+import 'package:y_crdt/src/utils/id.dart';
+import 'package:y_crdt/src/utils/snapshot.dart';
+import 'package:y_crdt/src/utils/struct_store.dart';
+import 'package:y_crdt/src/utils/transaction.dart';
+import 'package:y_crdt/src/utils/y_event.dart';
+import 'dart:math' as math;
+
+const maxSearchMarker = 80;
 
 /**
  * A unique timestamp that identifies each marker.
@@ -28,25 +45,28 @@ const maxSearchMarker = 80
  *
  * @type {number}
  */
-let globalSearchMarkerTimestamp = 0
+int globalSearchMarkerTimestamp = 0;
 
-export class ArraySearchMarker {
+class ArraySearchMarker {
   /**
    * @param {Item} p
    * @param {number} index
    */
-  constructor (p, index) {
-    p.marker = true
-    this.p = p
-    this.index = index
-    this.timestamp = globalSearchMarkerTimestamp++
+  ArraySearchMarker(this.p, this.index)
+      : timestamp = globalSearchMarkerTimestamp++ {
+    p.marker = true;
   }
+  Item p;
+  int index;
+  int timestamp;
 }
 
 /**
  * @param {ArraySearchMarker} marker
  */
-const refreshMarkerTimestamp = marker => { marker.timestamp = globalSearchMarkerTimestamp++ }
+void refreshMarkerTimestamp(ArraySearchMarker marker) {
+  marker.timestamp = globalSearchMarkerTimestamp++;
+}
 
 /**
  * This is rather complex so this function is the only thing that should overwrite a marker
@@ -55,30 +75,32 @@ const refreshMarkerTimestamp = marker => { marker.timestamp = globalSearchMarker
  * @param {Item} p
  * @param {number} index
  */
-const overwriteMarker = (marker, p, index) => {
-  marker.p.marker = false
-  marker.p = p
-  p.marker = true
-  marker.index = index
-  marker.timestamp = globalSearchMarkerTimestamp++
+void overwriteMarker(ArraySearchMarker marker, Item p, int index) {
+  marker.p.marker = false;
+  marker.p = p;
+  p.marker = true;
+  marker.index = index;
+  marker.timestamp = globalSearchMarkerTimestamp++;
 }
 
 /**
- * @param {Array<ArraySearchMarker>} searchMarker
+ * @param {List<ArraySearchMarker>} searchMarker
  * @param {Item} p
  * @param {number} index
  */
-const markPosition = (searchMarker, p, index) => {
+ArraySearchMarker markPosition(
+    List<ArraySearchMarker> searchMarker, Item p, int index) {
   if (searchMarker.length >= maxSearchMarker) {
     // override oldest marker (we don't want to create more objects)
-    const marker = searchMarker.reduce((a, b) => a.timestamp < b.timestamp ? a : b)
-    overwriteMarker(marker, p, index)
-    return marker
+    final marker =
+        searchMarker.reduce((a, b) => a.timestamp < b.timestamp ? a : b);
+    overwriteMarker(marker, p, index);
+    return marker;
   } else {
     // create new marker
-    const pm = new ArraySearchMarker(p, index)
-    searchMarker.push(pm)
-    return pm
+    final pm = ArraySearchMarker(p, index);
+    searchMarker.add(pm);
+    return pm;
   }
 }
 
@@ -94,57 +116,69 @@ const markPosition = (searchMarker, p, index) => {
  * @param {AbstractType<any>} yarray
  * @param {number} index
  */
-export const findMarker = (yarray, index) => {
-  if (yarray._start === null || index === 0 || yarray._searchMarker === null) {
-    return null
+ArraySearchMarker? findMarker(AbstractType yarray, int index) {
+  final _searchMarker = yarray.innerSearchMarker;
+  if (yarray.innerStart == null || index == 0 || _searchMarker == null) {
+    return null;
   }
-  const marker = yarray._searchMarker.length === 0 ? null : yarray._searchMarker.reduce((a, b) => math.abs(index - a.index) < math.abs(index - b.index) ? a : b)
-  let p = yarray._start
-  let pindex = 0
-  if (marker !== null) {
-    p = marker.p
-    pindex = marker.index
-    refreshMarkerTimestamp(marker) // we used it, we might need to use it again
+  final marker = _searchMarker.length == 0
+      ? null
+      : _searchMarker.reduce(
+          (a, b) => (index - a.index).abs() < (index - b.index).abs() ? a : b);
+  var p = yarray.innerStart;
+  var pindex = 0;
+  if (marker != null) {
+    p = marker.p;
+    pindex = marker.index;
+    refreshMarkerTimestamp(marker); // we used it, we might need to use it again
   }
   // iterate to right if possible
-  while (p.right !== null && pindex < index) {
+  if (p == null) {
+    throw Exception("");
+  }
+  while (p != null && p.right != null && pindex < index) {
     if (!p.deleted && p.countable) {
       if (index < pindex + p.length) {
-        break
+        break;
       }
-      pindex += p.length
+      pindex += p.length;
     }
-    p = p.right
+    p = p.right;
   }
   // iterate to left if necessary (might be that pindex > index)
-  while (p.left !== null && pindex > index) {
-    p = p.left
+  var pLeft = p?.left;
+  while (pLeft != null && pindex > index) {
+    p = pLeft;
     if (!p.deleted && p.countable) {
-      pindex -= p.length
+      pindex -= p.length;
     }
   }
   // we want to make sure that p can't be merged with left, because that would screw up everything
   // in that cas just return what we have (it is most likely the best marker anyway)
   // iterate to left until p can't be merged with left
-  while (p.left !== null && p.left.id.client === p.id.client && p.left.id.clock + p.left.length === p.id.clock) {
-    p = p.left
+  pLeft = p?.left;
+  while (p != null &&
+      pLeft != null &&
+      pLeft.id.client == p.id.client &&
+      pLeft.id.clock + pLeft.length == p.id.clock) {
+    p = pLeft;
     if (!p.deleted && p.countable) {
-      pindex -= p.length
+      pindex -= p.length;
     }
   }
 
   // @todo remove!
   // assure position
   // {
-  //   let start = yarray._start
-  //   let pos = 0
-  //   while (start !== p) {
+  //   var start = yarray._start
+  //   var pos = 0
+  //   while (start != p) {
   //     if (!start.deleted && start.countable) {
   //       pos += start.length
   //     }
   //     start = /** @type {Item} */ (start.right)
   //   }
-  //   if (pos !== pindex) {
+  //   if (pos != pindex) {
   //     debugger
   //     throw new Error('Gotcha position fail!')
   //   }
@@ -157,13 +191,20 @@ export const findMarker = (yarray, index) => {
   //   window.lengthes.push(marker.index - pindex)
   //   console.log('distance', marker.index - pindex, 'len', p && p.parent.length)
   // }
-  if (marker !== null && math.abs(marker.index - pindex) < /** @type {YText|YArray<any>} */ (p.parent).length / maxSearchMarker) {
+  if (p == null) {
+    throw Exception("");
+  }
+  if (marker != null &&
+      (marker.index - pindex).abs() < /** @type {YText|YList<any>} */ (p.parent
+                  as AbstractType)
+              .innerLength /
+          maxSearchMarker) {
     // adjust existing marker
-    overwriteMarker(marker, p, pindex)
-    return marker
+    overwriteMarker(marker, p, pindex);
+    return marker;
   } else {
     // create new marker
-    return markPosition(yarray._searchMarker, p, pindex)
+    return markPosition(yarray.innerSearchMarker!, p, pindex);
   }
 }
 
@@ -172,39 +213,41 @@ export const findMarker = (yarray, index) => {
  *
  * This should be called before doing a deletion!
  *
- * @param {Array<ArraySearchMarker>} searchMarker
+ * @param {List<ArraySearchMarker>} searchMarker
  * @param {number} index
  * @param {number} len If insertion, len is positive. If deletion, len is negative.
  */
-export const updateMarkerChanges = (searchMarker, index, len) => {
-  for (let i = searchMarker.length - 1; i >= 0; i--) {
-    const m = searchMarker[i]
+void updateMarkerChanges(
+    List<ArraySearchMarker> searchMarker, int index, int len) {
+  for (var i = searchMarker.length - 1; i >= 0; i--) {
+    final m = searchMarker[i];
     if (len > 0) {
       /**
        * @type {Item|null}
        */
-      let p = m.p
-      p.marker = false
+      Item? p = m.p;
+      p.marker = false;
       // Ideally we just want to do a simple position comparison, but this will only work if
       // search markers don't point to deleted items for formats.
       // Iterate marker to prev undeleted countable position so we know what to do when updating a position
-      while (p && (p.deleted || !p.countable)) {
-        p = p.left
-        if (p && !p.deleted && p.countable) {
+      while (p != null && (p.deleted || !p.countable)) {
+        p = p.left;
+        if (p != null && !p.deleted && p.countable) {
           // adjust position. the loop should break now
-          m.index -= p.length
+          m.index -= p.length;
         }
       }
-      if (p === null || p.marker === true) {
+      if (p == null || p.marker == true) {
         // remove search marker if updated position is null or if position is already marked
-        searchMarker.splice(i, 1)
-        continue
+        searchMarker.removeAt(i);
+        continue;
       }
-      m.p = p
-      p.marker = true
+      m.p = p;
+      p.marker = true;
     }
-    if (index < m.index || (len > 0 && index === m.index)) { // a simple index <= m.index check would actually suffice
-      m.index = math.max(index, m.index + len)
+    if (index < m.index || (len > 0 && index == m.index)) {
+      // a simple index <= m.index check would actually suffice
+      m.index = math.max(index, m.index + len);
     }
   }
 }
@@ -213,16 +256,16 @@ export const updateMarkerChanges = (searchMarker, index, len) => {
  * Accumulate all (list) children of a type and return them as an Array.
  *
  * @param {AbstractType<any>} t
- * @return {Array<Item>}
+ * @return {List<Item>}
  */
-export const getTypeChildren = t => {
-  let s = t._start
-  const arr = []
-  while (s) {
-    arr.push(s)
-    s = s.right
+List<Item> getTypeChildren(AbstractType t) {
+  var s = t.innerStart;
+  final arr = <Item>[];
+  while (s != null) {
+    arr.add(s);
+    s = s.right;
   }
-  return arr
+  return arr;
 }
 
 /**
@@ -234,57 +277,68 @@ export const getTypeChildren = t => {
  * @param {Transaction} transaction
  * @param {EventType} event
  */
-export const callTypeObservers = (type, transaction, event) => {
-  const changedType = type
-  const changedParentTypes = transaction.changedParentTypes
+void callTypeObservers<EventType extends YEvent>(
+    AbstractType<EventType> type, Transaction transaction, EventType event) {
+  final changedType = type;
+  final changedParentTypes = transaction.changedParentTypes;
+
+  AbstractType<YEvent> _type = type;
   while (true) {
     // @ts-ignore
-    map.setIfUndefined(changedParentTypes, type, () => []).push(event)
-    if (type._item === null) {
-      break
+    changedParentTypes.putIfAbsent(_type, () => []).add(event);
+    if (_type.innerItem == null) {
+      break;
     }
-    type = /** @type {AbstractType<any>} */ (type._item.parent)
+    _type = /** @type {AbstractType<any>} */ (_type.innerItem!.parent
+        as AbstractType<YEvent>);
   }
-  callEventHandlerListeners(changedType._eH, event, transaction)
+  callEventHandlerListeners(changedType._eH, event, transaction);
 }
 
 /**
  * @template EventType
  * Abstract Yjs Type class
  */
-export class AbstractType {
-  constructor () {
-    /**
+class AbstractType<EventType> {
+  static AbstractType<EventType> create<EventType>() =>
+      AbstractType<EventType>();
+  /**
      * @type {Item|null}
      */
-    this._item = null
-    /**
+  Item? innerItem;
+  /**
      * @type {Map<string,Item>}
      */
-    this._map = new Map()
-    /**
+  Map<String, Item> innerMap = {};
+  /**
      * @type {Item|null}
      */
-    this._start = null
-    /**
+  Item? innerStart;
+  /**
      * @type {Doc|null}
      */
-    this.doc = null
-    this._length = 0
-    /**
+  Doc? doc;
+  int innerLength = 0;
+  /**
      * Event handlers
      * @type {EventHandler<EventType,Transaction>}
      */
-    this._eH = createEventHandler()
-    /**
+  final EventHandler<EventType, Transaction> _eH = createEventHandler();
+  /**
      * Deep event handlers
-     * @type {EventHandler<Array<YEvent>,Transaction>}
+     * @type {EventHandler<List<YEvent>,Transaction>}
      */
-    this._dEH = createEventHandler()
-    /**
-     * @type {null | Array<ArraySearchMarker>}
+  final EventHandler<List<YEvent>, Transaction> innerdEH = createEventHandler();
+  /**
+     * @type {null | List<ArraySearchMarker>}
      */
-    this._searchMarker = null
+  List<ArraySearchMarker>? innerSearchMarker;
+
+  /**
+   * @return {AbstractType<any>|null}
+   */
+  AbstractType? get parent {
+    return this.innerItem?.parent as AbstractType?;
   }
 
   /**
@@ -297,39 +351,39 @@ export class AbstractType {
    * @param {Doc} y The Yjs instance
    * @param {Item|null} item
    */
-  _integrate (y, item) {
-    this.doc = y
-    this._item = item
+  void innerIntegrate(Doc y, Item? item) {
+    this.doc = y;
+    this.innerItem = item;
   }
 
   /**
    * @return {AbstractType<EventType>}
    */
-  _copy () {
-    throw error.methodUnimplemented()
+  AbstractType<EventType> innerCopy() {
+    throw UnimplementedError();
   }
 
   /**
    * @return {AbstractType<EventType>}
    */
-  clone () {
-    throw error.methodUnimplemented()
+  AbstractType<EventType> clone() {
+    throw UnimplementedError();
   }
 
   /**
    * @param {AbstractUpdateEncoder} encoder
    */
-  _write (encoder) { }
+  void innerWrite(AbstractUpdateEncoder encoder) {}
 
   /**
    * The first non-deleted item
    */
-  get _first () {
-    let n = this._start
-    while (n !== null && n.deleted) {
-      n = n.right
+  Item? get innerFirst {
+    var n = this.innerStart;
+    while (n != null && n.deleted) {
+      n = n.right;
     }
-    return n
+    return n;
   }
 
   /**
@@ -339,9 +393,9 @@ export class AbstractType {
    * @param {Transaction} transaction
    * @param {Set<null|string>} parentSubs Keys changed on this type. `null` if list was modified.
    */
-  _callObserver (transaction, parentSubs) {
-    if (!transaction.local && this._searchMarker) {
-      this._searchMarker.length = 0
+  void innerCallObserver(Transaction transaction, Set<String?> parentSubs) {
+    if (!transaction.local && (this.innerSearchMarker?.isNotEmpty ?? false)) {
+      this.innerSearchMarker!.length = 0;
     }
   }
 
@@ -350,17 +404,17 @@ export class AbstractType {
    *
    * @param {function(EventType, Transaction):void} f Observer function
    */
-  observe (f) {
-    addEventHandlerListener(this._eH, f)
+  void observe(void Function(EventType, Transaction) f) {
+    addEventHandlerListener(this._eH, f);
   }
 
   /**
    * Observe all events that are created by this type and its children.
    *
-   * @param {function(Array<YEvent>,Transaction):void} f Observer function
+   * @param {function(List<YEvent>,Transaction):void} f Observer function
    */
-  observeDeep (f) {
-    addEventHandlerListener(this._dEH, f)
+  void observeDeep(void Function(List<YEvent>, Transaction) f) {
+    addEventHandlerListener(this.innerdEH, f);
   }
 
   /**
@@ -368,106 +422,108 @@ export class AbstractType {
    *
    * @param {function(EventType,Transaction):void} f Observer function
    */
-  unobserve (f) {
-    removeEventHandlerListener(this._eH, f)
+  void unobserve(void Function(EventType, Transaction) f) {
+    removeEventHandlerListener(this._eH, f);
   }
 
   /**
    * Unregister an observer function.
    *
-   * @param {function(Array<YEvent>,Transaction):void} f Observer function
+   * @param {function(List<YEvent>,Transaction):void} f Observer function
    */
-  unobserveDeep (f) {
-    removeEventHandlerListener(this._dEH, f)
+  void unobserveDeep(void Function(List<YEvent>, Transaction) f) {
+    removeEventHandlerListener(this.innerdEH, f);
   }
 
   /**
    * @abstract
    * @return {any}
    */
-  toJSON () {}
+  Object toJSON() {
+    throw UnimplementedError();
+  }
 }
 
 /**
  * @param {AbstractType<any>} type
  * @param {number} start
  * @param {number} end
- * @return {Array<any>}
+ * @return {List<any>}
  *
  * @private
  * @function
  */
-export const typeListSlice = (type, start, end) => {
+List typeListSlice(AbstractType type, int start, int end) {
   if (start < 0) {
-    start = type._length + start
+    start = type.innerLength + start;
   }
   if (end < 0) {
-    end = type._length + end
+    end = type.innerLength + end;
   }
-  let len = end - start
-  const cs = []
-  let n = type._start
-  while (n !== null && len > 0) {
+  var len = end - start;
+  final cs = [];
+  var n = type.innerStart;
+  while (n != null && len > 0) {
     if (n.countable && !n.deleted) {
-      const c = n.content.getContent()
+      final c = n.content.getContent();
       if (c.length <= start) {
-        start -= c.length
+        start -= c.length;
       } else {
-        for (let i = start; i < c.length && len > 0; i++) {
-          cs.push(c[i])
-          len--
+        for (var i = start; i < c.length && len > 0; i++) {
+          cs.add(c[i]);
+          len--;
         }
-        start = 0
+        start = 0;
       }
     }
-    n = n.right
+    n = n.right;
   }
-  return cs
+  return cs;
 }
 
 /**
  * @param {AbstractType<any>} type
- * @return {Array<any>}
+ * @return {List<any>}
  *
  * @private
  * @function
  */
-export const typeListToArray = type => {
-  const cs = []
-  let n = type._start
-  while (n !== null) {
+List typeListToArray(AbstractType type) {
+  final cs = [];
+  var n = type.innerStart;
+  while (n != null) {
     if (n.countable && !n.deleted) {
-      const c = n.content.getContent()
-      for (let i = 0; i < c.length; i++) {
-        cs.push(c[i])
+      final c = n.content.getContent();
+      for (var i = 0; i < c.length; i++) {
+        cs.add(c[i]);
       }
     }
-    n = n.right
+    n = n.right;
   }
-  return cs
+  return cs;
 }
 
 /**
  * @param {AbstractType<any>} type
  * @param {Snapshot} snapshot
- * @return {Array<any>}
+ * @return {List<any>}
  *
  * @private
  * @function
  */
-export const typeListToArraySnapshot = (type, snapshot) => {
-  const cs = []
-  let n = type._start
-  while (n !== null) {
+List typeListToArraySnapshot(AbstractType type, Snapshot snapshot) {
+  final cs = [];
+  var n = type.innerStart;
+  while (n != null) {
     if (n.countable && isVisible(n, snapshot)) {
-      const c = n.content.getContent()
-      for (let i = 0; i < c.length; i++) {
-        cs.push(c[i])
+      final c = n.content.getContent();
+      for (var i = 0; i < c.length; i++) {
+        cs.add(c[i]);
       }
     }
-    n = n.right
+    n = n.right;
   }
-  return cs
+  return cs;
 }
 
 /**
@@ -479,17 +535,18 @@ export const typeListToArraySnapshot = (type, snapshot) => {
  * @private
  * @function
  */
-export const typeListForEach = (type, f) => {
-  let index = 0
-  let n = type._start
-  while (n !== null) {
+void typeListForEach<L, R extends AbstractType>(
+    R type, void Function(L, int, R) f) {
+  var index = 0;
+  var n = type.innerStart;
+  while (n != null) {
     if (n.countable && !n.deleted) {
-      const c = n.content.getContent()
-      for (let i = 0; i < c.length; i++) {
-        f(c[i], index++, type)
+      final c = n.content.getContent();
+      for (var i = 0; i < c.length; i++) {
+        f(c[i], index++, type);
       }
     }
-    n = n.right
+    n = n.right;
   }
 }
 
@@ -497,20 +554,21 @@ export const typeListForEach = (type, f) => {
  * @template C,R
  * @param {AbstractType<any>} type
  * @param {function(C,number,AbstractType<any>):R} f
- * @return {Array<R>}
+ * @return {List<R>}
  *
  * @private
  * @function
  */
-export const typeListMap = (type, f) => {
+List<R> typeListMap<C, R, T extends AbstractType>(
+    T type, R Function(C, int, T) f) {
   /**
-   * @type {Array<any>}
+   * @type {List<any>}
    */
-  const result = []
-  typeListForEach(type, (c, i) => {
-    result.push(f(c, i, type))
-  })
-  return result
+  final result = <R>[];
+  typeListForEach<C, T>(type, (c, i, _) {
+    result.add(f(c, i, type));
+  });
+  return result;
 }
 
 /**
@@ -520,45 +578,43 @@ export const typeListMap = (type, f) => {
  * @private
  * @function
  */
-export const typeListCreateIterator = type => {
-  let n = type._start
-  /**
-   * @type {Array<any>|null}
-   */
-  let currentContent = null
-  let currentContentIndex = 0
-  return {
-    [Symbol.iterator] () {
-      return this
-    },
-    next: () => {
-      // find some content
-      if (currentContent === null) {
-        while (n !== null && n.deleted) {
-          n = n.right
-        }
-        // check if we reached the end, no need to check currentContent, because it does not exist
-        if (n === null) {
-          return {
-            done: true,
-            value: undefined
-          }
-        }
-        // we found n, so we can set currentContent
-        currentContent = n.content.getContent()
-        currentContentIndex = 0
-        n = n.right // we used the content of n, now iterate to next
+Iterator<T> typeListCreateIterator<T>(AbstractType type) {
+  return TypeListIterator<T>(type.innerStart);
+}
+
+class TypeListIterator<T> extends Iterator<T> {
+  TypeListIterator(this.n);
+  Item? n;
+  List<dynamic>? currentContent;
+  int currentContentIndex = 0;
+  T? _value;
+
+  @override
+  T get current => _value as T;
+
+  @override
+  bool moveNext() {
+    // find some content
+    if (currentContent == null) {
+      while (n != null && n!.deleted) {
+        n = n!.right;
       }
-      const value = currentContent[currentContentIndex++]
-      // check if we need to empty currentContent
-      if (currentContent.length <= currentContentIndex) {
-        currentContent = null
+      // check if we reached the end, no need to check currentContent, because it does not exist
+      if (n == null) {
+        return false;
       }
-      return {
-        done: false,
-        value
-      }
+      // we found n, so we can set currentContent
+      currentContent = n!.content.getContent();
+      currentContentIndex = 0;
+      n = n!.right; // we used the content of n, now iterate to next
     }
+    final _currentContent = currentContent!;
+    _value = _currentContent[currentContentIndex++] as T;
+    // check if we need to empty currentContent
+    if (_currentContent.length <= currentContentIndex) {
+      currentContent = null;
+    }
+    return true;
   }
 }
 
@@ -573,17 +629,18 @@ export const typeListCreateIterator = type => {
  * @private
  * @function
  */
-export const typeListForEachSnapshot = (type, f, snapshot) => {
-  let index = 0
-  let n = type._start
-  while (n !== null) {
+void typeListForEachSnapshot(AbstractType type,
+    void Function(dynamic, int, AbstractType) f, Snapshot snapshot) {
+  var index = 0;
+  var n = type.innerStart;
+  while (n != null) {
     if (n.countable && isVisible(n, snapshot)) {
-      const c = n.content.getContent()
-      for (let i = 0; i < c.length; i++) {
-        f(c[i], index++, type)
+      final c = n.content.getContent();
+      for (var i = 0; i < c.length; i++) {
+        f(c[i], index++, type);
       }
     }
-    n = n.right
+    n = n.right;
   }
 }
 
@@ -595,19 +652,19 @@ export const typeListForEachSnapshot = (type, f, snapshot) => {
  * @private
  * @function
  */
-export const typeListGet = (type, index) => {
-  const marker = findMarker(type, index)
-  let n = type._start
-  if (marker !== null) {
-    n = marker.p
-    index -= marker.index
+dynamic typeListGet(AbstractType type, int index) {
+  final marker = findMarker(type, index);
+  var n = type.innerStart;
+  if (marker != null) {
+    n = marker.p;
+    index -= marker.index;
   }
-  for (; n !== null; n = n.right) {
+  for (; n != null; n = n.right) {
     if (!n.deleted && n.countable) {
       if (index < n.length) {
-        return n.content.getContent()[index]
+        return n.content.getContent()[index];
       }
-      index -= n.length
+      index -= n.length;
     }
   }
 }
@@ -616,107 +673,135 @@ export const typeListGet = (type, index) => {
  * @param {Transaction} transaction
  * @param {AbstractType<any>} parent
  * @param {Item?} referenceItem
- * @param {Array<Object<string,any>|Array<any>|boolean|number|string|Uint8Array>} content
+ * @param {List<Object<string,any>|List<any>|boolean|number|string|Uint8Array>} content
  *
  * @private
  * @function
  */
-export const typeListInsertGenericsAfter = (transaction, parent, referenceItem, content) => {
-  let left = referenceItem
-  const doc = transaction.doc
-  const ownClientId = doc.clientID
-  const store = doc.store
-  const right = referenceItem === null ? parent._start : referenceItem.right
+void typeListInsertGenericsAfter(
+  Transaction transaction,
+  AbstractType parent,
+  Item? referenceItem,
+  dynamic content,
+) {
+  var left = referenceItem;
+  final doc = transaction.doc;
+  final ownClientId = doc.clientID;
+  final store = doc.store;
+  final right = referenceItem == null ? parent.innerStart : referenceItem.right;
   /**
-   * @type {Array<Object|Array<any>|number>}
+   * @type {List<Object|List<any>|number>}
    */
-  let jsonContent = []
-  const packJsonContent = () => {
+  var jsonContent = [];
+  final packJsonContent = () {
     if (jsonContent.length > 0) {
-      left = new Item(createID(ownClientId, getState(store, ownClientId)), left, left && left.lastId, right, right && right.id, parent, null, new ContentAny(jsonContent))
-      left.integrate(transaction, 0)
-      jsonContent = []
+      left = Item(
+          createID(ownClientId, getState(store, ownClientId)),
+          left,
+          left?.lastId,
+          right,
+          right?.id,
+          parent,
+          null,
+          ContentAny(jsonContent));
+      left!.integrate(transaction, 0);
+      jsonContent = [];
     }
-  }
-  content.forEach(c => {
-    switch (c.constructor) {
-      case Number:
-      case Object:
-      case Boolean:
-      case Array:
-      case String:
-        jsonContent.push(c)
-        break
-      default:
-        packJsonContent()
-        switch (c.constructor) {
-          case Uint8Array:
-          case ArrayBuffer:
-            left = new Item(createID(ownClientId, getState(store, ownClientId)), left, left && left.lastId, right, right && right.id, parent, null, new ContentBinary(new Uint8Array(/** @type {Uint8Array} */ (c))))
-            left.integrate(transaction, 0)
-            break
-          case Doc:
-            left = new Item(createID(ownClientId, getState(store, ownClientId)), left, left && left.lastId, right, right && right.id, parent, null, new ContentDoc(/** @type {Doc} */ (c)))
-            left.integrate(transaction, 0)
-            break
-          default:
-            if (c instanceof AbstractType) {
-              left = new Item(createID(ownClientId, getState(store, ownClientId)), left, left && left.lastId, right, right && right.id, parent, null, new ContentType(c))
-              left.integrate(transaction, 0)
-            } else {
-              throw new Error('Unexpected content type in insert operation')
-            }
-        }
+  };
+  content.forEach((c) {
+    if (c is int ||
+        c is double ||
+        c is num ||
+        c is Map ||
+        c is bool ||
+        c is List ||
+        c is String) {
+      jsonContent.add(c);
+    } else {
+      packJsonContent();
+      // or ArrayBuffer
+      if (c is Uint8List) {
+        left = Item(
+            createID(ownClientId, getState(store, ownClientId)),
+            left,
+            left?.lastId,
+            right,
+            right?.id,
+            parent,
+            null,
+            ContentBinary(/** @type {Uint8Array} */ (c)));
+        left!.integrate(transaction, 0);
+      } else if (c is Doc) {
+        left = Item(
+            createID(ownClientId, getState(store, ownClientId)),
+            left,
+            left?.lastId,
+            right,
+            right?.id,
+            parent,
+            null,
+            ContentDoc(/** @type {Doc} */ (c)));
+        left!.integrate(transaction, 0);
+      } else if (c is AbstractType) {
+        left = Item(createID(ownClientId, getState(store, ownClientId)), left,
+            left?.lastId, right, right?.id, parent, null, ContentType(c));
+        left!.integrate(transaction, 0);
+      } else {
+        throw Exception('Unexpected content type in insert operation');
+      }
     }
-  })
-  packJsonContent()
+  });
+  packJsonContent();
 }
 
 /**
  * @param {Transaction} transaction
  * @param {AbstractType<any>} parent
  * @param {number} index
- * @param {Array<Object<string,any>|Array<any>|number|string|Uint8Array>} content
+ * @param {List<Object<string,any>|List<any>|number|string|Uint8Array>} content
  *
  * @private
  * @function
  */
-export const typeListInsertGenerics = (transaction, parent, index, content) => {
-  if (index === 0) {
-    if (parent._searchMarker) {
-      updateMarkerChanges(parent._searchMarker, index, content.length)
+void typeListInsertGenerics(
+    Transaction transaction, AbstractType parent, int index, dynamic content) {
+  if (index == 0) {
+    if (parent.innerSearchMarker != null) {
+      updateMarkerChanges(parent.innerSearchMarker!, index, content.length);
     }
-    return typeListInsertGenericsAfter(transaction, parent, null, content)
+    return typeListInsertGenericsAfter(transaction, parent, null, content);
   }
-  const startIndex = index
-  const marker = findMarker(parent, index)
-  let n = parent._start
-  if (marker !== null) {
-    n = marker.p
-    index -= marker.index
+  final startIndex = index;
+  final marker = findMarker(parent, index);
+  var n = parent.innerStart;
+  if (marker != null) {
+    n = marker.p;
+    index -= marker.index;
     // we need to iterate one to the left so that the algorithm works
-    if (index === 0) {
+    if (index == 0) {
       // @todo refactor this as it actually doesn't consider formats
-      n = n.prev // important! get the left undeleted item so that we can actually decrease index
-      index += (n && n.countable && !n.deleted) ? n.length : 0
+      n = n
+          .prev; // important! get the left undeleted item so that we can actually decrease index
+      index += (n != null && n.countable && !n.deleted) ? n.length : 0;
     }
   }
-  for (; n !== null; n = n.right) {
+  for (; n != null; n = n.right) {
     if (!n.deleted && n.countable) {
       if (index <= n.length) {
         if (index < n.length) {
           // insert in-between
-          getItemCleanStart(transaction, createID(n.id.client, n.id.clock + index))
+          getItemCleanStart(
+              transaction, createID(n.id.client, n.id.clock + index));
         }
-        break
+        break;
       }
-      index -= n.length
+      index -= n.length;
     }
   }
-  if (parent._searchMarker) {
-    updateMarkerChanges(parent._searchMarker, startIndex, content.length)
+  if (parent.innerSearchMarker != null) {
+    updateMarkerChanges(parent.innerSearchMarker!, startIndex, content.length);
   }
-  return typeListInsertGenericsAfter(transaction, parent, n, content)
+  return typeListInsertGenericsAfter(transaction, parent, n, content);
 }
 
 /**
@@ -728,41 +813,50 @@ export const typeListInsertGenerics = (transaction, parent, index, content) => {
  * @private
  * @function
  */
-export const typeListDelete = (transaction, parent, index, length) => {
-  if (length === 0) { return }
-  const startIndex = index
-  const startLength = length
-  const marker = findMarker(parent, index)
-  let n = parent._start
-  if (marker !== null) {
-    n = marker.p
-    index -= marker.index
+void typeListDelete(
+    Transaction transaction, AbstractType parent, int index, int _length) {
+  var length = _length;
+  if (length == 0) {
+    return;
+  }
+  final startIndex = index;
+  final startLength = length;
+  final marker = findMarker(parent, index);
+  var n = parent.innerStart;
+  if (marker != null) {
+    n = marker.p;
+    index -= marker.index;
   }
   // compute the first item to be deleted
-  for (; n !== null && index > 0; n = n.right) {
+  for (; n != null && index > 0; n = n.right) {
     if (!n.deleted && n.countable) {
       if (index < n.length) {
-        getItemCleanStart(transaction, createID(n.id.client, n.id.clock + index))
+        getItemCleanStart(
+            transaction, createID(n.id.client, n.id.clock + index));
       }
-      index -= n.length
+      index -= n.length;
     }
   }
   // delete all items until done
-  while (length > 0 && n !== null) {
+  while (length > 0 && n != null) {
+    print("length $length");
     if (!n.deleted) {
       if (length < n.length) {
-        getItemCleanStart(transaction, createID(n.id.client, n.id.clock + length))
+        getItemCleanStart(
+            transaction, createID(n.id.client, n.id.clock + length));
       }
-      n.delete(transaction)
-      length -= n.length
+      n.delete(transaction);
+      length -= n.length;
     }
-    n = n.right
+    n = n.right;
   }
+  print("out length $length");
   if (length > 0) {
-    throw error.create('array length exceeded')
+    throw Exception('array length exceeded');
   }
-  if (parent._searchMarker) {
-    updateMarkerChanges(parent._searchMarker, startIndex, -startLength + length /* in case we remove the above exception */)
+  if (parent.innerSearchMarker != null) {
+    updateMarkerChanges(parent.innerSearchMarker!, startIndex,
+        -startLength + length /* in case we remove the above exception */);
   }
 }
 
@@ -774,10 +868,10 @@ export const typeListDelete = (transaction, parent, index, length) => {
  * @private
  * @function
  */
-export const typeMapDelete = (transaction, parent, key) => {
-  const c = parent._map.get(key)
-  if (c !== undefined) {
-    c.delete(transaction)
+void typeMapDelete(Transaction transaction, AbstractType parent, String key) {
+  final c = parent.innerMap.get(key);
+  if (c != null) {
+    c.delete(transaction);
   }
 }
 
@@ -785,75 +879,78 @@ export const typeMapDelete = (transaction, parent, key) => {
  * @param {Transaction} transaction
  * @param {AbstractType<any>} parent
  * @param {string} key
- * @param {Object|number|Array<any>|string|Uint8Array|AbstractType<any>} value
+ * @param {Object|number|List<any>|string|Uint8Array|AbstractType<any>} value
  *
  * @private
  * @function
  */
-export const typeMapSet = (transaction, parent, key, value) => {
-  const left = parent._map.get(key) || null
-  const doc = transaction.doc
-  const ownClientId = doc.clientID
-  let content
+void typeMapSet(
+    Transaction transaction, AbstractType parent, String key, dynamic value) {
+  final left = parent.innerMap.get(key);
+  final doc = transaction.doc;
+  final ownClientId = doc.clientID;
+  var content;
   if (value == null) {
-    content = new ContentAny([value])
+    content = ContentAny([value]);
   } else {
-    switch (value.constructor) {
-      case Number:
-      case Object:
-      case Boolean:
-      case Array:
-      case String:
-        content = new ContentAny([value])
-        break
-      case Uint8Array:
-        content = new ContentBinary(/** @type {Uint8Array} */ (value))
-        break
-      case Doc:
-        content = new ContentDoc(/** @type {Doc} */ (value))
-        break
-      default:
-        if (value instanceof AbstractType) {
-          content = new ContentType(value)
-        } else {
-          throw new Error('Unexpected content type')
-        }
+    if (value is int ||
+        value is num ||
+        value is double ||
+        value is Map ||
+        value is bool ||
+        value is List ||
+        value is String) {
+      content = ContentAny([value]);
+    } else if (value is Uint8List) {
+      content = ContentBinary(/** @type {Uint8Array} */ (value));
+    } else if (value is Doc) {
+      content = ContentDoc(/** @type {Doc} */ (value));
+    } else {
+      if (value is AbstractType) {
+        content = ContentType(value);
+      } else {
+        throw Exception('Unexpected content type');
+      }
     }
   }
-  new Item(createID(ownClientId, getState(doc.store, ownClientId)), left, left && left.lastId, null, null, parent, key, content).integrate(transaction, 0)
+  Item(createID(ownClientId, getState(doc.store, ownClientId)), left,
+          left?.lastId, null, null, parent, key, content)
+      .integrate(transaction, 0);
 }
 
 /**
  * @param {AbstractType<any>} parent
  * @param {string} key
- * @return {Object<string,any>|number|Array<any>|string|Uint8Array|AbstractType<any>|undefined}
+ * @return {Object<string,any>|number|List<any>|string|Uint8Array|AbstractType<any>|undefined}
  *
  * @private
  * @function
  */
-export const typeMapGet = (parent, key) => {
-  const val = parent._map.get(key)
-  return val !== undefined && !val.deleted ? val.content.getContent()[val.length - 1] : undefined
+dynamic typeMapGet(AbstractType parent, String key) {
+  final val = parent.innerMap.get(key);
+  return val != null && !val.deleted
+      ? val.content.getContent()[val.length - 1]
+      : null;
 }
 
 /**
  * @param {AbstractType<any>} parent
- * @return {Object<string,Object<string,any>|number|Array<any>|string|Uint8Array|AbstractType<any>|undefined>}
+ * @return {Object<string,Object<string,any>|number|List<any>|string|Uint8Array|AbstractType<any>|undefined>}
  *
  * @private
  * @function
  */
-export const typeMapGetAll = (parent) => {
+dynamic typeMapGetAll(AbstractType parent) {
   /**
    * @type {Object<string,any>}
    */
-  const res = {}
-  parent._map.forEach((value, key) => {
+  final res = <String, dynamic>{};
+  parent.innerMap.forEach((key, value) {
     if (!value.deleted) {
-      res[key] = value.content.getContent()[value.length - 1]
+      res[key] = value.content.getContent()[value.length - 1];
     }
-  })
-  return res
+  });
+  return res;
 }
 
 /**
@@ -864,33 +961,38 @@ export const typeMapGetAll = (parent) => {
  * @private
  * @function
  */
-export const typeMapHas = (parent, key) => {
-  const val = parent._map.get(key)
-  return val !== undefined && !val.deleted
+bool typeMapHas(AbstractType parent, String key) {
+  final val = parent.innerMap.get(key);
+  return val != null && !val.deleted;
 }
 
 /**
  * @param {AbstractType<any>} parent
  * @param {string} key
  * @param {Snapshot} snapshot
- * @return {Object<string,any>|number|Array<any>|string|Uint8Array|AbstractType<any>|undefined}
+ * @return {Object<string,any>|number|List<any>|string|Uint8Array|AbstractType<any>|undefined}
  *
  * @private
  * @function
  */
-export const typeMapGetSnapshot = (parent, key, snapshot) => {
-  let v = parent._map.get(key) || null
-  while (v !== null && (!snapshot.sv.has(v.id.client) || v.id.clock >= (snapshot.sv.get(v.id.client) || 0))) {
-    v = v.left
+dynamic typeMapGetSnapshot(AbstractType parent, String key, Snapshot snapshot) {
+  var v = parent.innerMap.get(key);
+  while (v != null &&
+      (!snapshot.sv.containsKey(v.id.client) ||
+          v.id.clock >= (snapshot.sv.get(v.id.client) ?? 0))) {
+    v = v.left;
   }
-  return v !== null && isVisible(v, snapshot) ? v.content.getContent()[v.length - 1] : undefined
+  return v != null && isVisible(v, snapshot)
+      ? v.content.getContent()[v.length - 1]
+      : null;
 }
 
 /**
  * @param {Map<string,Item>} map
- * @return {IterableIterator<Array<any>>}
+ * @return {IterableIterator<List<any>>}
  *
  * @private
  * @function
  */
-export const createMapIterator = map => iterator.iteratorFilter(map.entries(), /** @param {any} entry */ entry => !entry[1].deleted)
+Iterable<MapEntry<String, Item>> createMapIterator(Map<String, Item> map) =>
+    map.entries.where((entry) => !entry.value.deleted);

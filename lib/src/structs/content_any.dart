@@ -1,96 +1,108 @@
-import {
-  AbstractUpdateDecoder, AbstractUpdateEncoder, Transaction, Item, StructStore // eslint-disable-line
-} from '../internals.js'
+// import {
+//   AbstractUpdateDecoder,
+//   AbstractUpdateEncoder,
+//   Transaction,
+//   Item,
+//   StructStore, // eslint-disable-line
+// } from "../internals.js";
 
-export class ContentAny {
+import 'package:y_crdt/src/structs/item.dart';
+import 'package:y_crdt/src/utils/struct_store.dart';
+import 'package:y_crdt/src/utils/transaction.dart';
+import 'package:y_crdt/src/utils/update_decoder.dart';
+import 'package:y_crdt/src/utils/update_encoder.dart';
+
+class ContentAny implements AbstractContent {
   /**
-   * @param {Array<any>} arr
+   * @param {List<any>} arr
    */
-  constructor (arr) {
-    /**
-     * @type {Array<any>}
-     */
-    this.arr = arr
-  }
+  ContentAny(this.arr);
+  List<dynamic> arr;
 
   /**
    * @return {number}
    */
-  getLength () {
-    return this.arr.length
+  int getLength() {
+    return this.arr.length;
   }
 
   /**
-   * @return {Array<any>}
+   * @return {List<any>}
    */
-  getContent () {
-    return this.arr
+  List<dynamic> getContent() {
+    return this.arr;
   }
 
   /**
    * @return {boolean}
    */
-  isCountable () {
-    return true
+  bool isCountable() {
+    return true;
   }
 
   /**
    * @return {ContentAny}
    */
-  copy () {
-    return new ContentAny(this.arr)
+  ContentAny copy() {
+    return ContentAny(this.arr);
   }
 
   /**
    * @param {number} offset
    * @return {ContentAny}
    */
-  splice (offset) {
-    const right = new ContentAny(this.arr.slice(offset))
-    this.arr = this.arr.slice(0, offset)
-    return right
+  ContentAny splice(int offset) {
+    final right = ContentAny(this.arr.sublist(offset));
+    this.arr = this.arr.sublist(0, offset);
+    return right;
   }
 
   /**
    * @param {ContentAny} right
    * @return {boolean}
    */
-  mergeWith (right) {
-    this.arr = this.arr.concat(right.arr)
-    return true
+  bool mergeWith(AbstractContent right) {
+    if (right is ContentAny) {
+      this.arr = [...this.arr, ...right.arr];
+      return true;
+    } else {
+      return false;
+    }
   }
 
   /**
    * @param {Transaction} transaction
    * @param {Item} item
    */
-  integrate (transaction, item) {}
+  void integrate(transaction, item) {}
   /**
    * @param {Transaction} transaction
    */
-  delete (transaction) {}
+  void delete(Transaction transaction) {
+    print("delete ContentAny");
+  }
   /**
    * @param {StructStore} store
    */
-  gc (store) {}
+  void gc(StructStore store) {}
   /**
    * @param {AbstractUpdateEncoder} encoder
    * @param {number} offset
    */
-  write (encoder, offset) {
-    const len = this.arr.length
-    encoder.writeLen(len - offset)
-    for (let i = offset; i < len; i++) {
-      const c = this.arr[i]
-      encoder.writeAny(c)
+  void write(AbstractUpdateEncoder encoder,int offset) {
+    final len = this.arr.length;
+    encoder.writeLen(len - offset);
+    for (var i = offset; i < len; i++) {
+      final c = this.arr[i];
+      encoder.writeAny(c);
     }
   }
 
   /**
    * @return {number}
    */
-  getRef () {
-    return 8
+  int getRef() {
+    return 8;
   }
 }
 
@@ -98,11 +110,11 @@ export class ContentAny {
  * @param {AbstractUpdateDecoder} decoder
  * @return {ContentAny}
  */
-export const readContentAny = decoder => {
-  const len = decoder.readLen()
-  const cs = []
-  for (let i = 0; i < len; i++) {
-    cs.push(decoder.readAny())
+ContentAny readContentAny(AbstractUpdateDecoder decoder) {
+  final len = decoder.readLen();
+  final cs = [];
+  for (var i = 0; i < len; i++) {
+    cs.add(decoder.readAny());
   }
-  return new ContentAny(cs)
+  return ContentAny(cs);
 }

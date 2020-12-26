@@ -1,33 +1,51 @@
+// import {
+//   findIndexSS,
+//   getState,
+//   splitItem,
+//   iterateStructs,
+//   AbstractUpdateDecoder,
+//   AbstractDSDecoder,
+//   AbstractDSEncoder,
+//   DSDecoderV2,
+//   DSEncoderV2,
+//   Item,
+//   GC,
+//   StructStore,
+//   Transaction,
+//   ID, // eslint-disable-line
+// } from "../internals.js";
 
-import {
-  findIndexSS,
-  getState,
-  splitItem,
-  iterateStructs,
-  AbstractUpdateDecoder, AbstractDSDecoder, AbstractDSEncoder, DSDecoderV2, DSEncoderV2, Item, GC, StructStore, Transaction, ID // eslint-disable-line
-} from '../internals.js'
+// import * as array from "lib0/array.js";
+// import * as math from "lib0/math.js";
+// import * as map from "lib0/map.js";
+// import * as encoding from "lib0/encoding.js";
+// import * as decoding from "lib0/decoding.js";
 
-import * as array from 'lib0/array.js'
-import * as math from 'lib0/math.js'
-import * as map from 'lib0/map.js'
-import * as encoding from 'lib0/encoding.js'
-import * as decoding from 'lib0/decoding.js'
+import 'package:y_crdt/src/structs/abstract_struct.dart';
+import 'package:y_crdt/src/structs/item.dart';
+import 'package:y_crdt/src/utils/id.dart';
+import 'package:y_crdt/src/utils/struct_store.dart';
+import 'package:y_crdt/src/utils/transaction.dart';
+import 'package:y_crdt/src/utils/update_decoder.dart';
+import 'package:y_crdt/src/utils/update_encoder.dart';
+import 'package:y_crdt/src/y_crdt_base.dart';
+import 'package:y_crdt/src/lib0/decoding.dart' as decoding;
+import 'package:y_crdt/src/lib0/encoding.dart' as encoding;
 
-export class DeleteItem {
+class DeleteItem {
   /**
    * @param {number} clock
    * @param {number} len
    */
-  constructor (clock, len) {
-    /**
+  DeleteItem(this.clock, this.len);
+  /**
      * @type {number}
      */
-    this.clock = clock
-    /**
+  final int clock;
+  /**
      * @type {number}
      */
-    this.len = len
-  }
+  int len;
 }
 
 /**
@@ -37,13 +55,12 @@ export class DeleteItem {
  * - We do not create a DeleteSet when we send a sync message. The DeleteSet message is created directly from StructStore
  * - We read a DeleteSet as part of a sync/update message. In this case the DeleteSet is already sorted and merged.
  */
-export class DeleteSet {
-  constructor () {
-    /**
-     * @type {Map<number,Array<DeleteItem>>}
+class DeleteSet {
+  DeleteSet();
+  /**
+     * @type {Map<number,List<DeleteItem>>}
      */
-    this.clients = new Map()
-  }
+  final clients = <int, List<DeleteItem>>{};
 }
 
 /**
@@ -55,40 +72,43 @@ export class DeleteSet {
  *
  * @function
  */
-export const iterateDeletedStructs = (transaction, ds, f) =>
-  ds.clients.forEach((deletes, clientid) => {
-    const structs = /** @type {Array<GC|Item>} */ (transaction.doc.store.clients.get(clientid))
-    for (let i = 0; i < deletes.length; i++) {
-      const del = deletes[i]
-      iterateStructs(transaction, structs, del.clock, del.len, f)
-    }
-  })
+void iterateDeletedStructs(Transaction transaction, DeleteSet ds,
+        void Function(AbstractStruct) f) =>
+    ds.clients.forEach((clientid, deletes) {
+      final structs = /** @type {List<GC|Item>} */ (transaction
+          .doc.store.clients
+          .get(clientid));
+      for (var i = 0; i < deletes.length; i++) {
+        final del = deletes[i];
+        iterateStructs(transaction, structs!, del.clock, del.len, f);
+      }
+    });
 
 /**
- * @param {Array<DeleteItem>} dis
+ * @param {List<DeleteItem>} dis
  * @param {number} clock
  * @return {number|null}
  *
  * @private
  * @function
  */
-export const findIndexDS = (dis, clock) => {
-  let left = 0
-  let right = dis.length - 1
+int? findIndexDS(List<DeleteItem> dis, int clock) {
+  var left = 0;
+  var right = dis.length - 1;
   while (left <= right) {
-    const midindex = math.floor((left + right) / 2)
-    const mid = dis[midindex]
-    const midclock = mid.clock
+    final midindex = ((left + right) / 2).floor();
+    final mid = dis[midindex];
+    final midclock = mid.clock;
     if (midclock <= clock) {
       if (clock < midclock + mid.len) {
-        return midindex
+        return midindex;
       }
-      left = midindex + 1
+      left = midindex + 1;
     } else {
-      right = midindex - 1
+      right = midindex - 1;
     }
   }
-  return null
+  return null;
 }
 
 /**
@@ -99,9 +119,9 @@ export const findIndexDS = (dis, clock) => {
  * @private
  * @function
  */
-export const isDeleted = (ds, id) => {
-  const dis = ds.clients.get(id.client)
-  return dis !== undefined && findIndexDS(dis, id.clock) !== null
+bool isDeleted(DeleteSet ds, ID id) {
+  final dis = ds.clients.get(id.client);
+  return dis != null && findIndexDS(dis, id.clock) != null;
 }
 
 /**
@@ -110,54 +130,54 @@ export const isDeleted = (ds, id) => {
  * @private
  * @function
  */
-export const sortAndMergeDeleteSet = ds => {
-  ds.clients.forEach(dels => {
-    dels.sort((a, b) => a.clock - b.clock)
+void sortAndMergeDeleteSet(DeleteSet ds) {
+  ds.clients.forEach((_, dels) {
+    dels.sort((a, b) => a.clock - b.clock);
     // merge items without filtering or splicing the array
     // i is the current pointer
     // j refers to the current insert position for the pointed item
     // try to merge dels[i] into dels[j-1] or set dels[j]=dels[i]
-    let i, j
-    for (i = 1, j = 1; i < dels.length; i++) {
-      const left = dels[j - 1]
-      const right = dels[i]
-      if (left.clock + left.len === right.clock) {
-        left.len += right.len
+    var i = 1, j = 1;
+    for (; i < dels.length; i++) {
+      final left = dels[j - 1];
+      final right = dels[i];
+      if (left.clock + left.len == right.clock) {
+        left.len += right.len;
       } else {
         if (j < i) {
-          dels[j] = right
+          dels[j] = right;
         }
-        j++
+        j++;
       }
     }
-    dels.length = j
-  })
+    dels.length = j;
+  });
 }
 
 /**
- * @param {Array<DeleteSet>} dss
+ * @param {List<DeleteSet>} dss
  * @return {DeleteSet} A fresh DeleteSet
  */
-export const mergeDeleteSets = dss => {
-  const merged = new DeleteSet()
-  for (let dssI = 0; dssI < dss.length; dssI++) {
-    dss[dssI].clients.forEach((delsLeft, client) => {
-      if (!merged.clients.has(client)) {
+DeleteSet mergeDeleteSets(List<DeleteSet> dss) {
+  final merged = DeleteSet();
+  for (var dssI = 0; dssI < dss.length; dssI++) {
+    dss[dssI].clients.forEach((client, delsLeft) {
+      if (!merged.clients.containsKey(client)) {
         // Write all missing keys from current ds and all following.
         // If merged already contains `client` current ds has already been added.
         /**
-         * @type {Array<DeleteItem>}
+         * @type {List<DeleteItem>}
          */
-        const dels = delsLeft.slice()
-        for (let i = dssI + 1; i < dss.length; i++) {
-          array.appendTo(dels, dss[i].clients.get(client) || [])
+        final dels = [...delsLeft];
+        for (var i = dssI + 1; i < dss.length; i++) {
+          dels.addAll(dss[i].clients.get(client) ?? []);
         }
-        merged.clients.set(client, dels)
+        merged.clients.set(client, dels);
       }
-    })
+    });
   }
-  sortAndMergeDeleteSet(merged)
-  return merged
+  sortAndMergeDeleteSet(merged);
+  return merged;
 }
 
 /**
@@ -169,11 +189,12 @@ export const mergeDeleteSets = dss => {
  * @private
  * @function
  */
-export const addToDeleteSet = (ds, client, clock, length) => {
-  map.setIfUndefined(ds.clients, client, () => []).push(new DeleteItem(clock, length))
+void addToDeleteSet(DeleteSet ds, int client, int clock, int length) {
+  print("addToDeleteSet !!");
+  ds.clients.putIfAbsent(client, () => []).add(DeleteItem(clock, length));
 }
 
-export const createDeleteSet = () => new DeleteSet()
+DeleteSet createDeleteSet() => DeleteSet();
 
 /**
  * @param {StructStore} ss
@@ -182,31 +203,35 @@ export const createDeleteSet = () => new DeleteSet()
  * @private
  * @function
  */
-export const createDeleteSetFromStructStore = ss => {
-  const ds = createDeleteSet()
-  ss.clients.forEach((structs, client) => {
+DeleteSet createDeleteSetFromStructStore(StructStore ss) {
+  final ds = createDeleteSet();
+  ss.clients.forEach((client, structs) {
     /**
-     * @type {Array<DeleteItem>}
+     * @type {List<DeleteItem>}
      */
-    const dsitems = []
-    for (let i = 0; i < structs.length; i++) {
-      const struct = structs[i]
+    final dsitems = <DeleteItem>[];
+    for (var i = 0; i < structs.length; i++) {
+      final struct = structs[i];
       if (struct.deleted) {
-        const clock = struct.id.clock
-        let len = struct.length
+        final clock = struct.id.clock;
+        var len = struct.length;
         if (i + 1 < structs.length) {
-          for (let next = structs[i + 1]; i + 1 < structs.length && next.id.clock === clock + len && next.deleted; next = structs[++i + 1]) {
-            len += next.length
+          for (var next = structs[i + 1];
+              i + 1 < structs.length &&
+                  next.id.clock == clock + len &&
+                  next.deleted;
+              next = structs[++i + 1]) {
+            len += next.length;
           }
         }
-        dsitems.push(new DeleteItem(clock, len))
+        dsitems.add(DeleteItem(clock, len));
       }
     }
     if (dsitems.length > 0) {
-      ds.clients.set(client, dsitems)
+      ds.clients.set(client, dsitems);
     }
-  })
-  return ds
+  });
+  return ds;
 }
 
 /**
@@ -216,19 +241,19 @@ export const createDeleteSetFromStructStore = ss => {
  * @private
  * @function
  */
-export const writeDeleteSet = (encoder, ds) => {
-  encoding.writeVarUint(encoder.restEncoder, ds.clients.size)
-  ds.clients.forEach((dsitems, client) => {
-    encoder.resetDsCurVal()
-    encoding.writeVarUint(encoder.restEncoder, client)
-    const len = dsitems.length
-    encoding.writeVarUint(encoder.restEncoder, len)
-    for (let i = 0; i < len; i++) {
-      const item = dsitems[i]
-      encoder.writeDsClock(item.clock)
-      encoder.writeDsLen(item.len)
+void writeDeleteSet(AbstractDSEncoder encoder, DeleteSet ds) {
+  encoding.writeVarUint(encoder.restEncoder, ds.clients.length);
+  ds.clients.forEach((client, dsitems) {
+    encoder.resetDsCurVal();
+    encoding.writeVarUint(encoder.restEncoder, client);
+    final len = dsitems.length;
+    encoding.writeVarUint(encoder.restEncoder, len);
+    for (var i = 0; i < len; i++) {
+      final item = dsitems[i];
+      encoder.writeDsClock(item.clock);
+      encoder.writeDsLen(item.len);
     }
-  })
+  });
 }
 
 /**
@@ -238,21 +263,21 @@ export const writeDeleteSet = (encoder, ds) => {
  * @private
  * @function
  */
-export const readDeleteSet = decoder => {
-  const ds = new DeleteSet()
-  const numClients = decoding.readVarUint(decoder.restDecoder)
-  for (let i = 0; i < numClients; i++) {
-    decoder.resetDsCurVal()
-    const client = decoding.readVarUint(decoder.restDecoder)
-    const numberOfDeletes = decoding.readVarUint(decoder.restDecoder)
+DeleteSet readDeleteSet(AbstractDSDecoder decoder) {
+  final ds = DeleteSet();
+  final numClients = decoding.readVarUint(decoder.restDecoder);
+  for (var i = 0; i < numClients; i++) {
+    decoder.resetDsCurVal();
+    final client = decoding.readVarUint(decoder.restDecoder);
+    final numberOfDeletes = decoding.readVarUint(decoder.restDecoder);
     if (numberOfDeletes > 0) {
-      const dsField = map.setIfUndefined(ds.clients, client, () => [])
-      for (let i = 0; i < numberOfDeletes; i++) {
-        dsField.push(new DeleteItem(decoder.readDsClock(), decoder.readDsLen()))
+      final dsField = ds.clients.putIfAbsent(client, () => []);
+      for (var i = 0; i < numberOfDeletes; i++) {
+        dsField.add(DeleteItem(decoder.readDsClock(), decoder.readDsLen()));
       }
     }
   }
-  return ds
+  return ds;
 }
 
 /**
@@ -267,57 +292,61 @@ export const readDeleteSet = decoder => {
  * @private
  * @function
  */
-export const readAndApplyDeleteSet = (decoder, transaction, store) => {
-  const unappliedDS = new DeleteSet()
-  const numClients = decoding.readVarUint(decoder.restDecoder)
-  for (let i = 0; i < numClients; i++) {
-    decoder.resetDsCurVal()
-    const client = decoding.readVarUint(decoder.restDecoder)
-    const numberOfDeletes = decoding.readVarUint(decoder.restDecoder)
-    const structs = store.clients.get(client) || []
-    const state = getState(store, client)
-    for (let i = 0; i < numberOfDeletes; i++) {
-      const clock = decoder.readDsClock()
-      const clockEnd = clock + decoder.readDsLen()
+void readAndApplyDeleteSet(
+    AbstractDSDecoder decoder, Transaction transaction, StructStore store) {
+  final unappliedDS = DeleteSet();
+  final numClients = decoding.readVarUint(decoder.restDecoder);
+  for (var i = 0; i < numClients; i++) {
+    decoder.resetDsCurVal();
+    final client = decoding.readVarUint(decoder.restDecoder);
+    final numberOfDeletes = decoding.readVarUint(decoder.restDecoder);
+    final structs = store.clients.get(client) ?? [];
+    final state = getState(store, client);
+    for (var i = 0; i < numberOfDeletes; i++) {
+      final clock = decoder.readDsClock();
+      final clockEnd = clock + decoder.readDsLen();
       if (clock < state) {
         if (state < clockEnd) {
-          addToDeleteSet(unappliedDS, client, state, clockEnd - state)
+          addToDeleteSet(unappliedDS, client, state, clockEnd - state);
         }
-        let index = findIndexSS(structs, clock)
+        var index = findIndexSS(structs, clock);
         /**
          * We can ignore the case of GC and Delete structs, because we are going to skip them
          * @type {Item}
          */
         // @ts-ignore
-        let struct = structs[index]
+        var struct = structs[index] as Item;
         // split the first item if necessary
         if (!struct.deleted && struct.id.clock < clock) {
-          structs.splice(index + 1, 0, splitItem(transaction, struct, clock - struct.id.clock))
-          index++ // increase we now want to use the next struct
+          structs.insert(index + 1,
+              splitItem(transaction, struct, clock - struct.id.clock));
+          index++; // increase we now want to use the next struct
         }
         while (index < structs.length) {
           // @ts-ignore
-          struct = structs[index++]
+          struct = structs[index++] as Item;
           if (struct.id.clock < clockEnd) {
             if (!struct.deleted) {
               if (clockEnd < struct.id.clock + struct.length) {
-                structs.splice(index, 0, splitItem(transaction, struct, clockEnd - struct.id.clock))
+                structs.insert(index, 
+                    splitItem(transaction, struct, clockEnd - struct.id.clock));
               }
-              struct.delete(transaction)
+              struct.delete(transaction);
             }
           } else {
-            break
+            break;
           }
         }
       } else {
-        addToDeleteSet(unappliedDS, client, clock, clockEnd - clock)
+        addToDeleteSet(unappliedDS, client, clock, clockEnd - clock);
       }
     }
   }
-  if (unappliedDS.clients.size > 0) {
+  if (unappliedDS.clients.length > 0) {
     // TODO: no need for encoding+decoding ds anymore
-    const unappliedDSEncoder = new DSEncoderV2()
-    writeDeleteSet(unappliedDSEncoder, unappliedDS)
-    store.pendingDeleteReaders.push(new DSDecoderV2(decoding.createDecoder((unappliedDSEncoder.toUint8Array()))))
+    final unappliedDSEncoder = DSEncoderV2();
+    writeDeleteSet(unappliedDSEncoder, unappliedDS);
+    store.pendingDeleteReaders.add(
+        DSDecoderV2(decoding.createDecoder(unappliedDSEncoder.toUint8Array())));
   }
 }

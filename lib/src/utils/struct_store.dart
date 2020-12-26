@@ -1,39 +1,131 @@
+// import {
+//   GC,
+//   splitItem,
+//   Transaction,
+//   ID,
+//   Item,
+//   DSDecoderV2, // eslint-disable-line
+// } from "../internals.js";
 
-import '.'{
-  GC,
-  splitItem,
-  Transaction, ID, Item, DSDecoderV2 // eslint-disable-line
-} from '../internals.js'
+// import * as math from "lib0/math.js";
+// import * as error from "lib0/error.js";
 
-import '.'* as math from 'lib0/math.js'
-import '.'* as error from 'lib0/error.js'
+import 'package:y_crdt/src/structs/abstract_struct.dart';
+import 'package:y_crdt/src/structs/gc.dart';
+import 'package:y_crdt/src/structs/item.dart';
+import 'package:y_crdt/src/utils/id.dart';
+import 'package:y_crdt/src/utils/transaction.dart';
+import 'package:y_crdt/src/utils/update_decoder.dart';
+import 'package:y_crdt/src/y_crdt_base.dart';
 
-export '.'class StructStore {
-  constructor () {
-    /**
-     * @type {Map<number,Array<GC|Item>>}
+class Pair<L, R> {
+  final L left;
+  final R right;
+
+  Pair(this.left, this.right);
+}
+
+abstract class Either<L, R> {
+  const Either._();
+
+  const factory Either.left(
+    L value,
+  ) = _Left;
+  const factory Either.right(
+    R value,
+  ) = _Right;
+
+  T when<T>({
+    required T Function(L value) left,
+    required T Function(R value) right,
+  }) {
+    final v = this;
+    if (v is _Left<L, R>) return left(v.value);
+    if (v is _Right<L, R>) return right(v.value);
+    throw "";
+  }
+
+  T? maybeWhen<T>({
+    T Function()? orElse,
+    T Function(L value)? left,
+    T Function(R value)? right,
+  }) {
+    final v = this;
+    if (v is _Left<L, R>) return left != null ? left(v.value) : orElse?.call();
+    if (v is _Right<L, R>)
+      return right != null ? right(v.value) : orElse?.call();
+    throw "";
+  }
+
+  T map<T>({
+    required T Function(_Left value) left,
+    required T Function(_Right value) right,
+  }) {
+    final v = this;
+    if (v is _Left<L, R>) return left(v);
+    if (v is _Right<L, R>) return right(v);
+    throw "";
+  }
+
+  T? maybeMap<T>({
+    T Function()? orElse,
+    T Function(_Left value)? left,
+    T Function(_Right value)? right,
+  }) {
+    final v = this;
+    if (v is _Left<L, R>) return left != null ? left(v) : orElse?.call();
+    if (v is _Right<L, R>) return right != null ? right(v) : orElse?.call();
+    throw "";
+  }
+}
+
+class _Left<L, R> extends Either<L, R> {
+  final L value;
+
+  const _Left(
+    this.value,
+  ) : super._();
+}
+
+class _Right<L, R> extends Either<L, R> {
+  final R value;
+
+  const _Right(
+    this.value,
+  ) : super._();
+}
+
+class PendingStructRef {
+  int i;
+  List<AbstractStruct> refs;
+
+  PendingStructRef({required this.i, required this.refs});
+}
+
+class StructStore {
+  /**
+     * @type {Map<number,List<GC|Item>>}
      */
-    this.clients = new Map()
-    /**
+  final clients = <int, List<AbstractStruct>>{};
+  /**
      * Store incompleted struct reads here
      * `i` denotes to the next read operation
      * We could shift the array of refs instead, but shift is incredible
      * slow in Chrome for arrays with more than 100k elements
      * @see tryResumePendingStructRefs
-     * @type {Map<number,{i:number,refs:Array<GC|Item>}>}
+     * @type {Map<number,{i:number,refs:List<GC|Item>}>}
      */
-    this.pendingClientsStructRefs = new Map()
-    /**
+  final pendingClientsStructRefs = <int, PendingStructRef>{};
+  /**
      * Stack of pending structs waiting for struct dependencies
      * Maximum length of stack is structReaders.size
-     * @type {Array<GC|Item>}
+     * @type {List<GC|Item>}
      */
-    this.pendingStack = []
-    /**
-     * @type {Array<DSDecoderV2>}
+  final pendingStack = <AbstractStruct>[];
+  /**
+     * @type {List<DSDecoderV2>}
      */
-    this.pendingDeleteReaders = []
-  }
+  List<DSDecoderV2> pendingDeleteReaders = [];
 }
 
 /**
@@ -46,13 +138,13 @@ export '.'class StructStore {
  * @public
  * @function
  */
-export '.'const getStateVector = store => {
-  const sm = new Map()
-  store.clients.forEach((structs, client) => {
-    const struct = structs[structs.length - 1]
-    sm.set(client, struct.id.clock + struct.length)
-  })
-  return sm
+Map<int, int> getStateVector(StructStore store) {
+  final sm = <int, int>{};
+  store.clients.forEach((client, structs) {
+    final struct = structs[structs.length - 1];
+    sm.set(client, struct.id.clock + struct.length);
+  });
+  return sm;
 }
 
 /**
@@ -63,13 +155,13 @@ export '.'const getStateVector = store => {
  * @public
  * @function
  */
-export '.'const getState = (store, client) => {
-  const structs = store.clients.get(client)
-  if (structs === undefined) {
-    return 0
+int getState(StructStore store, int client) {
+  final structs = store.clients.get(client);
+  if (structs == null) {
+    return 0;
   }
-  const lastStruct = structs[structs.length - 1]
-  return lastStruct.id.clock + lastStruct.length
+  final lastStruct = structs[structs.length - 1];
+  return lastStruct.id.clock + lastStruct.length;
 }
 
 /**
@@ -78,16 +170,16 @@ export '.'const getState = (store, client) => {
  * @private
  * @function
  */
-export '.'const integretyCheck = store => {
-  store.clients.forEach(structs => {
-    for (let i = 1; i < structs.length; i++) {
-      const l = structs[i - 1]
-      const r = structs[i]
-      if (l.id.clock + l.length !== r.id.clock) {
-        throw new Error('StructStore failed integrety check')
+void integretyCheck(StructStore store) {
+  store.clients.values.forEach((structs) {
+    for (var i = 1; i < structs.length; i++) {
+      final l = structs[i - 1];
+      final r = structs[i];
+      if (l.id.clock + l.length != r.id.clock) {
+        throw Exception('StructStore failed integrety check');
       }
     }
-  })
+  });
 }
 
 /**
@@ -97,57 +189,58 @@ export '.'const integretyCheck = store => {
  * @private
  * @function
  */
-export '.'const addStruct = (store, struct) => {
-  let structs = store.clients.get(struct.id.client)
-  if (structs === undefined) {
-    structs = []
-    store.clients.set(struct.id.client, structs)
+void addStruct(StructStore store, AbstractStruct struct) {
+  var structs = store.clients.get(struct.id.client);
+  if (structs == null) {
+    structs = [];
+    store.clients.set(struct.id.client, structs);
   } else {
-    const lastStruct = structs[structs.length - 1]
-    if (lastStruct.id.clock + lastStruct.length !== struct.id.clock) {
-      throw error.unexpectedCase()
+    final lastStruct = structs[structs.length - 1];
+    if (lastStruct.id.clock + lastStruct.length != struct.id.clock) {
+      throw Exception('Unexpected case');
     }
   }
-  structs.push(struct)
+  structs.add(struct);
 }
 
 /**
  * Perform a binary search on a sorted array
- * @param {Array<Item|GC>} structs
+ * @param {List<Item|GC>} structs
  * @param {number} clock
  * @return {number}
  *
  * @private
  * @function
  */
-export '.'const findIndexSS = (structs, clock) => {
-  let left = 0
-  let right = structs.length - 1
-  let mid = structs[right]
-  let midclock = mid.id.clock
-  if (midclock === clock) {
-    return right
+int findIndexSS(List<AbstractStruct> structs, int clock) {
+  var left = 0;
+  var right = structs.length - 1;
+  var mid = structs[right];
+  var midclock = mid.id.clock;
+  if (midclock == clock) {
+    return right;
   }
   // @todo does it even make sense to pivot the search?
   // If a good split misses, it might actually increase the time to find the correct item.
   // Currently, the only advantage is that search with pivoting might find the item on the first try.
-  let midindex = math.floor((clock / (midclock + mid.length - 1)) * right) // pivoting the search
+  var midindex = ((clock / (midclock + mid.length - 1)) * right)
+      .floor(); // pivoting the search
   while (left <= right) {
-    mid = structs[midindex]
-    midclock = mid.id.clock
+    mid = structs[midindex];
+    midclock = mid.id.clock;
     if (midclock <= clock) {
       if (clock < midclock + mid.length) {
-        return midindex
+        return midindex;
       }
-      left = midindex + 1
+      left = midindex + 1;
     } else {
-      right = midindex - 1
+      right = midindex - 1;
     }
-    midindex = math.floor((left + right) / 2)
+    midindex = ((left + right) / 2).floor();
   }
   // Always check state before looking for a struct in StructStore
   // Therefore the case of not finding a struct is unexpected
-  throw error.unexpectedCase()
+  throw Exception('Unexpected case');
 }
 
 /**
@@ -160,13 +253,13 @@ export '.'const findIndexSS = (structs, clock) => {
  * @private
  * @function
  */
-export '.'const find = (store, id) => {
+AbstractStruct find(StructStore store, ID id) {
   /**
-   * @type {Array<GC|Item>}
+   * @type {List<GC|Item>}
    */
   // @ts-ignore
-  const structs = store.clients.get(id.client)
-  return structs[findIndexSS(structs, id.clock)]
+  final structs = store.clients.get(id.client)!;
+  return structs[findIndexSS(structs, id.clock)];
 }
 
 /**
@@ -174,21 +267,23 @@ export '.'const find = (store, id) => {
  * @private
  * @function
  */
-export '.'const getItem = /** @type {function(StructStore,ID):Item} */ (find)
+final getItem = /** @type {function(StructStore,ID):Item} */ (find);
 
 /**
  * @param {Transaction} transaction
- * @param {Array<Item|GC>} structs
+ * @param {List<Item|GC>} structs
  * @param {number} clock
  */
-export '.'const findIndexCleanStart = (transaction, structs, clock) => {
-  const index = findIndexSS(structs, clock)
-  const struct = structs[index]
-  if (struct.id.clock < clock && struct instanceof Item) {
-    structs.splice(index + 1, 0, splitItem(transaction, struct, clock - struct.id.clock))
-    return index + 1
+int findIndexCleanStart(
+    Transaction transaction, List<AbstractStruct> structs, int clock) {
+  final index = findIndexSS(structs, clock);
+  final struct = structs[index];
+  if (struct.id.clock < clock && struct is Item) {
+    structs.insert(
+        index + 1, splitItem(transaction, struct, clock - struct.id.clock));
+    return index + 1;
   }
-  return index
+  return index;
 }
 
 /**
@@ -201,9 +296,10 @@ export '.'const findIndexCleanStart = (transaction, structs, clock) => {
  * @private
  * @function
  */
-export '.'const getItemCleanStart = (transaction, id) => {
-  const structs = /** @type {Array<Item>} */ (transaction.doc.store.clients.get(id.client))
-  return structs[findIndexCleanStart(transaction, structs, id.clock)]
+Item getItemCleanStart(Transaction transaction, ID id) {
+  final structs = /** @type {List<Item>} */ (transaction.doc.store.clients
+      .get(id.client))!;
+  return structs[findIndexCleanStart(transaction, structs, id.clock)] as Item;
 }
 
 /**
@@ -217,18 +313,19 @@ export '.'const getItemCleanStart = (transaction, id) => {
  * @private
  * @function
  */
-export '.'const getItemCleanEnd = (transaction, store, id) => {
+Item getItemCleanEnd(Transaction transaction, StructStore store, ID id) {
   /**
-   * @type {Array<Item>}
+   * @type {List<Item>}
    */
   // @ts-ignore
-  const structs = store.clients.get(id.client)
-  const index = findIndexSS(structs, id.clock)
-  const struct = structs[index]
-  if (id.clock !== struct.id.clock + struct.length - 1 && struct.constructor !== GC) {
-    structs.splice(index + 1, 0, splitItem(transaction, struct, id.clock - struct.id.clock + 1))
+  final structs = store.clients.get(id.client)!;
+  final index = findIndexSS(structs, id.clock);
+  final struct = structs[index] as Item;
+  if (id.clock != struct.id.clock + struct.length - 1 && struct is! GC) {
+    structs.insert(index + 1,
+        splitItem(transaction, struct, id.clock - struct.id.clock + 1));
   }
-  return struct
+  return struct;
 }
 
 /**
@@ -240,34 +337,42 @@ export '.'const getItemCleanEnd = (transaction, store, id) => {
  * @private
  * @function
  */
-export '.'const replaceStruct = (store, struct, newStruct) => {
-  const structs = /** @type {Array<GC|Item>} */ (store.clients.get(struct.id.client))
-  structs[findIndexSS(structs, struct.id.clock)] = newStruct
+void replaceStruct(
+    StructStore store, AbstractStruct struct, AbstractStruct newStruct) {
+  final structs = /** @type {List<GC|Item>} */ (store.clients
+      .get(struct.id.client))!;
+  structs[findIndexSS(structs, struct.id.clock)] = newStruct;
 }
 
 /**
  * Iterate over a range of structs
  *
  * @param {Transaction} transaction
- * @param {Array<Item|GC>} structs
+ * @param {List<Item|GC>} structs
  * @param {number} clockStart Inclusive start
  * @param {number} len
  * @param {function(GC|Item):void} f
  *
  * @function
  */
-export '.'const iterateStructs = (transaction, structs, clockStart, len, f) => {
-  if (len === 0) {
-    return
+void iterateStructs(
+  Transaction transaction,
+  List<AbstractStruct> structs,
+  int clockStart,
+  int len,
+  void Function(AbstractStruct) f,
+) {
+  if (len == 0) {
+    return;
   }
-  const clockEnd = clockStart + len
-  let index = findIndexCleanStart(transaction, structs, clockStart)
-  let struct
+  final clockEnd = clockStart + len;
+  var index = findIndexCleanStart(transaction, structs, clockStart);
+  var struct;
   do {
-    struct = structs[index++]
-    if (clockEnd < struct.id.clock + struct.length) {
-      findIndexCleanStart(transaction, structs, clockEnd)
+    struct = structs[index++];
+    if (clockEnd < struct.id.clock + struct.innerLength) {
+      findIndexCleanStart(transaction, structs, clockEnd);
     }
-    f(struct)
-  } while (index < structs.length && structs[index].id.clock < clockEnd)
+    f(struct);
+  } while (index < structs.length && structs[index].id.clock < clockEnd);
 }

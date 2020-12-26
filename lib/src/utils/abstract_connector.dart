@@ -1,9 +1,11 @@
+// import { Observable } from "lib0/observable.js";
 
-import { Observable } from 'lib0/observable.js'
+// import {
+//   Doc, // eslint-disable-line
+// } from "../internals.js";
 
-import {
-  Doc // eslint-disable-line
-} from '../internals.js'
+import 'package:y_crdt/src/utils/doc.dart';
+import 'package:y_crdt/src/utils/observable.dart';
 
 /**
  * This is an abstract interface that all Connectors should implement to keep them interchangeable.
@@ -13,14 +15,12 @@ import {
  *
  * @extends {Observable<any>}
  */
-export class AbstractConnector extends Observable {
+class AbstractConnector extends Observable {
   /**
    * @param {Doc} ydoc
    * @param {any} awareness
    */
-  constructor (ydoc, awareness) {
-    super()
-    this.doc = ydoc
-    this.awareness = awareness
-  }
+  AbstractConnector(this.doc, this.awareness);
+  final Doc doc;
+  final Object awareness;
 }
