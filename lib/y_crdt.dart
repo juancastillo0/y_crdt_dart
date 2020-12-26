@@ -7,10 +7,10 @@ export 'src/y_crdt_base.dart';
 
 // TYPES
 
-export 'src/types/YArray.dart' show YArray, YArrayEvent;
-export 'src/types/YMap.dart' show YMap, YMapEvent;
-export 'src/types/YText.dart' show YText, YTextEvent;
-export 'src/types/AbstractType.dart'
+export 'src/types/y_array.dart' show YArray, YArrayEvent;
+export 'src/types/y_map.dart' show YMap, YMapEvent;
+export 'src/types/y_text.dart' show YText, YTextEvent;
+export 'src/types/abstract_type.dart'
     show
         AbstractType,
         typeListToArraySnapshot,
@@ -20,7 +20,7 @@ export 'src/types/AbstractType.dart'
 // UTILS
 
 export 'src/utils/logging.dart' show logType;
-export 'src/utils/AbstractConnector.dart' show AbstractConnector;
+export 'src/utils/abstract_connector.dart' show AbstractConnector;
 // TODO experimental
 export 'src/utils/permanent_user_data.dart' show PermanentUserData;
 export 'src/utils/is_parent_of.dart' show isParentOf;
@@ -50,7 +50,7 @@ export 'src/utils/relative_position.dart'
         createAbsolutePositionFromRelativePosition,
         readRelativePosition,
         writeRelativePosition;
-export 'src/utils/DeleteSet.dart'
+export 'src/utils/delete_set.dart'
     show
         createDeleteSet,
         createDeleteSetFromStructStore,
@@ -59,7 +59,7 @@ export 'src/utils/DeleteSet.dart'
         DeleteSet;
 export 'src/utils/transaction.dart' show transact, Transaction, tryGc;
 export 'src/utils/doc.dart' show Doc;
-export 'src/utils/YEvent.dart' show YEvent, YChanges, YDelta;
+export 'src/utils/y_event.dart' show YEvent, YChanges, YDelta;
 export 'src/utils/id.dart' show ID, compareIDs, createID, findRootTypeKey;
 export 'src/utils/snapshot.dart'
     show
@@ -76,17 +76,17 @@ export 'src/utils/snapshot.dart'
 
 // STRUCTS
 
-export 'src/structs/Item.dart' show Item;
-export 'src/structs/AbstractStruct.dart' show AbstractStruct;
-export 'src/structs/GC.dart' show GC;
-export 'src/structs/ContentBinary.dart' show ContentBinary;
-export 'src/structs/ContentDeleted.dart' show ContentDeleted;
-export 'src/structs/ContentEmbed.dart' show ContentEmbed;
-export 'src/structs/ContentFormat.dart' show ContentFormat;
-export 'src/structs/ContentJSON.dart' show ContentJSON;
-export 'src/structs/ContentAny.dart' show ContentAny;
-export 'src/structs/ContentString.dart' show ContentString;
-export 'src/structs/ContentType.dart' show ContentType;
+export 'src/structs/item.dart' show Item;
+export 'src/structs/abstract_struct.dart' show AbstractStruct;
+export 'src/structs/gc.dart' show GC;
+export 'src/structs/content_binary.dart' show ContentBinary;
+export 'src/structs/content_deleted.dart' show ContentDeleted;
+export 'src/structs/content_embed.dart' show ContentEmbed;
+export 'src/structs/content_format.dart' show ContentFormat;
+export 'src/structs/content_json.dart' show ContentJSON;
+export 'src/structs/content_any.dart' show ContentAny;
+export 'src/structs/content_string.dart' show ContentString;
+export 'src/structs/content_type.dart' show ContentType;
 
 //   YXmlText as XmlText,
 //   YXmlHook as XmlHook,

@@ -23,7 +23,7 @@ import 'dart:math' as math;
 import 'package:y_crdt/src/lib0/prng.dart' as prng;
 import 'package:y_crdt/y_crdt.dart' as Y;
 import 'package:y_crdt/src/lib0/testing.dart' as t;
-import 'testHelper.dart';
+import 'test_helper.dart';
 
 void main(List<String> args) async {
   await t.runTests(

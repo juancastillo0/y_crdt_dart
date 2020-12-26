@@ -18,7 +18,7 @@ import 'package:y_crdt/src/lib0/decoding.dart' as decoding;
 import 'package:y_crdt/src/lib0/encoding.dart' as encoding;
 import 'package:y_crdt/src/lib0/prng.dart' as prng;
 import 'package:y_crdt/y_crdt.dart' as Y;
-import 'package:y_crdt/src/lib0/sync.dart' as syncProtocol;
+import 'package:y_crdt/src/external/protocol_sync.dart' as syncProtocol;
 import 'package:y_crdt/src/lib0/testing.dart' as t;
 
 /**
