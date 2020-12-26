@@ -1,10 +1,16 @@
+import 'dart:typed_data';
+
 /**
  * @module sync-protocol
  */
 
-import * as encoding from 'lib0/encoding.js'
-import * as decoding from 'lib0/decoding.js'
-import * as Y from 'yjs'
+// import * as encoding from "lib0/encoding.js";
+// import * as decoding from "lib0/decoding.js";
+// import * as Y from "yjs";
+
+import '../../y_crdt.dart' as Y;
+import '../lib0/decoding.dart' as decoding;
+import '../lib0/encoding.dart' as encoding;
 
 /**
  * @typedef {Map<number, number>} StateMap
@@ -35,9 +41,9 @@ import * as Y from 'yjs'
  * stringify[messageType] stringifies a message definition (messageType is already read from the bufffer)
  */
 
-export const messageYjsSyncStep1 = 0
-export const messageYjsSyncStep2 = 1
-export const messageYjsUpdate = 2
+const messageYjsSyncStep1 = 0;
+const messageYjsSyncStep2 = 1;
+const messageYjsUpdate = 2;
 
 /**
  * Create a sync step 1 message based on the state of the current shared document.
@@ -45,10 +51,10 @@ export const messageYjsUpdate = 2
  * @param {encoding.Encoder} encoder
  * @param {Y.Doc} doc
  */
-export const writeSyncStep1 = (encoder, doc) => {
-  encoding.writeVarUint(encoder, messageYjsSyncStep1)
-  const sv = Y.encodeStateVector(doc)
-  encoding.writeVarUint8Array(encoder, sv)
+void writeSyncStep1(encoding.Encoder encoder, Y.Doc doc) {
+  encoding.writeVarUint(encoder, messageYjsSyncStep1);
+  final sv = Y.encodeStateVector(doc);
+  encoding.writeVarUint8Array(encoder, sv);
 }
 
 /**
@@ -56,9 +62,11 @@ export const writeSyncStep1 = (encoder, doc) => {
  * @param {Y.Doc} doc
  * @param {Uint8Array} [encodedStateVector]
  */
-export const writeSyncStep2 = (encoder, doc, encodedStateVector) => {
-  encoding.writeVarUint(encoder, messageYjsSyncStep2)
-  encoding.writeVarUint8Array(encoder, Y.encodeStateAsUpdate(doc, encodedStateVector))
+void writeSyncStep2(
+    encoding.Encoder encoder, Y.Doc doc, Uint8List encodedStateVector) {
+  encoding.writeVarUint(encoder, messageYjsSyncStep2);
+  encoding.writeVarUint8Array(
+      encoder, Y.encodeStateAsUpdate(doc, encodedStateVector));
 }
 
 /**
@@ -68,8 +76,9 @@ export const writeSyncStep2 = (encoder, doc, encodedStateVector) => {
  * @param {encoding.Encoder} encoder The received message
  * @param {Y.Doc} doc
  */
-export const readSyncStep1 = (decoder, encoder, doc) =>
-  writeSyncStep2(encoder, doc, decoding.readVarUint8Array(decoder))
+void readSyncStep1(
+        decoding.Decoder decoder, encoding.Encoder encoder, Y.Doc doc) =>
+    writeSyncStep2(encoder, doc, decoding.readVarUint8Array(decoder));
 
 /**
  * Read and apply Structs and then DeleteStore to a y instance.
@@ -78,17 +87,18 @@ export const readSyncStep1 = (decoder, encoder, doc) =>
  * @param {Y.Doc} doc
  * @param {any} transactionOrigin
  */
-export const readSyncStep2 = (decoder, doc, transactionOrigin) => {
-  Y.applyUpdate(doc, decoding.readVarUint8Array(decoder), transactionOrigin)
+void readSyncStep2(
+    decoding.Decoder decoder, Y.Doc doc, dynamic transactionOrigin) {
+  Y.applyUpdate(doc, decoding.readVarUint8Array(decoder), transactionOrigin);
 }
 
 /**
  * @param {encoding.Encoder} encoder
  * @param {Uint8Array} update
  */
-export const writeUpdate = (encoder, update) => {
-  encoding.writeVarUint(encoder, messageYjsUpdate)
-  encoding.writeVarUint8Array(encoder, update)
+void writeUpdate(encoding.Encoder encoder, Uint8List update) {
+  encoding.writeVarUint(encoder, messageYjsUpdate);
+  encoding.writeVarUint8Array(encoder, update);
 }
 
 /**
@@ -98,7 +108,7 @@ export const writeUpdate = (encoder, update) => {
  * @param {Y.Doc} doc
  * @param {any} transactionOrigin
  */
-export const readUpdate = readSyncStep2
+const readUpdate = readSyncStep2;
 
 /**
  * @param {decoding.Decoder} decoder A message received from another client
@@ -106,20 +116,21 @@ export const readUpdate = readSyncStep2
  * @param {Y.Doc} doc
  * @param {any} transactionOrigin
  */
-export const readSyncMessage = (decoder, encoder, doc, transactionOrigin) => {
-  const messageType = decoding.readVarUint(decoder)
+int readSyncMessage(decoding.Decoder decoder, encoding.Encoder encoder,
+    Y.Doc doc, Object transactionOrigin) {
+  final messageType = decoding.readVarUint(decoder);
   switch (messageType) {
     case messageYjsSyncStep1:
-      readSyncStep1(decoder, encoder, doc)
-      break
+      readSyncStep1(decoder, encoder, doc);
+      break;
     case messageYjsSyncStep2:
-      readSyncStep2(decoder, doc, transactionOrigin)
-      break
+      readSyncStep2(decoder, doc, transactionOrigin);
+      break;
     case messageYjsUpdate:
-      readUpdate(decoder, doc, transactionOrigin)
-      break
+      readUpdate(decoder, doc, transactionOrigin);
+      break;
     default:
-      throw new Error('Unknown message type')
+      throw Exception("Unknown message type");
   }
-  return messageType
+  return messageType;
 }
