@@ -40,7 +40,7 @@ class TestYInstance extends Y.Doc {
    * @param {TestConnector} testConnector
    * @param {number} clientID
    */
-  TestYInstance(this.tc, this.userID) {
+  TestYInstance(this.tc, this.userID, {bool? gc}): super(gc: gc) {
     tc.allConns.add(this);
     // set up observe on local model
     this.on("update",
@@ -142,8 +142,8 @@ class TestConnector {
    * Create a new Y instance and add it to the list of connections
    * @param {number} clientID
    */
-  TestYInstance createY(int clientID) {
-    return TestYInstance(this, clientID);
+  TestYInstance createY(int clientID, {bool? gc}) {
+    return TestYInstance(this, clientID, gc: gc);
   }
 
   /**
@@ -248,6 +248,7 @@ class TestConnector {
 _TestData<T> init<T>(
   t.TestCase tc, {
   int users = 5,
+  bool? gc,
   T Function(TestYInstance)? initTestObject,
 }) {
   final gen = tc.prng;
@@ -262,7 +263,7 @@ _TestData<T> init<T>(
   final _users = <_UserTestData>[];
 
   for (var i = 0; i < users; i++) {
-    final y = _testConnector.createY(i);
+    final y = _testConnector.createY(i, gc: gc);
     y.clientID = i;
 
     _users.add(_UserTestData(
