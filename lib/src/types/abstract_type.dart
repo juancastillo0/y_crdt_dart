@@ -149,6 +149,7 @@ ArraySearchMarker? findMarker(AbstractType yarray, int index) {
   var pLeft = p?.left;
   while (pLeft != null && pindex > index) {
     p = pLeft;
+    pLeft = p.left;
     if (!p.deleted && p.countable) {
       pindex -= p.length;
     }
@@ -162,6 +163,7 @@ ArraySearchMarker? findMarker(AbstractType yarray, int index) {
       pLeft.id.client == p.id.client &&
       pLeft.id.clock + pLeft.length == p.id.clock) {
     p = pLeft;
+    pLeft = p.left;
     if (!p.deleted && p.countable) {
       pindex -= p.length;
     }
@@ -771,7 +773,8 @@ void typeListInsertGenerics(
   List<dynamic> content,
 ) {
   if (index == 0) {
-    if (parent.innerSearchMarker != null) {
+    if (parent.innerSearchMarker != null &&
+        parent.innerSearchMarker!.isNotEmpty) {
       updateMarkerChanges(parent.innerSearchMarker!, index, content.length);
     }
     return typeListInsertGenericsAfter(transaction, parent, null, content);
@@ -803,7 +806,8 @@ void typeListInsertGenerics(
       index -= n.length;
     }
   }
-  if (parent.innerSearchMarker != null) {
+  if (parent.innerSearchMarker != null &&
+      parent.innerSearchMarker!.isNotEmpty) {
     updateMarkerChanges(parent.innerSearchMarker!, startIndex, content.length);
   }
   return typeListInsertGenericsAfter(transaction, parent, n, content);

@@ -29,41 +29,41 @@ void main() async {
   await t.runTests(
     {
       "array": {
-        // "testSlice": testSlice,
-        // "testDeleteInsert": testDeleteInsert,
-        // "testInsertThreeElementsTryRegetProperty":
-        //     testInsertThreeElementsTryRegetProperty,
-        // "testConcurrentInsertWithThreeConflicts":
-        //     testConcurrentInsertWithThreeConflicts,
-        // "testConcurrentInsertDeleteWithThreeConflicts":
-        //     testConcurrentInsertDeleteWithThreeConflicts,
-        // "testInsertionsInLateSync": testInsertionsInLateSync,
-        // "testDisconnectReallyPreventsSendingMessages":
-        //     testDisconnectReallyPreventsSendingMessages,
-        // "testDeletionsInLateSync": testDeletionsInLateSync,
-        // "testInsertThenMergeDeleteOnSync": testInsertThenMergeDeleteOnSync,
-        // "testInsertAndDeleteEvents": testInsertAndDeleteEvents,
-        // "testNestedObserverEvents": testNestedObserverEvents,
-        // "testInsertAndDeleteEventsForTypes": testInsertAndDeleteEventsForTypes,
-        // "testObserveDeepEventOrder": testObserveDeepEventOrder,
-        // "testChangeEvent": testChangeEvent,
-        // "testInsertAndDeleteEventsForTypes2":
-        //     testInsertAndDeleteEventsForTypes2,
-        // "testNewChildDoesNotEmitEventInTransaction":
-        //     testNewChildDoesNotEmitEventInTransaction,
-        // "testGarbageCollector": testGarbageCollector,
-        // "testEventTargetIsSetCorrectlyOnLocal":
-        //     testEventTargetIsSetCorrectlyOnLocal,
-        // "testEventTargetIsSetCorrectlyOnRemote":
-        //     testEventTargetIsSetCorrectlyOnRemote,
-        // "testIteratingArrayContainingTypes": testIteratingArrayContainingTypes,
-        // "testRepeatGeneratingYarrayTests6": testRepeatGeneratingYarrayTests6,
+        "testSlice": testSlice,
+        "testDeleteInsert": testDeleteInsert,
+        "testInsertThreeElementsTryRegetProperty":
+            testInsertThreeElementsTryRegetProperty,
+        "testConcurrentInsertWithThreeConflicts":
+            testConcurrentInsertWithThreeConflicts,
+        "testConcurrentInsertDeleteWithThreeConflicts":
+            testConcurrentInsertDeleteWithThreeConflicts,
+        "testInsertionsInLateSync": testInsertionsInLateSync,
+        "testDisconnectReallyPreventsSendingMessages":
+            testDisconnectReallyPreventsSendingMessages,
+        "testDeletionsInLateSync": testDeletionsInLateSync,
+        "testInsertThenMergeDeleteOnSync": testInsertThenMergeDeleteOnSync,
+        "testInsertAndDeleteEvents": testInsertAndDeleteEvents,
+        "testNestedObserverEvents": testNestedObserverEvents,
+        "testInsertAndDeleteEventsForTypes": testInsertAndDeleteEventsForTypes,
+        "testObserveDeepEventOrder": testObserveDeepEventOrder,
+        "testChangeEvent": testChangeEvent,
+        "testInsertAndDeleteEventsForTypes2":
+            testInsertAndDeleteEventsForTypes2,
+        "testNewChildDoesNotEmitEventInTransaction":
+            testNewChildDoesNotEmitEventInTransaction,
+        "testGarbageCollector": testGarbageCollector,
+        "testEventTargetIsSetCorrectlyOnLocal":
+            testEventTargetIsSetCorrectlyOnLocal,
+        "testEventTargetIsSetCorrectlyOnRemote":
+            testEventTargetIsSetCorrectlyOnRemote,
+        "testIteratingArrayContainingTypes": testIteratingArrayContainingTypes,
+        "testRepeatGeneratingYarrayTests6": testRepeatGeneratingYarrayTests6,
         "testRepeatGeneratingYarrayTests40": testRepeatGeneratingYarrayTests40,
-        // "testRepeatGeneratingYarrayTests42": testRepeatGeneratingYarrayTests42,
-        // "testRepeatGeneratingYarrayTests43": testRepeatGeneratingYarrayTests43,
-        // "testRepeatGeneratingYarrayTests44": testRepeatGeneratingYarrayTests44,
-        // "testRepeatGeneratingYarrayTests45": testRepeatGeneratingYarrayTests45,
-        // "testRepeatGeneratingYarrayTests46": testRepeatGeneratingYarrayTests46,
+        "testRepeatGeneratingYarrayTests42": testRepeatGeneratingYarrayTests42,
+        "testRepeatGeneratingYarrayTests43": testRepeatGeneratingYarrayTests43,
+        "testRepeatGeneratingYarrayTests44": testRepeatGeneratingYarrayTests44,
+        "testRepeatGeneratingYarrayTests45": testRepeatGeneratingYarrayTests45,
+        "testRepeatGeneratingYarrayTests46": testRepeatGeneratingYarrayTests46,
       }
     },
   );
