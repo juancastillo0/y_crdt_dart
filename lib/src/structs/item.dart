@@ -50,6 +50,17 @@ import 'package:y_crdt/src/y_crdt_base.dart';
 
 import 'package:y_crdt/src/lib0/binary.dart' as binary;
 
+export 'package:y_crdt/src/structs/content_deleted.dart'
+    show readContentDeleted;
+export 'package:y_crdt/src/structs/content_json.dart' show readContentJSON;
+export 'package:y_crdt/src/structs/content_binary.dart' show readContentBinary;
+export 'package:y_crdt/src/structs/content_string.dart' show readContentString;
+export 'package:y_crdt/src/structs/content_embed.dart' show readContentEmbed;
+export 'package:y_crdt/src/structs/content_format.dart' show readContentFormat;
+export 'package:y_crdt/src/structs/content_type.dart' show readContentType;
+export 'package:y_crdt/src/structs/content_any.dart' show readContentAny;
+export 'package:y_crdt/src/structs/content_doc.dart' show readContentDoc;
+
 /**
  * @todo This should return several items
  *

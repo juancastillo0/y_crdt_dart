@@ -115,7 +115,7 @@ class YMap<T> extends AbstractType<YMapEvent<T>> {
    * @param {Set<null|string>} parentSubs Keys changed on this type. `null` if list was modified.
    */
   void innerCallObserver(Transaction transaction, Set<String?> parentSubs) {
-    callTypeObservers<YMapEvent>(
+    callTypeObservers<YMapEvent<T>>(
       this,
       transaction,
       YMapEvent<T>(this, transaction, parentSubs),

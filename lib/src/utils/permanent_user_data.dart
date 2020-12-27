@@ -39,7 +39,7 @@ class PermanentUserData {
    * @param {YMap<any>} [storeType]
    */
   PermanentUserData(this.doc, [YMap<YMap<dynamic>>? storeType]) {
-    this.yusers = storeType ?? doc.getMap("users");
+    this.yusers = storeType ?? doc.getMap<YMap<dynamic>>("users");
 
     /**
      * @param {YMap<any>} user
@@ -132,8 +132,8 @@ class PermanentUserData {
     var user = users.get(userDescription);
     if (user == null) {
       user = YMap();
-      user.set("ids", YArray());
-      user.set("ds", YArray());
+      user.set("ids", YArray<int>());
+      user.set("ds", YArray<Uint8List>());
       users.set(userDescription, user);
     }
     user.get("ids").push([clientid]);
@@ -163,7 +163,7 @@ class PermanentUserData {
         /** @param {Transaction} transaction */ (params) {
       final transaction = params[0] as Transaction;
       Future.delayed(Duration.zero, () {
-        final yds = user!.get("ds") as YArray;
+        final yds = user!.get("ds") as YArray<Uint8List>;
         final ds = transaction.deleteSet;
         if (transaction.local &&
             ds.clients.length > 0 &&
