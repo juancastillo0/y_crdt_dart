@@ -54,7 +54,7 @@ void testStructReferences(t.TestCase tc) {
  *
  * @param {t.TestCase} tc
  */
-void testPermanentUserData(t.TestCase tc) async {
+Future<void> testPermanentUserData(t.TestCase tc) async {
   final ydoc1 = Doc();
   final ydoc2 = Doc();
   final pd1 = PermanentUserData(ydoc1);
