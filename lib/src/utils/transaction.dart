@@ -323,16 +323,17 @@ void cleanupTransactions(List<Transaction> transactionCleanups, int i) {
       });
       Object? _err;
       // https://github.com/dart-lang/sdk/issues/30741
-      // StackTrace? _stack;
+      StackTrace? _stack;
       for (var i = 0; i < fs.length; i++) {
         try {
           fs[i]();
-        } catch (e, _) {
+        } catch (e, s) {
           _err = e;
-          // _stack = s;
+          _stack = s;
         }
       }
       if (_err != null) {
+        logger.e("Exception from observer", _err, _stack);
         throw _err;
       }
     } finally {
