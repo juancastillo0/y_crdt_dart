@@ -408,11 +408,11 @@ class Item extends AbstractStruct {
    * @return {null | number}
    */
   int? getMissing(Transaction transaction, StructStore store) {
-    final origin = this.origin;
-    if (origin != null &&
-        origin.client != this.id.client &&
-        origin.clock >= getState(store, origin.client)) {
-      return origin.client;
+    final _origin = this.origin;
+    if (_origin != null &&
+        _origin.client != this.id.client &&
+        _origin.clock >= getState(store, _origin.client)) {
+      return _origin.client;
     }
     final _rightOrigin = this.rightOrigin;
     if (_rightOrigin != null &&
@@ -430,8 +430,8 @@ class Item extends AbstractStruct {
 
     // We have all missing ids, now find the items
 
-    if (origin != null) {
-      this.left = getItemCleanEnd(transaction, store, origin);
+    if (_origin != null) {
+      this.left = getItemCleanEnd(transaction, store, _origin);
       this.origin = this.left!.lastId;
     }
     if (this.rightOrigin != null) {
@@ -455,12 +455,14 @@ class Item extends AbstractStruct {
       }
     } else if (this.parent is ID) {
       final parentItem = getItem(store, this.parent as ID);
-      if (parentItem is GC) {
+      // if (parentItem is GC) {
+      //   this.parent = null;
+      // } else 
+      if (parentItem is Item && parentItem.content is ContentType) {
+        // TODO:
+        this.parent = (parentItem.content as ContentType).type;
+      } else {
         this.parent = null;
-      } else if (parentItem is Item) {
-        this.parent = /** @type {ContentType} */ (parentItem.content
-                as ContentType)
-            .type;
       }
     }
     return null;

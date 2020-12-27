@@ -278,4 +278,4 @@ class YArray<T> extends AbstractType<YArrayEvent<T>> with IterableMixin<T> {
  * @private
  * @function
  */
-YArray readYArray(AbstractUpdateDecoder decoder) => YArray();
+YArray<T> readYArray<T>(AbstractUpdateDecoder decoder) => YArray<T>();

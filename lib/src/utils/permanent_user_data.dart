@@ -59,12 +59,13 @@ class PermanentUserData {
           item.content.getContent().forEach((encodedDs) {
             if (encodedDs is Uint8List) {
               this.dss.set(
-                  userDescription,
-                  mergeDeleteSets([
-                    this.dss.get(userDescription) ?? createDeleteSet(),
-                    readDeleteSet(
-                        DSDecoderV1(decoding.createDecoder(encodedDs))),
-                  ]));
+                    userDescription,
+                    mergeDeleteSets([
+                      this.dss.get(userDescription) ?? createDeleteSet(),
+                      readDeleteSet(
+                          DSDecoderV1(decoding.createDecoder(encodedDs))),
+                    ]),
+                  );
             }
           });
         });
@@ -162,7 +163,7 @@ class PermanentUserData {
         /** @param {Transaction} transaction */ (params) {
       final transaction = params[0] as Transaction;
       Future.delayed(Duration.zero, () {
-        final yds = user!.get("ds");
+        final yds = user!.get("ds") as YArray;
         final ds = transaction.deleteSet;
         if (transaction.local &&
             ds.clients.length > 0 &&

@@ -29,35 +29,41 @@ void main() async {
   await t.runTests(
     {
       "array": {
-        "testSlice": testSlice,
-        "testDeleteInsert": testDeleteInsert,
-        "testInsertThreeElementsTryRegetProperty":
-            testInsertThreeElementsTryRegetProperty,
-        "testConcurrentInsertWithThreeConflicts":
-            testConcurrentInsertWithThreeConflicts,
-        "testConcurrentInsertDeleteWithThreeConflicts":
-            testConcurrentInsertDeleteWithThreeConflicts,
-        "testInsertionsInLateSync": testInsertionsInLateSync,
-        "testDisconnectReallyPreventsSendingMessages":
-            testDisconnectReallyPreventsSendingMessages,
-        "testDeletionsInLateSync": testDeletionsInLateSync,
-        "testInsertThenMergeDeleteOnSync": testInsertThenMergeDeleteOnSync,
-        "testInsertAndDeleteEvents": testInsertAndDeleteEvents,
-        "testNestedObserverEvents": testNestedObserverEvents,
-        "testInsertAndDeleteEventsForTypes": testInsertAndDeleteEventsForTypes,
-        "testObserveDeepEventOrder": testObserveDeepEventOrder,
-        "testChangeEvent": testChangeEvent,
-        "testInsertAndDeleteEventsForTypes2":
-            testInsertAndDeleteEventsForTypes2,
-        "testNewChildDoesNotEmitEventInTransaction":
-            testNewChildDoesNotEmitEventInTransaction,
-        "testGarbageCollector": testGarbageCollector,
-        "testEventTargetIsSetCorrectlyOnLocal":
-            testEventTargetIsSetCorrectlyOnLocal,
-        "testEventTargetIsSetCorrectlyOnRemote":
-            testEventTargetIsSetCorrectlyOnRemote,
-        "testIteratingArrayContainingTypes": testIteratingArrayContainingTypes,
-        "testRepeatGeneratingYarrayTests6": testRepeatGeneratingYarrayTests6,
+        // "testSlice": testSlice,
+        // "testDeleteInsert": testDeleteInsert,
+        // "testInsertThreeElementsTryRegetProperty":
+        //     testInsertThreeElementsTryRegetProperty,
+        // "testConcurrentInsertWithThreeConflicts":
+        //     testConcurrentInsertWithThreeConflicts,
+        // "testConcurrentInsertDeleteWithThreeConflicts":
+        //     testConcurrentInsertDeleteWithThreeConflicts,
+        // "testInsertionsInLateSync": testInsertionsInLateSync,
+        // "testDisconnectReallyPreventsSendingMessages":
+        //     testDisconnectReallyPreventsSendingMessages,
+        // "testDeletionsInLateSync": testDeletionsInLateSync,
+        // "testInsertThenMergeDeleteOnSync": testInsertThenMergeDeleteOnSync,
+        // "testInsertAndDeleteEvents": testInsertAndDeleteEvents,
+        // "testNestedObserverEvents": testNestedObserverEvents,
+        // "testInsertAndDeleteEventsForTypes": testInsertAndDeleteEventsForTypes,
+        // "testObserveDeepEventOrder": testObserveDeepEventOrder,
+        // "testChangeEvent": testChangeEvent,
+        // "testInsertAndDeleteEventsForTypes2":
+        //     testInsertAndDeleteEventsForTypes2,
+        // "testNewChildDoesNotEmitEventInTransaction":
+        //     testNewChildDoesNotEmitEventInTransaction,
+        // "testGarbageCollector": testGarbageCollector,
+        // "testEventTargetIsSetCorrectlyOnLocal":
+        //     testEventTargetIsSetCorrectlyOnLocal,
+        // "testEventTargetIsSetCorrectlyOnRemote":
+        //     testEventTargetIsSetCorrectlyOnRemote,
+        // "testIteratingArrayContainingTypes": testIteratingArrayContainingTypes,
+        // "testRepeatGeneratingYarrayTests6": testRepeatGeneratingYarrayTests6,
+        "testRepeatGeneratingYarrayTests40": testRepeatGeneratingYarrayTests40,
+        // "testRepeatGeneratingYarrayTests42": testRepeatGeneratingYarrayTests42,
+        // "testRepeatGeneratingYarrayTests43": testRepeatGeneratingYarrayTests43,
+        // "testRepeatGeneratingYarrayTests44": testRepeatGeneratingYarrayTests44,
+        // "testRepeatGeneratingYarrayTests45": testRepeatGeneratingYarrayTests45,
+        // "testRepeatGeneratingYarrayTests46": testRepeatGeneratingYarrayTests46,
       }
     },
   );
@@ -477,9 +483,9 @@ void __insert(Y.Doc user, Random gen, dynamic _) {
 
 void __insertTypeArray(Y.Doc user, Random gen, dynamic _) {
   final yarray = user.getArray("array");
-  var pos = prng.int32(gen, 0, yarray.length);
+  final pos = prng.int32(gen, 0, yarray.length);
   yarray.insert(pos, [Y.YArray()]);
-  var array2 = yarray.get(pos);
+  final array2 = yarray.get(pos) as Y.YArray;
   array2.insert(0, [1, 2, 3, 4]);
 }
 
@@ -487,7 +493,7 @@ void __insertTypeMap(Y.Doc user, Random gen, dynamic _) {
   final yarray = user.getArray("array");
   final pos = prng.int32(gen, 0, yarray.length);
   yarray.insert(pos, [Y.YMap()]);
-  final map = yarray.get(pos);
+  final map = yarray.get(pos) as Y.YMap;
   map.set("someprop", 42);
   map.set("someprop", 43);
   map.set("someprop", 44);

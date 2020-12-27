@@ -321,8 +321,19 @@ void cleanupTransactions(List<Transaction> transactionCleanups, int i) {
             }));
         fs.add(() => doc.emit('afterTransaction', [transaction, doc]));
       });
+      Object? _err;
+      // https://github.com/dart-lang/sdk/issues/30741
+      // StackTrace? _stack;
       for (var i = 0; i < fs.length; i++) {
-        fs[i]();
+        try {
+          fs[i]();
+        } catch (e, _) {
+          _err = e;
+          // _stack = s;
+        }
+      }
+      if (_err != null) {
+        throw _err;
       }
     } finally {
       // Replace deleted items with ItemDeleted / GC.

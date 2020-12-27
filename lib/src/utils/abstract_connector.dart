@@ -15,7 +15,7 @@ import 'package:y_crdt/src/utils/observable.dart';
  *
  * @extends {Observable<any>}
  */
-class AbstractConnector extends Observable {
+class AbstractConnector extends Observable<dynamic> {
   /**
    * @param {Doc} ydoc
    * @param {any} awareness

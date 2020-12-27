@@ -657,7 +657,7 @@ void check(bool condition, [String? message]) {
  * @throws {TestError}
  */
 void fails(void Function() f) {
-  var err;
+  Object? err;
   try {
     f();
   } catch (_err) {

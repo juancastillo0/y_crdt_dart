@@ -461,7 +461,7 @@ List typeListSlice(AbstractType type, int start, int end) {
     end = type.innerLength + end;
   }
   var len = end - start;
-  final cs = [];
+  final cs = <dynamic>[];
   var n = type.innerStart;
   while (n != null && len > 0) {
     if (n.countable && !n.deleted) {
@@ -489,7 +489,7 @@ List typeListSlice(AbstractType type, int start, int end) {
  * @function
  */
 List typeListToArray(AbstractType type) {
-  final cs = [];
+  final cs = <dynamic>[];
   var n = type.innerStart;
   while (n != null) {
     if (n.countable && !n.deleted) {
@@ -512,7 +512,7 @@ List typeListToArray(AbstractType type) {
  * @function
  */
 List typeListToArraySnapshot(AbstractType type, Snapshot snapshot) {
-  final cs = [];
+  final cs = <dynamic>[];
   var n = type.innerStart;
   while (n != null) {
     if (n.countable && isVisible(n, snapshot)) {
@@ -535,7 +535,7 @@ List typeListToArraySnapshot(AbstractType type, Snapshot snapshot) {
  * @private
  * @function
  */
-void typeListForEach<L, R extends AbstractType>(
+void typeListForEach<L, R extends AbstractType<dynamic>>(
     R type, void Function(L, int, R) f) {
   var index = 0;
   var n = type.innerStart;
@@ -559,7 +559,7 @@ void typeListForEach<L, R extends AbstractType>(
  * @private
  * @function
  */
-List<R> typeListMap<C, R, T extends AbstractType>(
+List<R> typeListMap<C, R, T extends AbstractType<dynamic>>(
     T type, R Function(C, int, T) f) {
   /**
    * @type {List<any>}
@@ -682,7 +682,7 @@ void typeListInsertGenericsAfter(
   Transaction transaction,
   AbstractType parent,
   Item? referenceItem,
-  dynamic content,
+  List<dynamic> content,
 ) {
   var left = referenceItem;
   final doc = transaction.doc;
@@ -692,7 +692,7 @@ void typeListInsertGenericsAfter(
   /**
    * @type {List<Object|List<any>|number>}
    */
-  var jsonContent = [];
+  var jsonContent = <Object>[];
   final packJsonContent = () {
     if (jsonContent.length > 0) {
       left = Item(
@@ -708,7 +708,7 @@ void typeListInsertGenericsAfter(
       jsonContent = [];
     }
   };
-  content.forEach((c) {
+  content.forEach((dynamic c) {
     if (c is int ||
         c is double ||
         c is num ||
@@ -716,20 +716,21 @@ void typeListInsertGenericsAfter(
         c is bool ||
         c is List ||
         c is String) {
-      jsonContent.add(c);
+      jsonContent.add(c as Object);
     } else {
       packJsonContent();
       // or ArrayBuffer
       if (c is Uint8List) {
         left = Item(
-            createID(ownClientId, getState(store, ownClientId)),
-            left,
-            left?.lastId,
-            right,
-            right?.id,
-            parent,
-            null,
-            ContentBinary(/** @type {Uint8Array} */ (c)));
+          createID(ownClientId, getState(store, ownClientId)),
+          left,
+          left?.lastId,
+          right,
+          right?.id,
+          parent,
+          null,
+          ContentBinary(c),
+        );
         left!.integrate(transaction, 0);
       } else if (c is Doc) {
         left = Item(
@@ -887,13 +888,17 @@ void typeMapDelete(Transaction transaction, AbstractType parent, String key) {
  * @function
  */
 void typeMapSet(
-    Transaction transaction, AbstractType parent, String key, dynamic value) {
+  Transaction transaction,
+  AbstractType parent,
+  String key,
+  Object? value,
+) {
   final left = parent.innerMap.get(key);
   final doc = transaction.doc;
   final ownClientId = doc.clientID;
   final AbstractContent content;
   if (value == null) {
-    content = ContentAny([value]);
+    content = ContentAny(<dynamic>[value]);
   } else {
     if (value is int ||
         value is num ||
@@ -902,7 +907,7 @@ void typeMapSet(
         value is bool ||
         value is List ||
         value is String) {
-      content = ContentAny([value]);
+      content = ContentAny(<dynamic>[value]);
     } else if (value is Uint8List) {
       content = ContentBinary(/** @type {Uint8Array} */ (value));
     } else if (value is Doc) {

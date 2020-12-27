@@ -118,7 +118,7 @@ class YMap<T> extends AbstractType<YMapEvent<T>> {
     callTypeObservers<YMapEvent>(
       this,
       transaction,
-      YMapEvent(this, transaction, parentSubs),
+      YMapEvent<T>(this, transaction, parentSubs),
     );
   }
 
@@ -272,4 +272,4 @@ class YMap<T> extends AbstractType<YMapEvent<T>> {
  * @private
  * @function
  */
-YMap readYMap(AbstractUpdateDecoder decoder) => YMap();
+YMap<T> readYMap<T>(AbstractUpdateDecoder decoder) => YMap<T>();

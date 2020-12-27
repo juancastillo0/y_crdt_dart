@@ -123,7 +123,7 @@ class Doc extends Observable<String> {
   }
 
   Set<dynamic> getSubdocGuids() {
-    return Set.from(this.subdocs.map((doc) => doc.guid));
+    return this.subdocs.map((doc) => doc.guid).toSet();
   }
 
   /**

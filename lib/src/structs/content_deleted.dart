@@ -109,5 +109,6 @@ class ContentDeleted implements AbstractContent {
  * @param {AbstractUpdateDecoder} decoder
  * @return {ContentDeleted}
  */
-ContentDeleted readContentDeleted(AbstractUpdateDecoder decoder) =>
-    ContentDeleted(decoder.readLen());
+ContentDeleted readContentDeleted(AbstractUpdateDecoder decoder) {
+  return ContentDeleted(decoder.readLen());
+}

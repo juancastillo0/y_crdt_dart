@@ -205,7 +205,7 @@ class UpdateEncoderV1 extends DSEncoderV1 implements AbstractUpdateEncoder {
   /**
    * @param {any} any
    */
-  void writeAny(any) {
+  void writeAny(dynamic any) {
     encoding.writeAny(this.restEncoder, any);
   }
 

@@ -577,8 +577,13 @@ ItemTextListPosition deleteText(
     currPos.forward();
   }
   if (start != null) {
-    cleanupFormattingGap(transaction, start, currPos.right, startAttrs,
-        {...currPos.currentAttributes});
+    cleanupFormattingGap(
+      transaction,
+      start,
+      currPos.right,
+      startAttrs,
+      {...currPos.currentAttributes},
+    );
   }
   final parent = /** @type {AbstractType<any>} */ (
       /** @type {Item} */ (currPos.left ?? currPos.right as Item).parent

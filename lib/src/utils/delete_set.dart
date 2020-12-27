@@ -315,21 +315,25 @@ void readAndApplyDeleteSet(
          * @type {Item}
          */
         // @ts-ignore
-        var struct = structs[index] as Item;
+        var struct = structs[index];
         // split the first item if necessary
         if (!struct.deleted && struct.id.clock < clock) {
-          structs.insert(index + 1,
-              splitItem(transaction, struct, clock - struct.id.clock));
+          structs.insert(
+            index + 1,
+            splitItem(transaction, struct as Item, clock - struct.id.clock),
+          );
           index++; // increase we now want to use the next struct
         }
         while (index < structs.length) {
           // @ts-ignore
-          struct = structs[index++] as Item;
+          struct = structs[index++];
           if (struct.id.clock < clockEnd) {
-            if (!struct.deleted) {
+            if (!struct.deleted && struct is Item) {
               if (clockEnd < struct.id.clock + struct.length) {
-                structs.insert(index,
-                    splitItem(transaction, struct, clockEnd - struct.id.clock));
+                structs.insert(
+                  index,
+                  splitItem(transaction, struct, clockEnd - struct.id.clock),
+                );
               }
               struct.delete(transaction);
             }
