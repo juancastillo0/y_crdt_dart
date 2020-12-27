@@ -18,8 +18,7 @@ class ContentBinary implements AbstractContent {
    * @param {Uint8Array} content
    */
   ContentBinary(this.content);
-    final Uint8List content;
-  
+  final Uint8List content;
 
   /**
    * @return {number}
@@ -98,5 +97,5 @@ class ContentBinary implements AbstractContent {
  * @param {AbstractUpdateDecoder} decoder
  * @return {ContentBinary}
  */
-ContentBinary readContentBinary (AbstractUpdateDecoder decoder) =>
-   ContentBinary(decoder.readBuf());
+ContentBinary readContentBinary(AbstractUpdateDecoder decoder) =>
+    ContentBinary(decoder.readBuf());

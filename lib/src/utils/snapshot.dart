@@ -169,8 +169,8 @@ bool isVisible(Item item, Snapshot? snapshot) => snapshot == null
  * @param {Snapshot} snapshot
  */
 void splitSnapshotAffectedStructs(Transaction transaction, Snapshot snapshot) {
-  final meta =
-      transaction.meta.putIfAbsent(splitSnapshotAffectedStructs, () => <dynamic>{}) as Set;
+  final meta = transaction.meta
+      .putIfAbsent(splitSnapshotAffectedStructs, () => <dynamic>{}) as Set;
   final store = transaction.doc.store;
   // check if we already split for this snapshot
   if (!meta.contains(snapshot)) {

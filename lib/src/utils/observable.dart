@@ -62,7 +62,9 @@ class Observable<N> {
    */
   void emit(N name, List<dynamic> args) {
     // copy all listeners to an array first to make sure that no event is emitted to listeners that are subscribed while the event handler is called.
-    return (this.innerObservers.get(name) ?? {}).toList().forEach((f) => f(args));
+    return (this.innerObservers.get(name) ?? {})
+        .toList()
+        .forEach((f) => f(args));
   }
 
   void destroy() {

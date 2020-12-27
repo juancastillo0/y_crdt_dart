@@ -18,7 +18,8 @@ bool isParentOf(AbstractType parent, Item? child) {
     if (child.parent == parent) {
       return true;
     }
-    child = /** @type {AbstractType<any>} */ (child.parent as AbstractType).innerItem;
+    child = /** @type {AbstractType<any>} */ (child.parent as AbstractType)
+        .innerItem;
   }
   return false;
 }

@@ -8,7 +8,8 @@
 
 import 'package:y_crdt/src/utils/id.dart' show ID;
 import 'package:y_crdt/src/utils/transaction.dart' show Transaction;
-import 'package:y_crdt/src/utils/update_encoder.dart' show AbstractUpdateEncoder;
+import 'package:y_crdt/src/utils/update_encoder.dart'
+    show AbstractUpdateEncoder;
 
 abstract class AbstractStruct {
   /**

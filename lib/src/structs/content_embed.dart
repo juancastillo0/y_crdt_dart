@@ -21,7 +21,6 @@ class ContentEmbed implements AbstractContent {
   ContentEmbed(this.embed);
   final Map<String, dynamic> embed;
 
-
   /**
    * @return {number}
    */
@@ -101,5 +100,5 @@ class ContentEmbed implements AbstractContent {
  * @param {AbstractUpdateDecoder} decoder
  * @return {ContentEmbed}
  */
-ContentEmbed readContentEmbed (AbstractUpdateDecoder decoder) =>
-  ContentEmbed(decoder.readJSON() as Map<String, dynamic>);
+ContentEmbed readContentEmbed(AbstractUpdateDecoder decoder) =>
+    ContentEmbed(decoder.readJSON() as Map<String, dynamic>);

@@ -457,7 +457,7 @@ class Item extends AbstractStruct {
       final parentItem = getItem(store, this.parent as ID);
       // if (parentItem is GC) {
       //   this.parent = null;
-      // } else 
+      // } else
       if (parentItem is Item && parentItem.content is ContentType) {
         // TODO:
         this.parent = (parentItem.content as ContentType).type;

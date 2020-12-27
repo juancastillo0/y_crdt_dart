@@ -18,7 +18,6 @@ import 'package:y_crdt/src/utils/transaction.dart';
 import 'package:y_crdt/src/utils/update_decoder.dart';
 import 'package:y_crdt/src/y_crdt_base.dart';
 
-
 class PendingStructRef {
   int i;
   List<AbstractStruct> refs;

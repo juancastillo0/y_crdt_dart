@@ -170,7 +170,8 @@ ContentDoc readContentDoc(AbstractUpdateDecoder decoder) {
       guid: guid,
       autoLoad: params["autoLoad"] as bool?,
       gc: params["gc"] as bool?,
-      gcFilter: (params["gcFilter"] ?? Doc.defaultGcFilter) as bool Function(Item),
+      gcFilter:
+          (params["gcFilter"] ?? Doc.defaultGcFilter) as bool Function(Item),
       meta: params["meta"],
     ),
   );

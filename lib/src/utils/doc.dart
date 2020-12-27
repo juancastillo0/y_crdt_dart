@@ -114,7 +114,7 @@ class Doc extends Observable<String> {
           (transaction) {
         transaction.subdocsLoaded.add(this);
       }, null, true);
-    } 
+    }
     this.shouldLoad = true;
   }
 

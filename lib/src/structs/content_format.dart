@@ -75,7 +75,8 @@ class ContentFormat implements AbstractContent {
    */
   integrate(transaction, item) {
     // @todo searchmarker are currently unsupported for rich text documents
-    /** @type {AbstractType<any>} */ (item.parent as AbstractType).innerSearchMarker = null;
+    /** @type {AbstractType<any>} */ (item.parent as AbstractType)
+        .innerSearchMarker = null;
   }
 
   /**
@@ -107,5 +108,5 @@ class ContentFormat implements AbstractContent {
  * @param {AbstractUpdateDecoder} decoder
  * @return {ContentFormat}
  */
-ContentFormat readContentFormat(AbstractUpdateDecoder decoder) =>
-    ContentFormat(decoder.readString(), decoder.readJSON() as Map<String, dynamic>);
+ContentFormat readContentFormat(AbstractUpdateDecoder decoder) => ContentFormat(
+    decoder.readString(), decoder.readJSON() as Map<String, dynamic>);
