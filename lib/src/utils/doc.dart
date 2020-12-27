@@ -167,7 +167,7 @@ class Doc extends Observable<String> {
    *
    * @public
    */
-  AbstractType<YEvent> get<T extends AbstractType<YEvent>>(
+  T get<T extends AbstractType<YEvent>>(
     String name, [
     T Function()? typeConstructor,
   ]) {
@@ -184,8 +184,8 @@ class Doc extends Observable<String> {
       t.innerIntegrate(this, null);
       return t;
     });
-    if (type is AbstractType && type is! T) {
-      if (T.toString() == "AbstractType<YEvent>") {
+    if (T.toString() != "AbstractType<YEvent>" && type is! T) {
+      if (type.runtimeType.toString() == "AbstractType<YEvent>") {
         // @ts-ignore
         final t = typeConstructor();
         t.innerMap = type.innerMap;
@@ -210,7 +210,7 @@ class Doc extends Observable<String> {
             "Type with the name ${name} has already been defined with a different constructor");
       }
     }
-    return type;
+    return type as T;
   }
 
   /**
@@ -268,7 +268,7 @@ class Doc extends Observable<String> {
     /**
      * @type {Object<string, any>}
      */
-    const doc = <String, dynamic>{};
+    final doc = <String, dynamic>{};
 
     // TODO: use Map.map
     this.share.forEach((key, value) {
@@ -286,11 +286,16 @@ class Doc extends Observable<String> {
     final item = this.item;
     if (item != null) {
       this.item = null;
-      final content = /** @type {ContentDoc} */ (item.content) as ContentDoc;
+      final content = item.content;
       if (item.deleted) {
         // @ts-ignore
-        content.doc = null;
+        if (content is ContentDoc) {
+          content.doc = null;
+        }
       } else {
+        if (content is! ContentDoc) {
+          throw Exception();
+        }
         content.doc = Doc(
           guid: this.guid,
           autoLoad: content.opts.autoLoad,
@@ -300,10 +305,9 @@ class Doc extends Observable<String> {
         content.doc!.item = item;
       }
       globalTransact(
-          /** @type {any} */ (item.parent as dynamic).doc as Doc,
-          (transaction) {
+          /** @type {any} */ (item.parent as AbstractType).doc!, (transaction) {
         if (!item.deleted) {
-          transaction.subdocsAdded.add(content.doc!);
+          transaction.subdocsAdded.add((content as ContentDoc).doc!);
         }
         transaction.subdocsRemoved.add(this);
       }, null, true);

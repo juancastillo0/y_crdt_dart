@@ -375,7 +375,9 @@ class AbstractType<EventType> {
   /**
    * @param {AbstractUpdateEncoder} encoder
    */
-  void innerWrite(AbstractUpdateEncoder encoder) {}
+  void innerWrite(AbstractUpdateEncoder encoder) {
+    throw UnimplementedError();
+  }
 
   /**
    * The first non-deleted item

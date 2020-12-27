@@ -607,7 +607,7 @@ void writeStateAsUpdate(AbstractUpdateEncoder encoder, Doc doc,
  */
 Uint8List encodeStateAsUpdateV2(
   Doc doc,
-  Uint8List encodedTargetStateVector, [
+  Uint8List? encodedTargetStateVector, [
   AbstractUpdateEncoder? encoder,
 ]) {
   final _encoder = encoder ?? UpdateEncoderV2();
@@ -630,7 +630,7 @@ Uint8List encodeStateAsUpdateV2(
  *
  * @function
  */
-Uint8List encodeStateAsUpdate(Doc doc, Uint8List encodedTargetStateVector) =>
+Uint8List encodeStateAsUpdate(Doc doc, Uint8List? encodedTargetStateVector) =>
     encodeStateAsUpdateV2(
         doc, encodedTargetStateVector, DefaultUpdateEncoder());
 

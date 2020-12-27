@@ -1287,7 +1287,7 @@ class YText extends AbstractType<YTextEvent> {
    *
    * @public
    */
-  format(int index, int length, Map<String, Map<String, dynamic>> attributes) {
+  void format(int index, int length, Map<String, Map<String, dynamic>> attributes) {
     if (length == 0) {
       return;
     }
@@ -1309,7 +1309,7 @@ class YText extends AbstractType<YTextEvent> {
   /**
    * @param {AbstractUpdateEncoder} encoder
    */
-  _write(AbstractUpdateEncoder encoder) {
+  void innerWrite(AbstractUpdateEncoder encoder) {
     encoder.writeTypeRef(YTextRefID);
   }
 }
