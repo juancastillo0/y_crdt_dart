@@ -1,8 +1,3 @@
-import 'package:y_crdt/src/structs/content_embed.dart';
-import 'package:y_crdt/src/structs/content_format.dart';
-import 'package:y_crdt/src/structs/content_string.dart';
-import 'package:y_crdt/src/structs/content_type.dart';
-import 'package:y_crdt/src/structs/gc.dart';
 /**
  * @module YText
  */
@@ -40,12 +35,17 @@ import 'package:y_crdt/src/structs/gc.dart';
 // import * as map from "lib0/map.js";
 // import * as error from "lib0/error.js";
 
+import 'package:y_crdt/src/structs/content_embed.dart';
+import 'package:y_crdt/src/structs/content_format.dart';
+import 'package:y_crdt/src/structs/content_string.dart';
+import 'package:y_crdt/src/structs/content_type.dart';
+import 'package:y_crdt/src/structs/gc.dart';
 import 'package:y_crdt/src/structs/item.dart';
 import 'package:y_crdt/src/types/abstract_type.dart';
 import 'package:y_crdt/src/utils/delete_set.dart';
 import 'package:y_crdt/src/utils/doc.dart';
 import 'package:y_crdt/src/utils/id.dart';
-import 'package:y_crdt/src/utils/Snapshot.dart';
+import 'package:y_crdt/src/utils/snapshot.dart';
 import 'package:y_crdt/src/utils/struct_store.dart';
 import 'package:y_crdt/src/utils/transaction.dart';
 import 'package:y_crdt/src/utils/update_decoder.dart';
@@ -78,7 +78,7 @@ class ItemTextListPosition {
   Item? left;
   Item? right;
   int index;
-  final Map<String, Map<String, dynamic>> currentAttributes;
+  final Map<String, Object?> currentAttributes;
 
   /**
    * Only call this if you know that this.right is defined
@@ -95,8 +95,7 @@ class ItemTextListPosition {
     } else if (_right.content is ContentFormat) {
       if (!_right.deleted) {
         updateCurrentAttributes(
-            this.currentAttributes,
-            /** @type {ContentFormat} */ (_right.content as ContentFormat));
+            this.currentAttributes, (_right.content as ContentFormat));
       }
     }
 
@@ -154,7 +153,7 @@ ItemTextListPosition findNextPosition(
  */
 ItemTextListPosition findPosition(
     Transaction transaction, AbstractType parent, int index) {
-  final currentAttributes = <String, Map<String, dynamic>>{};
+  final currentAttributes = <String, Object?>{};
   final marker = findMarker(parent, index);
   if (marker != null) {
     final pos = ItemTextListPosition(
@@ -182,7 +181,7 @@ void insertNegatedAttributes(
   Transaction transaction,
   AbstractType parent,
   ItemTextListPosition currPos,
-  Map<String, Map<String, dynamic>> negatedAttributes,
+  Map<String, Object?> negatedAttributes,
 ) {
   // check if we really need to remove attributes
   var _right = currPos.right;
@@ -256,13 +255,8 @@ void minimizeAttributeChanges(
       break;
     } else if (_right.deleted ||
         (_right.content is ContentFormat &&
-            equalAttrs(
-                attributes[
-                    /** @type {ContentFormat} */ (_right.content
-                            as ContentFormat)
-                        .key],
-                /** @type {ContentFormat} */ (_right.content as ContentFormat)
-                    .value))) {
+            equalAttrs(attributes[(_right.content as ContentFormat).key],
+                (_right.content as ContentFormat).value))) {
       //
     } else {
       break;
@@ -281,21 +275,21 @@ void minimizeAttributeChanges(
  * @private
  * @function
  **/
-Map<String, Map<String, dynamic>> insertAttributes(
+Map<String, Object?> insertAttributes(
     Transaction transaction,
     AbstractType parent,
     ItemTextListPosition currPos,
-    Map<String, Map<String, dynamic>> attributes) {
+    Map<String, Object?> attributes) {
   final doc = transaction.doc;
   final ownClientId = doc.clientID;
-  final negatedAttributes = <String, Map<String, dynamic>>{};
+  final negatedAttributes = <String, Object?>{};
   // insert format-start items
   for (final key in attributes.keys) {
     final val = attributes[key];
     final currentVal = currPos.currentAttributes.get(key);
     if (!equalAttrs(currentVal, val)) {
       // save negated attribute (set null if currentVal undefined)
-      negatedAttributes.set(key, currentVal!);
+      negatedAttributes.set(key, currentVal);
       final left = currPos.left;
       final right = currPos.right;
       currPos.right = Item(
@@ -306,7 +300,7 @@ Map<String, Map<String, dynamic>> insertAttributes(
         right?.id,
         parent,
         null,
-        ContentFormat(key, val!),
+        ContentFormat(key, val),
       );
       currPos.right!.integrate(transaction, 0);
       currPos.forward();
@@ -326,11 +320,12 @@ Map<String, Map<String, dynamic>> insertAttributes(
  * @function
  **/
 void insertText(
-    Transaction transaction,
-    AbstractType parent,
-    ItemTextListPosition currPos,
-    Object text,
-    Map<String, Map<String, dynamic>> attributes) {
+  Transaction transaction,
+  AbstractType parent,
+  ItemTextListPosition currPos,
+  Object text,
+  Map<String, Object?> attributes,
+) {
   // currPos.currentAttributes.forEach((key, val) {
   //   if (attributes[key] == null) {
   //     attributes[key] = null;
@@ -376,7 +371,7 @@ void formatText(
   AbstractType parent,
   ItemTextListPosition currPos,
   int length,
-  Map<String, Map<String, dynamic>> attributes,
+  Map<String, Object?> attributes,
 ) {
   final doc = transaction.doc;
   final ownClientId = doc.clientID;
@@ -572,6 +567,7 @@ ItemTextListPosition deleteText(
         }
         length -= _right.length;
         _right.delete(transaction);
+        break;
       }
     }
     currPos.forward();
@@ -1016,7 +1012,7 @@ class YText extends AbstractType<YTextEvent> {
    *
    * @public
    */
-  void applyDelta(List<Map<String, Object>> delta, {bool sanitize = true}) {
+  void applyDelta(List<Map<String, Object?>> delta, {bool sanitize = true}) {
     if (this.doc != null) {
       transact(this.doc!, (transaction) {
         final currPos = ItemTextListPosition(null, this.innerStart, 0, {});
@@ -1042,7 +1038,7 @@ class YText extends AbstractType<YTextEvent> {
                 this,
                 currPos,
                 ins!,
-                (op["attributes"] as Map<String, Map<String, dynamic>>?) ?? {},
+                (op["attributes"] as Map<String, Object?>?) ?? {},
               );
             }
           } else if (op["retain"] != null) {
@@ -1051,7 +1047,7 @@ class YText extends AbstractType<YTextEvent> {
               this,
               currPos,
               op["retain"] as int,
-              (op["attributes"] as Map<String, Map<String, dynamic>>?) ?? {},
+              (op["attributes"] as Map<String, Object?>?) ?? {},
             );
           } else if (op["delete"] != null) {
             deleteText(transaction, currPos, op["delete"] as int);
@@ -1074,7 +1070,7 @@ class YText extends AbstractType<YTextEvent> {
    *
    * @public
    */
-  List<Map<String, Object>> toDelta([
+  List<Map<String, Object?>> toDelta([
     Snapshot? snapshot,
     Snapshot? prevSnapshot,
     Map<String, dynamic> Function(String, ID)? computeYChange,
@@ -1082,8 +1078,8 @@ class YText extends AbstractType<YTextEvent> {
     /**
      * @type{List<any>}
      */
-    final ops = <Map<String, Object>>[];
-    final currentAttributes = <String, Map<String, dynamic>>{};
+    final ops = <Map<String, Object?>>[];
+    final currentAttributes = <String, Object?>{};
     final doc = /** @type {Doc} */ (this.doc);
     var str = "";
     var n = this.innerStart;
@@ -1093,7 +1089,7 @@ class YText extends AbstractType<YTextEvent> {
         /**
          * @type {Object<string,any>}
          */
-        final attributes = <String, Map<String, dynamic>>{};
+        final attributes = <String, Object?>{};
         var addAttributes = false;
         currentAttributes.forEach((key, value) {
           addAttributes = true;
@@ -1125,7 +1121,8 @@ class YText extends AbstractType<YTextEvent> {
         if (isVisible(_n, snapshot) ||
             (prevSnapshot != null && isVisible(_n, prevSnapshot))) {
           if (_n.content is ContentString) {
-            final cur = currentAttributes.get("ychange");
+            final cur =
+                currentAttributes.get("ychange") as Map<String, Object?>?;
             if (snapshot != null && !isVisible(_n, snapshot)) {
               if (cur == null ||
                   cur["user"] != _n.id.client ||
@@ -1200,7 +1197,7 @@ class YText extends AbstractType<YTextEvent> {
   void insert(
     int index,
     String text, [
-    Map<String, Map<String, dynamic>>? _attributes,
+    Map<String, Object?>? _attributes,
   ]) {
     if (text.length <= 0) {
       return;
@@ -1209,7 +1206,7 @@ class YText extends AbstractType<YTextEvent> {
     if (y != null) {
       transact(y, (transaction) {
         final pos = findPosition(transaction, this, index);
-        final Map<String, Map<String, dynamic>> attributes;
+        final Map<String, Object?> attributes;
         if (_attributes == null) {
           attributes = {};
           // @ts-ignore
@@ -1237,8 +1234,11 @@ class YText extends AbstractType<YTextEvent> {
    *
    * @public
    */
-  void insertEmbed(int index, Map<String, dynamic> embed,
-      [Map<String, Map<String, dynamic>> attributes = const {}]) {
+  void insertEmbed(
+    int index,
+    Map<String, dynamic> embed, [
+    Map<String, Object?> attributes = const {},
+  ]) {
     // if (embed.constructor != Object) {
     //   throw  Exception("Embed must be an Object");
     // }
@@ -1287,7 +1287,7 @@ class YText extends AbstractType<YTextEvent> {
    *
    * @public
    */
-  void format(int index, int length, Map<String, Map<String, dynamic>> attributes) {
+  void format(int index, int length, Map<String, Object?> attributes) {
     if (length == 0) {
       return;
     }
@@ -1325,6 +1325,67 @@ YText readYText(AbstractUpdateDecoder decoder) => YText();
 
 abstract class DeltaItem {
   DeltaItem._();
+
+  static DeltaItem? fromMap(Map<String, Object?> map) {
+    final _attr = map["attributes"] as Map<String, dynamic>?;
+
+    if (map["retain"] is int) {
+      DeltaItem.retain(map["retain"] as int, attributes: _attr);
+    } else if (map["delete"] is int) {
+      DeltaItem.delete(map["delete"] as int, attributes: _attr);
+    } else if (map["insert"] is String || map["insert"] is Map) {
+      DeltaItem.insert(map["insert"] as Object, attributes: _attr);
+    } else {
+      return null;
+    }
+  }
+
+  Map<String, Object?> toMap() {
+    return {
+      "attributes": this.attributes,
+      ...this.when<Map<String, Object?>>(
+        delete: (d, _) => {"delete": d},
+        retain: (d, _) => {"retain": d},
+        insert: (d, _) => {"insert": d},
+      )
+    };
+  }
+
+  @override
+  int get hashCode =>
+      this.attributes.hashCode ^
+      this
+          .when<Object>(
+            delete: (d, _) => d,
+            retain: (d, _) => d,
+            insert: (d, _) => d,
+          )
+          .hashCode;
+
+  @override
+  bool operator ==(Object other) {
+    if (other is DeltaItem) {
+      if (!mapsAreEqual(this.attributes, other.attributes)) {
+        return false;
+      }
+      return this.when(
+        delete: (d1, _) =>
+            other.maybeWhen(delete: (d2, _) => d2 == d1) ?? false,
+        retain: (d1, _) =>
+            other.maybeWhen(retain: (d2, _) => d2 == d1) ?? false,
+        insert: (d1, _) =>
+            other.maybeWhen(insert: (d2, _) {
+              if (d1 is Map && d2 is Map) {
+                return mapsAreEqual(d1, d2);
+              } else {
+                return d2 == d1;
+              }
+            }) ??
+            false,
+      );
+    }
+    return false;
+  }
 
   Map<String, dynamic>? get attributes => this.map(
         delete: (e) => e.attributes,
