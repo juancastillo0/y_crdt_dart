@@ -23,7 +23,7 @@ class ContentFormat implements AbstractContent {
    */
   ContentFormat(this.key, this.value);
   final String key;
-  final Map<String, dynamic> value;
+  final Object? value;
 
   /**
    * @return {number}
@@ -50,7 +50,7 @@ class ContentFormat implements AbstractContent {
    * @return {ContentFormat}
    */
   copy() {
-    return new ContentFormat(this.key, this.value);
+    return ContentFormat(this.key, this.value);
   }
 
   /**
@@ -108,5 +108,5 @@ class ContentFormat implements AbstractContent {
  * @param {AbstractUpdateDecoder} decoder
  * @return {ContentFormat}
  */
-ContentFormat readContentFormat(AbstractUpdateDecoder decoder) => ContentFormat(
-    decoder.readString(), decoder.readJSON() as Map<String, dynamic>);
+ContentFormat readContentFormat(AbstractUpdateDecoder decoder) =>
+    ContentFormat(decoder.readString(), decoder.readJSON());
