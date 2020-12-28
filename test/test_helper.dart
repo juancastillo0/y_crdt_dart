@@ -40,7 +40,7 @@ class TestYInstance extends Y.Doc {
    * @param {TestConnector} testConnector
    * @param {number} clientID
    */
-  TestYInstance(this.tc, this.userID, {bool? gc}): super(gc: gc) {
+  TestYInstance(this.tc, this.userID, {bool? gc}) : super(gc: gc) {
     tc.allConns.add(this);
     // set up observe on local model
     this.on("update",
@@ -245,7 +245,7 @@ class TestConnector {
  * @param {InitTestObjectCallback<T>} [initTestObject]
  * @return {{testObjects:Array<any>,testConnector:TestConnector,users:Array<TestYInstance>,array0:Y.YArray<any>,array1:Y.YArray<any>,array2:Y.YArray<any>,map0:Y.YMap<any>,map1:Y.YMap<any>,map2:Y.YMap<any>,map3:Y.YMap<any>,text0:Y.YText,text1:Y.YText,text2:Y.YText,xml0:Y.YXmlElement,xml1:Y.YXmlElement,xml2:Y.YXmlElement}}
  */
-_TestData<T> init<T>(
+TestData<T> init<T>(
   t.TestCase tc, {
   int users = 5,
   bool? gc,
@@ -281,7 +281,7 @@ _TestData<T> init<T>(
   _testConnector.syncAll();
   Y.useV1Encoding();
 
-  return _TestData<T>(
+  return TestData<T>(
     users: _users,
     testConnector: _testConnector,
     testObjects: _users
@@ -291,7 +291,7 @@ _TestData<T> init<T>(
   );
 }
 
-class _TestData<T> {
+class TestData<T> {
   final List<T> testObjects;
   final TestConnector testConnector;
   final List<_UserTestData> users;
@@ -299,7 +299,7 @@ class _TestData<T> {
   List<TestYInstance> get userInstances =>
       users.map((e) => e.instance).toList();
 
-  _TestData({
+  TestData({
     required this.testObjects,
     required this.testConnector,
     required this.users,
@@ -470,7 +470,7 @@ void compareDS(Y.DeleteSet ds1, Y.DeleteSet ds2) {
  * @param {number} iterations
  * @param {InitTestObjectCallback<T>} [initTestObject]
  */
-_TestData applyRandomTests<T>(
+TestData applyRandomTests<T>(
   t.TestCase tc,
   List<void Function(Y.Doc, Random, T)> mods,
   int iterations, [
