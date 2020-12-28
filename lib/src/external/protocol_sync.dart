@@ -8,9 +8,9 @@ import 'dart:typed_data';
 // import * as decoding from "lib0/decoding.js";
 // import * as Y from "yjs";
 
-import '../../y_crdt.dart' as Y;
-import '../lib0/decoding.dart' as decoding;
-import '../lib0/encoding.dart' as encoding;
+import 'package:y_crdt/y_crdt.dart' as Y;
+import 'package:y_crdt/src/lib0/decoding.dart' as decoding;
+import 'package:y_crdt/src/lib0/encoding.dart' as encoding;
 
 /**
  * @typedef {Map<number, number>} StateMap

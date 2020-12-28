@@ -33,8 +33,8 @@
 
 import 'dart:typed_data';
 import 'dart:math' as math;
-import 'binary.dart' as binary;
-import 'decoding.dart' show isNegativeZero, rightShift;
+import 'package:y_crdt/src/lib0/binary.dart' as binary;
+import 'package:y_crdt/src/lib0/decoding.dart' show isNegativeZero, rightShift;
 
 /**
  * A BinaryEncoder handles the encoding to an Uint8Array.

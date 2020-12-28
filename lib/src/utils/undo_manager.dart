@@ -32,7 +32,7 @@ import 'package:y_crdt/src/utils/transaction.dart';
 import 'package:y_crdt/src/utils/is_parent_of.dart';
 import 'package:y_crdt/src/y_crdt_base.dart';
 
-import 'observable.dart';
+import 'package:y_crdt/src/utils/observable.dart';
 
 class StackItem {
   /**

@@ -64,9 +64,9 @@ import 'package:y_crdt/src/utils/update_encoder.dart';
 // import * as binary from "lib0/binary.js";
 // import * as map from "lib0/map.js";
 
-import "../lib0/decoding.dart" as decoding;
-import "../lib0/encoding.dart" as encoding;
-import '../lib0/binary.dart' as binary;
+import "package:y_crdt/src/lib0/decoding.dart" as decoding;
+import "package:y_crdt/src/lib0/encoding.dart" as encoding;
+import 'package:y_crdt/src/lib0/binary.dart' as binary;
 
 AbstractDSEncoder Function() DefaultDSEncoder = DSEncoderV1.create;
 AbstractDSDecoder Function(decoding.Decoder) DefaultDSDecoder =

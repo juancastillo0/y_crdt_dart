@@ -44,8 +44,8 @@ import 'package:y_crdt/src/utils/update_encoder.dart';
 import 'package:y_crdt/src/utils/encoding.dart';
 import 'package:y_crdt/src/y_crdt_base.dart';
 
-import '../lib0/decoding.dart' as decoding;
-import '../lib0/encoding.dart' as encoding;
+import 'package:y_crdt/src/lib0/decoding.dart' as decoding;
+import 'package:y_crdt/src/lib0/encoding.dart' as encoding;
 
 class Snapshot {
   /**

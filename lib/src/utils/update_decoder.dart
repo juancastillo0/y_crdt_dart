@@ -9,7 +9,7 @@ import 'dart:typed_data';
 import 'package:y_crdt/src/lib0/decoding.dart';
 import 'package:y_crdt/src/utils/id.dart';
 
-import '../lib0/decoding.dart' as decoding;
+import 'package:y_crdt/src/lib0/decoding.dart' as decoding;
 
 abstract class AbstractDSDecoder {
   /**

@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:y_crdt/src/lib0/decoding.dart' show rightShift;
 
 /**
  * Fast Pseudo Random Number Generators.
@@ -88,7 +89,7 @@ int int32(Random gen, int min, int max) =>
 //  * @param {Number} max The upper bound of the allowed return values (inclusive).
 //  * @return {Number} A random integer on [min, max]
 //  */
-// void uint32 = (gen, min, max) => int32(gen, min, max) >>> 0;
+int uint32(Random gen, int min, int max) => rightShift(int32(gen, min, max), 0);
 
 // /**
 //  * @deprecated

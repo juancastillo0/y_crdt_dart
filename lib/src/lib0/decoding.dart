@@ -31,7 +31,7 @@
 // import * as math from './math.js'
 
 import 'dart:typed_data';
-import 'binary.dart' as binary;
+import 'package:y_crdt/src/lib0/binary.dart' as binary;
 import 'package:fixnum/fixnum.dart' show Int64;
 
 bool isNegativeZero(num n) => n != 0 ? n < 0 : 1 / n < 0;

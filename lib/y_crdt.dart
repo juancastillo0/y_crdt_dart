@@ -3,14 +3,14 @@
 /// More dartdocs go here.
 library y_crdt;
 
-export 'src/y_crdt_base.dart';
+export 'package:y_crdt/src/y_crdt_base.dart';
 
 // TYPES
 
-export 'src/types/y_array.dart' show YArray, YArrayEvent;
-export 'src/types/y_map.dart' show YMap, YMapEvent;
-export 'src/types/y_text.dart' show YText, YTextEvent;
-export 'src/types/abstract_type.dart'
+export 'package:y_crdt/src/types/y_array.dart' show YArray, YArrayEvent;
+export 'package:y_crdt/src/types/y_map.dart' show YMap, YMapEvent;
+export 'package:y_crdt/src/types/y_text.dart' show YText, YTextEvent;
+export 'package:y_crdt/src/types/abstract_type.dart'
     show
         AbstractType,
         typeListToArraySnapshot,
@@ -19,13 +19,15 @@ export 'src/types/abstract_type.dart'
 
 // UTILS
 
-export 'src/utils/logging.dart' show logType;
-export 'src/utils/abstract_connector.dart' show AbstractConnector;
+export 'package:y_crdt/src/utils/logging.dart' show logType;
+export 'package:y_crdt/src/utils/abstract_connector.dart'
+    show AbstractConnector;
 // TODO experimental
-export 'src/utils/permanent_user_data.dart' show PermanentUserData;
-export 'src/utils/is_parent_of.dart' show isParentOf;
-export 'src/utils/undo_manager.dart' show UndoManager;
-export 'src/utils/encoding.dart'
+export 'package:y_crdt/src/utils/permanent_user_data.dart'
+    show PermanentUserData;
+export 'package:y_crdt/src/utils/is_parent_of.dart' show isParentOf;
+export 'package:y_crdt/src/utils/undo_manager.dart' show UndoManager;
+export 'package:y_crdt/src/utils/encoding.dart'
     show
         applyUpdate,
         applyUpdateV2,
@@ -39,9 +41,9 @@ export 'src/utils/encoding.dart'
         decodeStateVectorV2,
         useV2Encoding,
         useV1Encoding;
-export 'src/utils/struct_store.dart'
+export 'package:y_crdt/src/utils/struct_store.dart'
     show getItem, getState, getStateVector, StructStore;
-export 'src/utils/relative_position.dart'
+export 'package:y_crdt/src/utils/relative_position.dart'
     show
         RelativePosition,
         compareRelativePositions,
@@ -50,19 +52,21 @@ export 'src/utils/relative_position.dart'
         createAbsolutePositionFromRelativePosition,
         readRelativePosition,
         writeRelativePosition;
-export 'src/utils/delete_set.dart'
+export 'package:y_crdt/src/utils/delete_set.dart'
     show
         createDeleteSet,
         createDeleteSetFromStructStore,
         iterateDeletedStructs,
         isDeleted,
         DeleteSet;
-export 'src/utils/transaction.dart' show transact, Transaction, tryGc;
-export 'src/utils/doc.dart' show Doc;
-export 'src/utils/y_event.dart'
+export 'package:y_crdt/src/utils/transaction.dart'
+    show transact, Transaction, tryGc;
+export 'package:y_crdt/src/utils/doc.dart' show Doc;
+export 'package:y_crdt/src/utils/y_event.dart'
     show YEvent, YChanges, YDelta, YChange, YChangeType;
-export 'src/utils/id.dart' show ID, compareIDs, createID, findRootTypeKey;
-export 'src/utils/snapshot.dart'
+export 'package:y_crdt/src/utils/id.dart'
+    show ID, compareIDs, createID, findRootTypeKey;
+export 'package:y_crdt/src/utils/snapshot.dart'
     show
         Snapshot,
         createSnapshot,
@@ -77,17 +81,17 @@ export 'src/utils/snapshot.dart'
 
 // STRUCTS
 
-export 'src/structs/item.dart' show Item;
-export 'src/structs/abstract_struct.dart' show AbstractStruct;
-export 'src/structs/gc.dart' show GC;
-export 'src/structs/content_binary.dart' show ContentBinary;
-export 'src/structs/content_deleted.dart' show ContentDeleted;
-export 'src/structs/content_embed.dart' show ContentEmbed;
-export 'src/structs/content_format.dart' show ContentFormat;
-export 'src/structs/content_json.dart' show ContentJSON;
-export 'src/structs/content_any.dart' show ContentAny;
-export 'src/structs/content_string.dart' show ContentString;
-export 'src/structs/content_type.dart' show ContentType;
+export 'package:y_crdt/src/structs/item.dart' show Item;
+export 'package:y_crdt/src/structs/abstract_struct.dart' show AbstractStruct;
+export 'package:y_crdt/src/structs/gc.dart' show GC;
+export 'package:y_crdt/src/structs/content_binary.dart' show ContentBinary;
+export 'package:y_crdt/src/structs/content_deleted.dart' show ContentDeleted;
+export 'package:y_crdt/src/structs/content_embed.dart' show ContentEmbed;
+export 'package:y_crdt/src/structs/content_format.dart' show ContentFormat;
+export 'package:y_crdt/src/structs/content_json.dart' show ContentJSON;
+export 'package:y_crdt/src/structs/content_any.dart' show ContentAny;
+export 'package:y_crdt/src/structs/content_string.dart' show ContentString;
+export 'package:y_crdt/src/structs/content_type.dart' show ContentType;
 
 //   YXmlText as XmlText,
 //   YXmlHook as XmlHook,

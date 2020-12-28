@@ -26,6 +26,18 @@ extension MapIndex<V> on Iterable<V> {
 
 final logger = Logger();
 
+bool mapsAreEqual<K, V>(Map<K, V>? m1, Map<K, V>? m2) {
+  if (m1 == m2) {
+    return true;
+  }
+  if (m1 == null || m2 == null || m1.length != m2.length) {
+    return false;
+  }
+  return m1.entries.every(
+    (e1) => m2.containsKey(e1.key) && e1.value == m2[e1.key],
+  );
+}
+
 class Pair<L, R> {
   final L left;
   final R right;
