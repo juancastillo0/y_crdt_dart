@@ -49,10 +49,10 @@ class PermanentUserData {
       /**
        * @type {YList<Uint8Array>}
        */
-      final ds = user.get("ds")! as YArray<Uint8List>;
-      final ids = user.get("ids")! as YArray<int>;
-      final addClientId = /** @param {number} clientid */ (int clientid) =>
-          this.clients.set(clientid, userDescription);
+      final ds = user.get("ds")! as YArray;
+      final ids = user.get("ids")! as YArray;
+      final addClientId =
+          (int clientid) => this.clients.set(clientid, userDescription);
       ds.observe(
           /** @param {YArrayEvent<any>} event */ (event, _) {
         event.changes.added.forEach((item) {
@@ -75,7 +75,7 @@ class PermanentUserData {
             mergeDeleteSets(ds
                 .map(
                   (encodedDs) => readDeleteSet(DSDecoderV1(
-                    decoding.createDecoder(encodedDs),
+                    decoding.createDecoder(encodedDs as Uint8List),
                   )),
                 )
                 .toList()),
@@ -86,7 +86,7 @@ class PermanentUserData {
           (item) => item.content.getContent().cast<int>().forEach(addClientId),
         ),
       );
-      ids.forEach(addClientId);
+      ids.forEach((v) => addClientId(v as int));
     }
 
     // observe users

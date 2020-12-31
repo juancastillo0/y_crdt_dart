@@ -496,6 +496,10 @@ void writeAny(Encoder encoder, dynamic _data) {
   } else if (data == null) {
     // TYPE 126: null
     write(encoder, 126);
+  } else if (data is Uint8List) {
+    // TYPE 116: ArrayBuffer
+    write(encoder, 116);
+    writeVarUint8Array(encoder, data);
   } else if (data is List) {
     // TYPE 117: Array
     write(encoder, 117);
@@ -503,11 +507,7 @@ void writeAny(Encoder encoder, dynamic _data) {
     for (var i = 0; i < data.length; i++) {
       writeAny(encoder, data[i]);
     }
-  } else if (data is Uint8List) {
-    // TYPE 116: ArrayBuffer
-    write(encoder, 116);
-    writeVarUint8Array(encoder, data);
-  } else if (data is Map) {
+  }  else if (data is Map) {
     // TYPE 118: Object
     write(encoder, 118);
     final keys = data.keys.toList().cast<String>();

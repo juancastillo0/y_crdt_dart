@@ -718,12 +718,12 @@ void typeListInsertGenericsAfter(
         c is num ||
         c is Map ||
         c is bool ||
-        c is List ||
+        (c is List && c is! Uint8List) ||
         c is String) {
       jsonContent.add(c as Object);
     } else {
       packJsonContent();
-      // or ArrayBuffer
+      // TODO: or ArrayBuffer
       if (c is Uint8List) {
         left = Item(
           createID(ownClientId, getState(store, ownClientId)),
