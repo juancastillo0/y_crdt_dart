@@ -399,7 +399,7 @@ void testObserversUsingObservedeep(t.TestCase tc) {
  * @param {Object<string,any>} is
  * @param {Object<string,any>} should
  */
-void compareEvent(Map<String, Object> iss, Map<String, Object> should) {
+void compareEvent(Map<String, Object?> iss, Map<String, Object?> should) {
   for (var key in should.keys) {
     t.compare(should[key], iss[key]);
   }
@@ -415,7 +415,7 @@ void testThrowsAddAndUpdateAndDeleteEvents(t.TestCase tc) {
    * @type {Object<string,any>}
    */
   YMapEvent? event;
-  Map<String, Object> _eventAsMap() {
+  Map<String, Object?> _eventAsMap() {
     return {
       "target": event!.target,
       "keysChanged": event!.keysChanged,

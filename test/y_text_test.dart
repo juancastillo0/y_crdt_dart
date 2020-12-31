@@ -390,7 +390,7 @@ void testFormattingRemoved(t.TestCase tc) {
 
   text0.insert(0, "ab", {"bold": true});
   text0.delete(0, 2);
-  t.check(Y.getTypeChildren(text0).length == 1);
+  t.compare(Y.getTypeChildren(text0).length, 1);
 }
 
 /**
@@ -403,7 +403,7 @@ void testFormattingRemovedInMidText(t.TestCase tc) {
   text0.insert(0, "1234");
   text0.insert(2, "ab", {"bold": true});
   text0.delete(2, 2);
-  t.check(Y.getTypeChildren(text0).length == 3);
+  t.compare(Y.getTypeChildren(text0).length, 3);
 }
 
 /**
@@ -759,7 +759,7 @@ final qChanges = <void Function(Y.Doc, Random, dynamic)>[
     final ytext = y.getText("text");
     final insertPos = prng.int32(gen, 0, ytext.toString().length);
     final text = (charCounter++).toString() + prng.word(gen);
-    final ops = <Map<String, Object>>[];
+    final ops = <Map<String, Object?>>[];
     if (insertPos > 0) {
       ops.add({"retain": insertPos});
     }

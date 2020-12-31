@@ -319,18 +319,18 @@ Map<String, Object?> insertAttributes(
  * @private
  * @function
  **/
-void insertText(
+void _insertText(
   Transaction transaction,
   AbstractType parent,
   ItemTextListPosition currPos,
   Object text,
   Map<String, Object?> attributes,
 ) {
-  // currPos.currentAttributes.forEach((key, val) {
-  //   if (attributes[key] == null) {
-  //     attributes[key] = null;
-  //   }
-  // });
+  currPos.currentAttributes.forEach((key, val) {
+    if (!attributes.containsKey(key)) {
+      attributes[key] = null;
+    }
+  });
   final doc = transaction.doc;
   final ownClientId = doc.clientID;
   minimizeAttributeChanges(currPos, attributes);
@@ -343,7 +343,8 @@ void insertText(
   var index = currPos.index;
   var right = currPos.right;
   var left = currPos.left;
-  if (parent.innerSearchMarker != null) {
+  if (parent.innerSearchMarker != null &&
+      parent.innerSearchMarker!.isNotEmpty) {
     updateMarkerChanges(
         parent.innerSearchMarker!, currPos.index, content.getLength());
   }
@@ -388,7 +389,7 @@ void formatText(
         final key = /** @type {ContentFormat} */ _content.key;
         final value = /** @type {ContentFormat} */ _content.value;
         final attr = attributes[key];
-        if (attr != null) {
+        if (attributes.containsKey(key)) {
           if (equalAttrs(attr, value)) {
             negatedAttributes.remove(key);
           } else {
@@ -442,8 +443,9 @@ void formatText(
  *
  * @function
  */
-int cleanupFormattingGap(Transaction transaction, Item start, Item? end,
+int cleanupFormattingGap(Transaction transaction, Item _start, Item? end,
     Map<String, dynamic> startAttributes, Map<String, dynamic> endAttributes) {
+  Item? start = _start;
   while (end != null &&
       end.content is! ContentString &&
       end.content is! ContentEmbed) {
@@ -455,7 +457,7 @@ int cleanupFormattingGap(Transaction transaction, Item start, Item? end,
     end = end.right;
   }
   var cleanups = 0;
-  while (start != end) {
+  while (start != null && start != end) {
     if (!start.deleted) {
       final content = start.content;
       if (content is ContentFormat) {
@@ -468,7 +470,7 @@ int cleanupFormattingGap(Transaction transaction, Item start, Item? end,
       }
     }
 
-    start = /** @type {Item} */ (start.right!);
+    start = /** @type {Item} */ (start.right);
   }
   return cleanups;
 }
@@ -567,7 +569,6 @@ ItemTextListPosition deleteText(
         }
         length -= _right.length;
         _right.delete(transaction);
-        break;
       }
     }
     currPos.forward();
@@ -584,7 +585,8 @@ ItemTextListPosition deleteText(
   final parent = /** @type {AbstractType<any>} */ (
       /** @type {Item} */ (currPos.left ?? currPos.right as Item).parent
           as AbstractType);
-  if (parent.innerSearchMarker != null) {
+  if (parent.innerSearchMarker != null &&
+      parent.innerSearchMarker!.isNotEmpty) {
     updateMarkerChanges(
         parent.innerSearchMarker!, currPos.index, -startLength + length);
   }
@@ -795,7 +797,7 @@ class YTextEvent extends YEvent {
             } else if (!item.deleted) {
               oldAttributes.set(key, value);
               final attr = attributes[key];
-              if (attr != null) {
+              if (attributes.containsKey(key)) {
                 if (!equalAttrs(attr, value)) {
                   if (action == "retain") {
                     addOp();
@@ -862,7 +864,8 @@ class YText extends AbstractType<YTextEvent> {
   /**
      * @type {List<ArraySearchMarker>}
      */
-  final List<ArraySearchMarker> _searchMarker = [];
+  @override
+  final List<ArraySearchMarker> innerSearchMarker = [];
 
   List<void Function()>? _pending;
 
@@ -918,7 +921,7 @@ class YText extends AbstractType<YTextEvent> {
       var foundFormattingItem = false;
       for (final entry in transaction.afterState.entries) {
         final client = entry.key;
-        final afterClock = entry.key;
+        final afterClock = entry.value;
         final clock = transaction.beforeState.get(client) ?? 0;
         if (afterClock == clock) {
           continue;
@@ -1033,7 +1036,7 @@ class YText extends AbstractType<YTextEvent> {
                 ? _insert.substring(0, _insert.length - 1)
                 : _insert;
             if (ins is! String || ins.length > 0) {
-              insertText(
+              _insertText(
                 transaction,
                 this,
                 currPos,
@@ -1098,7 +1101,7 @@ class YText extends AbstractType<YTextEvent> {
         /**
          * @type {Object<string,any>}
          */
-        final op = <String, Object>{"insert": str};
+        final op = <String, Object?>{"insert": str};
         if (addAttributes) {
           op["attributes"] = attributes;
         }
@@ -1156,7 +1159,7 @@ class YText extends AbstractType<YTextEvent> {
             /**
                  * @type {Object<string,any>}
                  */
-            final op = <String, Object>{
+            final op = <String, Object?>{
               "insert": /** @type {ContentEmbed} */ (_n.content as ContentEmbed)
                   .embed,
             };
@@ -1214,9 +1217,9 @@ class YText extends AbstractType<YTextEvent> {
             attributes[k] = v;
           });
         } else {
-          attributes = _attributes;
+          attributes = {..._attributes};
         }
-        insertText(transaction, this, pos, text, attributes);
+        _insertText(transaction, this, pos, text, attributes);
       });
     } else {
       /** @type {List<function>} */ (this._pending!)
@@ -1237,16 +1240,17 @@ class YText extends AbstractType<YTextEvent> {
   void insertEmbed(
     int index,
     Map<String, dynamic> embed, [
-    Map<String, Object?> attributes = const {},
+    Map<String, Object?>? attributes,
   ]) {
     // if (embed.constructor != Object) {
     //   throw  Exception("Embed must be an Object");
     // }
+    attributes = attributes == null ? {} : {...attributes};
     final y = this.doc;
     if (y != null) {
       transact(y, (transaction) {
         final pos = findPosition(transaction, this, index);
-        insertText(transaction, this, pos, embed, attributes);
+        _insertText(transaction, this, pos, embed, attributes!);
       });
     } else {
       /** @type {List<function>} */ (this._pending!)

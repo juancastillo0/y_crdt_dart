@@ -528,7 +528,7 @@ bool compareValues(
     dynamic constructor, dynamic a, dynamic b, String path, dynamic _) {
   if (a != b) {
     fail(
-        "Values $a ${jsonEncode(a)} and ${jsonEncode(b)} don't match (${path})");
+        "Values $a (${jsonEncode(a)}) and $b (${jsonEncode(b)}) don't match (${path})");
   }
   return true;
 }
