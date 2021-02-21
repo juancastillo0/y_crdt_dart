@@ -507,7 +507,7 @@ void writeAny(Encoder encoder, dynamic _data) {
     for (var i = 0; i < data.length; i++) {
       writeAny(encoder, data[i]);
     }
-  }  else if (data is Map) {
+  } else if (data is Map) {
     // TYPE 118: Object
     write(encoder, 118);
     final keys = data.keys.toList().cast<String>();
