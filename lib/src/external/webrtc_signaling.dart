@@ -18,6 +18,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/cupertino.dart';
 import 'package:uuid/uuid.dart';
+import 'package:y_crdt/src/external/broadcast_channel/broadcast_channel_web.dart';
 import 'package:y_crdt/src/external/simple-peer.dart';
 import 'package:y_crdt/src/utils/observable.dart';
 
@@ -36,7 +37,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 
 // const log = logging.createModuleLogger("y-webrtc");
 
-void Function(VoidCallback, [VoidCallback?]) createMutex () {
+void Function(VoidCallback, [VoidCallback?]) createMutex() {
   bool token = true;
   return (f, [g]) {
     if (token) {
@@ -60,7 +61,7 @@ const messageBcPeerId = 4;
 /**
  * @type {Map<string, SignalingConn>}
  */
-const signalingConns = <String, SignalingConn>{};
+const globalSignalingConns = <String, SignalingConn>{};
 
 /**
  * @type {Map<string,Room>}
@@ -196,7 +197,7 @@ void sendWebrtcConn(WebrtcConn webrtcConn, encoding.Encoder encoder) {
   );
   try {
     webrtcConn.peer.sendBinary(encoding.toUint8Array(encoder));
-  } catch (e) {}
+  } catch (_) {}
 }
 
 /**
@@ -208,7 +209,7 @@ void broadcastWebrtcConn(Room room, Uint8List m) {
   room.webrtcConns.values.forEach((conn) {
     try {
       conn.peer.sendBinary(m);
-    } catch (e) {}
+    } catch (_) {}
   });
 }
 
@@ -317,7 +318,7 @@ class WebrtcConn {
  */
 void broadcastBcMessage(Room room, Uint8List m) =>
 // cryptoutils.encrypt(m, room.key).then((data) =>
-    room.mux(() => bc.publish(room.name, data));
+    room.mux(() => broadcastChannelWeb.publish(room.name, m.buffer));
 // );
 
 /**
@@ -335,7 +336,7 @@ void broadcastRoomMessage(Room room, Uint8List m) {
  * @param {Room} room
  */
 void announceSignalingInfo(Room room) {
-  signalingConns.values.forEach((conn) {
+  globalSignalingConns.values.forEach((conn) {
     // only subcribe if connection is established, otherwise the conn automatically subscribes to all rooms
     if (conn.connected) {
       conn.send({
@@ -366,13 +367,14 @@ void broadcastBcPeerId(Room room) {
   }
 }
 
+final _uuid = Uuid();
 class Room {
   /**
    * Do not assume that peerId is unique. This is only meant for sending signaling messages.
    *
    * @type {string}
    */
-  late final peerId = Uuid().v4();
+  final peerId = _uuid.v4();
   final Y.Doc doc;
   /**
    * @type {awarenessProtocol.Awareness}
@@ -403,17 +405,17 @@ class Room {
   Room(this.doc, this.provider, this.name, this.key) {
     this.doc.on(
           "update",
-          (params) => this._docUpdateHandler(params[0] as Uint8List, params[1]),
+          this._docUpdateHandlerWrapper,
         );
     this.awareness.on("update", this._awarenessUpdateHandlerWrapped);
 
-    window.addEventListener("beforeunload", () {
-      awarenessProtocol.removeAwarenessStates(
-          this.awareness, [doc.clientID], "window unload");
-      rooms.values.forEach((room) {
-        room.disconnect();
-      });
-    });
+    // window.addEventListener("beforeunload", () {
+    //   awarenessProtocol.removeAwarenessStates(
+    //       this.awareness, [doc.clientID], "window unload");
+    //   rooms.values.forEach((room) {
+    //     room.disconnect();
+    //   });
+    // });
   }
 
   void _awarenessUpdateHandlerWrapped(List<dynamic> params) {
@@ -429,15 +431,19 @@ class Room {
   /**
      * @param {ArrayBuffer} data
      */
-  void _bcSubscriber(ByteBuffer data) =>
+  void _bcSubscriber(Object? data) =>
       // cryptoutils.decrypt(Uint8List.view(data), key).then((m) =>
       this.mux(() {
-        final reply = readMessage(this, Uint8List.view(data), () {});
+        final reply =
+            readMessage(this, Uint8List.view(data as ByteBuffer), () {});
         if (reply != null) {
           broadcastBcMessage(this, encoding.toUint8Array(reply));
         }
       });
   // );
+
+  void _docUpdateHandlerWrapper(List<dynamic> params) =>
+      this._docUpdateHandler(params[0] as Uint8List, params[1]);
   /**
      * Listens to Yjs updates and sends them to remote peers
      *
@@ -477,7 +483,7 @@ class Room {
     // signal through all available signaling connections
     announceSignalingInfo(this);
     final roomName = this.name;
-    bc.subscribe(roomName, this._bcSubscriber);
+    broadcastChannelWeb.subscribe(roomName, this._bcSubscriber);
     this.bcconnected = true;
     // broadcast peerId via broadcastchannel
     broadcastBcPeerId(this);
@@ -508,7 +514,7 @@ class Room {
 
   void disconnect() {
     // signal through all available signaling connections
-    signalingConns.values.forEach((conn) {
+    globalSignalingConns.values.forEach((conn) {
       if (conn.connected) {
         conn.send({
           "type": "unsubscribe",
@@ -529,16 +535,10 @@ class Room {
     encoding.writeVarString(encoderPeerIdBc, this.peerId);
     broadcastBcMessage(this, encoding.toUint8Array(encoderPeerIdBc));
 
-    bc.unsubscribe(this.name, this._bcSubscriber);
+    broadcastChannelWeb.unsubscribe(this.name, this._bcSubscriber);
     this.bcconnected = false;
-    this.doc.off(
-          "update",
-          (params) => this._docUpdateHandler(params[0] as Uint8List, params[1]),
-        );
-    this.awareness.off(
-          "update",
-          this._awarenessUpdateHandlerWrapped,
-        );
+    this.doc.off("update", this._docUpdateHandlerWrapper);
+    this.awareness.off("update", this._awarenessUpdateHandlerWrapped);
     this.webrtcConns.values.forEach((conn) => conn.destroy());
   }
 
@@ -614,87 +614,89 @@ class SignalingConn {
     _channel.sink.add(jsonEncode({"type": "publish"}));
     _channel.stream.listen(
       (event) {
+        // TODO: ready future
         if (!connected) {
           Y.logger.i("connected (${url})");
           final topics = rooms.keys.toList();
           this.send({"type": "subscribe", "topics": topics});
-          rooms.values.forEach((room) => publishSignalingMessage(this, room, {
-                "type": "announce",
-                "from": room.peerId,
-              }));
+          rooms.values.forEach(
+            (room) => publishSignalingMessage(this, room, {
+              "type": "announce",
+              "from": room.peerId,
+            }),
+          );
           connected = true;
-        } else {
-          final m = jsonDecode(event as String) as Map<String, Object?>;
-          switch (m["type"]) {
-            case "publish":
-              {
-                final roomName = m["topic"];
-                final room = roomName is String ? rooms.get(roomName) : null;
-                if (room == null) {
+        }
+        final m = jsonDecode(event as String) as Map<String, Object?>;
+        switch (m["type"]) {
+          case "publish":
+            {
+              final roomName = m["topic"];
+              final room = roomName is String ? rooms.get(roomName) : null;
+              if (room == null) {
+                return;
+              }
+
+              void _execMessage(Map<String, Object?>? _data) {
+                if (_data == null) {
                   return;
                 }
-
-                void execMessage(Map<String, Object?>? _data) {
-                  if (_data == null) {
-                    return;
-                  }
-                  final data = SignalingMsg.fromJson(_data);
-                  final webrtcConns = room.webrtcConns;
-                  final peerId = room.peerId;
-                  if (data.from == peerId ||
-                      (data.to != null && data.to != peerId) ||
-                      room.bcConns.contains(data.from)) {
-                    // ignore messages that are not addressed to this conn, or from clients that are connected via broadcastchannel
-                    return;
-                  }
-                  final emitPeerChange = webrtcConns.containsKey(data.from)
-                      ? () => {}
-                      : () => room.provider.emit("peers", [
-                            {
-                              "removed": [],
-                              "added": [data.from],
-                              "webrtcPeers": room.webrtcConns.keys.toList(),
-                              "bcPeers": room.bcConns.toList(),
-                            },
-                          ]);
-                  switch (data.type) {
-                    case "announce":
-                      if (webrtcConns.length < room.provider.maxConns) {
-                        webrtcConns.putIfAbsent(
-                          data.from,
-                          () => WebrtcConn(this, true, data.from, room),
-                        );
-                        emitPeerChange();
-                      }
-                      break;
-                    case "signal":
-                      if (data.to == peerId) {
-                        webrtcConns
-                            .putIfAbsent(
-                              data.from,
-                              () => WebrtcConn(this, false, data.from, room),
-                            )
-                            .peer
-                            .signal(data.signal);
-                        emitPeerChange();
-                      }
-                      break;
-                  }
+                final data = SignalingMsg.fromJson(_data);
+                final webrtcConns = room.webrtcConns;
+                final peerId = room.peerId;
+                if (data.from == peerId ||
+                    (data.to != null && data.to != peerId) ||
+                    room.bcConns.contains(data.from)) {
+                  // ignore messages that are not addressed to this conn, or from clients that are connected via broadcastchannel
+                  return;
                 }
-
-                if (room.key != null) {
-                  // TODO:
-                  throw Exception("Encription not supported");
-                  // if (m.data is String) {
-                  //   cryptoutils
-                  //       .decryptJson(buffer.fromBase64(m.data), room.key)
-                  //       .then(execMessage);
-                  // }
-                } else {
-                  execMessage(m["data"] as Map<String, Object?>?);
+                final emitPeerChange = webrtcConns.containsKey(data.from)
+                    ? () => {}
+                    : () => room.provider.emit("peers", [
+                          {
+                            "removed": [],
+                            "added": [data.from],
+                            "webrtcPeers": room.webrtcConns.keys.toList(),
+                            "bcPeers": room.bcConns.toList(),
+                          },
+                        ]);
+                switch (data.type) {
+                  case "announce":
+                    if (webrtcConns.length < room.provider.maxConns) {
+                      webrtcConns.putIfAbsent(
+                        data.from,
+                        () => WebrtcConn(this, true, data.from, room),
+                      );
+                      emitPeerChange();
+                    }
+                    break;
+                  case "signal":
+                    if (data.to == peerId) {
+                      webrtcConns
+                          .putIfAbsent(
+                            data.from,
+                            () => WebrtcConn(this, false, data.from, room),
+                          )
+                          .peer
+                          .signal(data.signal!);
+                      emitPeerChange();
+                    }
+                    break;
                 }
               }
-          }
+
+              if (room.key != null) {
+                // TODO:
+                throw Exception("Encription not supported");
+                // if (m.data is String) {
+                //   cryptoutils
+                //       .decryptJson(buffer.fromBase64(m.data), room.key)
+                //       .then(execMessage);
+                // }
+              } else {
+                _execMessage(m["data"] as Map<String, Object?>?);
+              }
+            }
         }
       },
       cancelOnError: true,
@@ -714,7 +716,7 @@ class SignalingMsg {
   final String? to;
   final String from;
   final String type;
-  final Map<String, dynamic>? signal;
+  final Map<String, Object?>? signal;
 
   const SignalingMsg({
     required this.to,
@@ -723,23 +725,21 @@ class SignalingMsg {
     required this.signal,
   });
 
-  static SignalingMsg fromJson(Map<String, dynamic> map) {
+  static SignalingMsg fromJson(Map<String, Object?> map) {
     return SignalingMsg(
       to: map['to'] as String,
       from: map['from'] as String,
       type: map['type'] as String,
-      signal: (map['signal'] as Map).map(
-        (key, value) => MapEntry(key as String, value),
-      ),
+      signal: (map['signal'] as Map?)?.cast(),
     );
   }
 
-  Map<String, dynamic> toJson() {
+  Map<String, Object?> toJson() {
     return {
       "to": to,
       "from": from,
       "type": type,
-      "signal": signal?.map((key, value) => MapEntry(key, value.toJson())),
+      "signal": signal,
     };
   }
 }
@@ -793,7 +793,8 @@ class WebrtcProvider extends Observable<String> {
     int?
         maxConns, // the random factor reduces the chance that n clients form a cluster
     this.filterBcConns = true,
-    this.peerOpts = const PeerOptions(), // simple-peer options. See https://github.com/feross/simple-peer#peer--new-peeropts
+    this.peerOpts =
+        const PeerOptions(), // simple-peer options. See https://github.com/feross/simple-peer#peer--new-peeropts
   })  : signalingUrls = signaling,
         maxConns = maxConns ?? 20 + (random.nextDouble() * 15).floor(),
         awareness = awareness ?? awarenessProtocol.Awareness(doc),
@@ -815,7 +816,7 @@ class WebrtcProvider extends Observable<String> {
       }
     });
     this.connect();
-    doc.on("destroy", (_) => this.destroy());
+    doc.on("destroy", this._destroyWrapper);
   }
 
   /**
@@ -829,7 +830,7 @@ class WebrtcProvider extends Observable<String> {
     this.shouldConnect = true;
     this.signalingUrls.forEach((url) {
       final signalingConn =
-          map.setIfUndefined(signalingConns, url, () => SignalingConn(url));
+          globalSignalingConns.putIfAbsent(url, () => SignalingConn(url));
       this.signalingConns.add(signalingConn);
       signalingConn.providers.add(this);
     });
@@ -842,16 +843,18 @@ class WebrtcProvider extends Observable<String> {
       conn.providers.remove(this);
       if (conn.providers.length == 0) {
         conn.destroy();
-        signalingConns.remove(conn.url);
+        globalSignalingConns.remove(conn.url);
       }
     });
 
     this.room?.disconnect();
   }
 
+  void _destroyWrapper(List<dynamic> _) => this.destroy();
+
   @override
   void destroy() {
-    this.doc.off("destroy", (_) => this.destroy());
+    this.doc.off("destroy", _destroyWrapper);
     // need to wait for key before deleting room
     this.key.then((_) {
       /** @type {Room} */ (this.room!).destroy();
