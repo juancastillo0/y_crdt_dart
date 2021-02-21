@@ -319,20 +319,25 @@ class Peer {
     };
   }
 
-  void signal(dynamic _data) async {
+  void signalString(String data) {
+    Map<String, Object?> _data;
+    try {
+      _data = jsonDecode(data) as Map<String, Object?>;
+    } catch (err) {
+      _data = {};
+    }
+    this.signal(_data);
+  }
+
+  void signal(Map<String, Object?> _data) async {
     if (this.destroyed) {
       throw errCode(
-          Exception("cannot signal after peer is destroyed"), "ERR_SIGNALING");
-    }
-    if (_data is String) {
-      try {
-        _data = jsonDecode(_data);
-      } catch (err) {
-        _data = {};
-      }
+        Exception("cannot signal after peer is destroyed"),
+        "ERR_SIGNALING",
+      );
     }
     this._debug("signal()");
-    final data = SignalData.fromJson(_data as Map<String, Object?>);
+    final data = SignalData.fromJson(_data);
 
     if (data.renegotiate != null && this.initiator) {
       this._debug("got request to renegotiate");
@@ -351,7 +356,6 @@ class Peer {
       }
     }
     if (data.sdp != null) {
-      // ignore: unawaited
       await this
           ._pc
           .setRemoteDescription(RTCSessionDescription(data.sdp, data.type))
@@ -407,7 +411,7 @@ class Peer {
   }
 
   void sendBinary(Uint8List message) {
-    this._channel!.send(RTCDataChannelMessage.fromBinary(message));
+    this.send(RTCDataChannelMessage.fromBinary(message));
     // if (chunk is String) {
     //   this._channel!.send(RTCDataChannelMessage(chunk));
     // } else if (chunk is Uint8List) {
@@ -416,7 +420,7 @@ class Peer {
   }
 
   void sendString(String message) {
-    this._channel!.send(RTCDataChannelMessage(message));
+    this.send(RTCDataChannelMessage(message));
     // if (chunk is String) {
     //   this._channel!.send(RTCDataChannelMessage(chunk));
     // } else if (chunk is Uint8List) {
