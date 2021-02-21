@@ -368,6 +368,7 @@ void broadcastBcPeerId(Room room) {
 }
 
 final _uuid = Uuid();
+
 class Room {
   /**
    * Do not assume that peerId is unique. This is only meant for sending signaling messages.
@@ -612,21 +613,22 @@ class SignalingConn {
   SignalingConn(this.url)
       : _channel = WebSocketChannel.connect(Uri.parse(url)) {
     _channel.sink.add(jsonEncode({"type": "publish"}));
+    _channel.onOpen = () {
+      if (!connected) {
+        Y.logger.i("connected (${url})");
+        final topics = rooms.keys.toList();
+        this.send({"type": "subscribe", "topics": topics});
+        rooms.values.forEach(
+          (room) => publishSignalingMessage(this, room, {
+            "type": "announce",
+            "from": room.peerId,
+          }),
+        );
+        connected = true;
+      }
+    };
     _channel.stream.listen(
       (event) {
-        // TODO: ready future
-        if (!connected) {
-          Y.logger.i("connected (${url})");
-          final topics = rooms.keys.toList();
-          this.send({"type": "subscribe", "topics": topics});
-          rooms.values.forEach(
-            (room) => publishSignalingMessage(this, room, {
-              "type": "announce",
-              "from": room.peerId,
-            }),
-          );
-          connected = true;
-        }
         final m = jsonDecode(event as String) as Map<String, Object?>;
         switch (m["type"]) {
           case "publish":

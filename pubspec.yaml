@@ -16,9 +16,10 @@ dependencies:
       url: https://github.com/Daegalus/dart-uuid
       ref: acca9f98eb00094d028a61f2f5a364635a8e0a0f
   web_socket_channel:
-    git:
-      url: https://github.com/dart-lang/web_socket_channel
-      ref: 76931ea1b81ba71e8319330c35285d3e88566315
+    path: ./packages/web_socket_channel
+    # git:
+    #   url: https://github.com/dart-lang/web_socket_channel
+    #   ref: 76931ea1b81ba71e8319330c35285d3e88566315
   flutter_webrtc:
 
 dev_dependencies:
@@ -32,6 +33,7 @@ dependency_overrides:
       ref: "3.0"
   convert: ^3.0.0-nullsafety
   web_socket_channel:
-    git:
-      url: https://github.com/dart-lang/web_socket_channel
-      ref: 76931ea1b81ba71e8319330c35285d3e88566315
+    path: ./packages/web_socket_channel
+  #   git:
+  #     url: https://github.com/dart-lang/web_socket_channel
+  #     ref: 76931ea1b81ba71e8319330c35285d3e88566315
