@@ -19,7 +19,7 @@ import 'dart:typed_data';
 import 'package:flutter/cupertino.dart';
 import 'package:uuid/uuid.dart';
 import 'package:y_crdt/src/external/broadcast_channel/broadcast_channel_web.dart';
-import 'package:y_crdt/src/external/simple-peer.dart';
+import 'package:y_crdt/src/external/simple_peer.dart';
 import 'package:y_crdt/src/utils/observable.dart';
 
 import "../lib0/encoding.dart" as encoding;
