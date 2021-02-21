@@ -38,6 +38,36 @@ bool mapsAreEqual<K, V>(Map<K, V>? m1, Map<K, V>? m2) {
   );
 }
 
+bool areEqualDeep<T>(T? m1, T? m2) {
+  if (m1 == m2) {
+    return true;
+  }
+  if (m1 == null || m2 == null) {
+    return false;
+  }
+  if (m1 is Map && m2 is Map) {
+    return m1.length == m2.length &&
+        m1.entries.every(
+          (e1) {
+            final e2Value = m2[e1.key];
+            return m2.containsKey(e1.key) && areEqualDeep(e1.value, e2Value);
+          },
+        );
+  } else if (m1 is Set && m2 is Set) {
+    return m1.length == m2.length && m1.difference(m2).isEmpty;
+  } else if (m1 is Iterable && m2 is Iterable && m1.length == m2.length) {
+    final _m1It = m1.iterator;
+    final _m2It = m2.iterator;
+    while (_m1It.moveNext() && _m2It.moveNext()) {
+      if (!areEqualDeep(_m1It.current, _m2It.current)) {
+        return false;
+      }
+    }
+  }
+
+  return false;
+}
+
 class Pair<L, R> {
   final L left;
   final R right;

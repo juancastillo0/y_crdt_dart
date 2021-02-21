@@ -63,10 +63,15 @@ void writeSyncStep1(encoding.Encoder encoder, Y.Doc doc) {
  * @param {Uint8Array} [encodedStateVector]
  */
 void writeSyncStep2(
-    encoding.Encoder encoder, Y.Doc doc, Uint8List encodedStateVector) {
+  encoding.Encoder encoder,
+  Y.Doc doc,
+  Uint8List? encodedStateVector,
+) {
   encoding.writeVarUint(encoder, messageYjsSyncStep2);
   encoding.writeVarUint8Array(
-      encoder, Y.encodeStateAsUpdate(doc, encodedStateVector));
+    encoder,
+    Y.encodeStateAsUpdate(doc, encodedStateVector),
+  );
 }
 
 /**
