@@ -177,8 +177,8 @@ class Peer {
 
   Peer(this.opts)
       : channelName = opts.initiator
-            ? opts.channelName ??
-                prng.word(_random, 7, 7) // randombytes(20).toString("hex")
+            ? (opts.channelName ??
+                prng.word(_random, 7, 7)) // randombytes(20).toString("hex")
             : null,
         config = {...Peer.defaultConfig, ...opts.config} {
     this.channelConfig = opts.channelConfig ?? Peer.defaultChannelConfig;
@@ -251,7 +251,7 @@ class Peer {
     if (this.initiator || this.channelConfig.negotiated) {
       pc
           .createDataChannel(
-            this.channelName,
+            this.channelName!,
             this.channelConfig,
           )
           .then(this._setupData);
@@ -349,7 +349,8 @@ class Peer {
     }
     if (data.candidate != null) {
       final remoteDescription = await this._pc.getRemoteDescription();
-      if (remoteDescription != null && remoteDescription.type.isNotEmpty) {
+      if (remoteDescription != null &&
+          (remoteDescription.type?.isNotEmpty ?? false)) {
         this._addIceCandidate(data.candidate!);
       } else {
         this._pendingCandidates.add(data.candidate!);
@@ -512,11 +513,15 @@ class Peer {
     }
     final _sender = sender.sender;
 
-    if (_sender.replaceTrack != null) {
+    // TODO:
+    if (newTrack == null) {
+      return;
+    }
+    try {
       _sender.replaceTrack(newTrack);
-    } else {
+    } catch (e, s) {
       this.destroy(errCode(
-          Exception("replaceTrack is not supported in this browser"),
+          Exception("replaceTrack is not supported in this browser. $e - $s"),
           "ERR_UNSUPPORTED_REPLACETRACK"));
     }
   }
@@ -837,9 +842,9 @@ class Peer {
     this._pc.createOffer(this.opts.offerOptions).then((offer) {
       if (this.destroyed) return;
       if (!this.opts.trickle && !this.opts.allowHalfTrickle) {
-        offer.sdp = filterTrickle(offer.sdp);
+        offer.sdp = filterTrickle(offer.sdp!);
       }
-      offer.sdp = this.opts.sdpTransform(offer.sdp);
+      offer.sdp = this.opts.sdpTransform(offer.sdp!);
 
       final sendOffer = () async {
         if (this.destroyed) return;
@@ -906,9 +911,9 @@ class Peer {
     this._pc.createAnswer(this.opts.answerOptions).then((answer) {
       if (this.destroyed) return;
       if (!this.opts.trickle && !this.opts.allowHalfTrickle) {
-        answer.sdp = filterTrickle(answer.sdp);
+        answer.sdp = filterTrickle(answer.sdp!);
       }
-      answer.sdp = this.opts.sdpTransform(answer.sdp);
+      answer.sdp = this.opts.sdpTransform(answer.sdp!);
 
       final sendAnswer = () async {
         if (this.destroyed) return;
@@ -966,8 +971,8 @@ class Peer {
       "iceStateChange (connection: $iceConnectionState) (gathering: $iceGatheringState)",
     );
     this.emit(SimplePeerEvent.iceStateChange(
-      iceConnectionState: iceConnectionState,
-      iceGatheringState: iceGatheringState,
+      iceConnectionState: iceConnectionState!,
+      iceGatheringState: iceGatheringState!,
     ));
 
     if (iceConnectionState ==
@@ -1191,7 +1196,7 @@ class Peer {
 
         if (this._chunk != null) {
           try {
-            this.send(RTCDataChannelMessage.fromBinary(this._chunk));
+            this.send(RTCDataChannelMessage.fromBinary(this._chunk!));
           } catch (err) {
             return this.destroy(errCode(err, "ERR_DATA_CHANNEL"));
           }
@@ -1253,7 +1258,7 @@ class Peer {
     }
 
     this._debug("signalingStateChange ${this._pc.signalingState}");
-    this.emit(SimplePeerEvent.signalingStateChange(this._pc.signalingState));
+    this.emit(SimplePeerEvent.signalingStateChange(this._pc.signalingState!));
   }
 
   void _onIceCandidate(RTCIceCandidate? candidate) {
