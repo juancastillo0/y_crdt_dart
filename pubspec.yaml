@@ -13,7 +13,7 @@ dependencies:
   fixnum: ^1.0.0
   uuid: ^3.0.0
   web_socket_channel:
-    path: ./packages/web_socket_channel
+    path: packages/web_socket_channel
     # git:
     #   url: https://github.com/dart-lang/web_socket_channel
     #   ref: 76931ea1b81ba71e8319330c35285d3e88566315
@@ -25,7 +25,7 @@ dev_dependencies:
 
 dependency_overrides:
   web_socket_channel:
-    path: ./packages/web_socket_channel
+    path: packages/web_socket_channel
   #   git:
   #     url: https://github.com/dart-lang/web_socket_channel
   #     ref: 76931ea1b81ba71e8319330c35285d3e88566315
