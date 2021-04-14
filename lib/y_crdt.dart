@@ -5,6 +5,10 @@ library y_crdt;
 
 export 'package:y_crdt/src/y_crdt_base.dart';
 
+// EXTERNAL
+
+export 'package:y_crdt/src/external/webrtc_signaling.dart';
+
 // TYPES
 
 export 'package:y_crdt/src/types/y_array.dart' show YArray, YArrayEvent;

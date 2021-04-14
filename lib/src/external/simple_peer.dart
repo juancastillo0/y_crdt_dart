@@ -121,6 +121,8 @@ class Peer {
 
   late final RTCPeerConnection _pc;
 
+  final _pcReadyCompleter = Completer<void>();
+  Future<void> get pcReadyFutute => _pcReadyCompleter.future;
   bool _pcReady = false;
   bool _channelReady = false;
   bool _iceComplete = false; // ice candidate trickle done (got null candidate)
@@ -227,9 +229,15 @@ class Peer {
     // this._isReactNativeWebrtc = typeof this._pc._peerConnectionId == "number";
 
     pc.onIceConnectionState = (_) {
+      this._debug(
+        "onIceConnectionState (connection: $_)",
+      );
       this._onIceStateChange();
     };
     pc.onIceGatheringState = (_) {
+      this._debug(
+        "onIceGatheringState (gathering: $_)",
+      );
       this._onIceStateChange();
     };
     pc.onConnectionState = (_) {
@@ -271,6 +279,7 @@ class Peer {
     this._debug("initial negotiation");
     this._needsNegotiation();
 
+    this._pcReadyCompleter.complete();
     // this._onFinishBound = () {
     //   this._onFinish();
     // };
@@ -338,6 +347,7 @@ class Peer {
     }
     this._debug("signal()");
     final data = SignalData.fromJson(_data);
+    await this.pcReadyFutute;
 
     if (data.renegotiate != null && this.initiator) {
       this._debug("got request to renegotiate");
@@ -895,7 +905,7 @@ class Peer {
           // HACK: Safari returns negotiated transceivers with a null mid
           _requestedTransceivers.add(transceiver);
           this.addTransceiver(TransceiverRequest(
-            kind: typeStringToRTCRtpMediaType[transceiver.sender.track.kind]!,
+            kind: typeStringToRTCRtpMediaType[transceiver.sender.track!.kind]!,
             init: RTCRtpTransceiverInit(),
           ));
         }
@@ -971,8 +981,8 @@ class Peer {
       "iceStateChange (connection: $iceConnectionState) (gathering: $iceGatheringState)",
     );
     this.emit(SimplePeerEvent.iceStateChange(
-      iceConnectionState: iceConnectionState!,
-      iceGatheringState: iceGatheringState!,
+      iceConnectionState: iceConnectionState,
+      iceGatheringState: iceGatheringState,
     ));
 
     if (iceConnectionState ==

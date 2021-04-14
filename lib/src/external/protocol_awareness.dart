@@ -300,8 +300,8 @@ void applyAwarenessUpdate(
   for (int i = 0; i < len; i++) {
     final clientID = decoding.readVarUint(decoder);
     var clock = decoding.readVarUint(decoder);
-    final state =
-        jsonDecode(decoding.readVarString(decoder)) as Map<String, Object>?;
+    final _s = jsonDecode(decoding.readVarString(decoder));
+    final Map<String, Object>? state = (_s as Map?)?.cast();
     final clientMeta = awareness.meta.get(clientID);
     final prevState = awareness.states.get(clientID);
     final currClock = clientMeta == null ? 0 : clientMeta.clock;

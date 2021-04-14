@@ -61,12 +61,12 @@ const messageBcPeerId = 4;
 /**
  * @type {Map<string, SignalingConn>}
  */
-const globalSignalingConns = <String, SignalingConn>{};
+final globalSignalingConns = <String, SignalingConn>{};
 
 /**
  * @type {Map<string,Room>}
  */
-const rooms = <String, Room>{};
+final rooms = <String, Room>{};
 
 /**
  * @param {Room} room
@@ -209,7 +209,9 @@ void broadcastWebrtcConn(Room room, Uint8List m) {
   room.webrtcConns.values.forEach((conn) {
     try {
       conn.peer.sendBinary(m);
-    } catch (_) {}
+    } catch (e) {
+      Y.logger.e(e);
+    }
   });
 }
 
@@ -219,7 +221,7 @@ class WebrtcConn {
   bool closed = false;
   bool connected = false;
   bool synced = false;
-  late final Peer peer;
+  final Peer peer;
   /**
    * @param {SignalingConn} signalingConn
    * @param {boolean} initiator
@@ -231,13 +233,12 @@ class WebrtcConn {
     bool initiator,
     this.remotePeerId,
     this.room,
-  ) {
+  ): peer = Peer(room.provider.peerOpts.copyWith(initiator: initiator)) {
     Y.logger.i("establishing connection to $remotePeerId");
 
     /**
      * @type {any}
      */
-    this.peer = Peer(room.provider.peerOpts.copyWith(initiator: initiator));
     this.peer.eventStream.listen((event) {
       event.maybeWhen(
         signal: (signal) {
@@ -615,6 +616,7 @@ class SignalingConn {
     _channel.sink.add(jsonEncode({"type": "publish"}));
     _channel.onOpen = () {
       if (!connected) {
+        connected = true;
         Y.logger.i("connected (${url})");
         final topics = rooms.keys.toList();
         this.send({"type": "subscribe", "topics": topics});
@@ -624,7 +626,6 @@ class SignalingConn {
             "from": room.peerId,
           }),
         );
-        connected = true;
       }
     };
     _channel.stream.listen(
@@ -706,8 +707,8 @@ class SignalingConn {
         Y.logger.i("disconnect onDone (${url})");
         this.connected = false;
       },
-      onError: () {
-        Y.logger.i("disconnect onError (${url})");
+      onError: (e, s) {
+        Y.logger.i("disconnect onError (${url}) $e - $s");
         this.connected = false;
       },
     );
@@ -729,7 +730,7 @@ class SignalingMsg {
 
   static SignalingMsg fromJson(Map<String, Object?> map) {
     return SignalingMsg(
-      to: map['to'] as String,
+      to: map['to'] as String?,
       from: map['from'] as String,
       type: map['type'] as String,
       signal: (map['signal'] as Map?)?.cast(),

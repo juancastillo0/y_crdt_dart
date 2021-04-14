@@ -13,8 +13,8 @@ abstract class SimplePeerEvent {
     Map<String, Object?> /*SimplePeerSignal*/ signal,
   ) = _Signal;
   const factory SimplePeerEvent.iceStateChange({
-    required RTCIceConnectionState iceConnectionState,
-    required RTCIceGatheringState iceGatheringState,
+    required RTCIceConnectionState? iceConnectionState,
+    required RTCIceGatheringState? iceGatheringState,
   }) = _IceStateChange;
   const factory SimplePeerEvent.connect() = _Connect;
   const factory SimplePeerEvent.negotiated() = _Negotiated;
@@ -36,8 +36,8 @@ abstract class SimplePeerEvent {
     required T Function() iceComplete,
     required T Function(Map<String, Object?> /*SimplePeerSignal*/ signal)
         signal,
-    required T Function(RTCIceConnectionState iceConnectionState,
-            RTCIceGatheringState iceGatheringState)
+    required T Function(RTCIceConnectionState? iceConnectionState,
+            RTCIceGatheringState? iceGatheringState)
         iceStateChange,
     required T Function() connect,
     required T Function() negotiated,
@@ -69,8 +69,8 @@ abstract class SimplePeerEvent {
     T Function()? iceTimeout,
     T Function()? iceComplete,
     T Function(Map<String, Object?> /*SimplePeerSignal*/ signal)? signal,
-    T Function(RTCIceConnectionState iceConnectionState,
-            RTCIceGatheringState iceGatheringState)?
+    T Function(RTCIceConnectionState? iceConnectionState,
+            RTCIceGatheringState? iceGatheringState)?
         iceStateChange,
     T Function()? connect,
     T Function()? negotiated,
@@ -197,8 +197,8 @@ class _Signal extends SimplePeerEvent {
 }
 
 class _IceStateChange extends SimplePeerEvent {
-  final RTCIceConnectionState iceConnectionState;
-  final RTCIceGatheringState iceGatheringState;
+  final RTCIceConnectionState? iceConnectionState;
+  final RTCIceGatheringState? iceGatheringState;
 
   const _IceStateChange({
     required this.iceConnectionState,
