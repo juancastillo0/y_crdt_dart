@@ -379,7 +379,7 @@ class Peer {
         this._pendingCandidates.clear();
         final remoteDescription = await this._pc.getRemoteDescription();
 
-        if (remoteDescription.type == "offer") this._createAnswer();
+        if (remoteDescription?.type == "offer") this._createAnswer();
       }).catchError((err) {
         this.destroy(errCode(err, "ERR_SET_REMOTE_DESCRIPTION"));
       });
