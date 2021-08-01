@@ -212,17 +212,14 @@ class Peer {
     //   }
     // }
 
-    try {
-      createPeerConnection(this.config).then(this._setupPc);
-    } catch (err) {
-      this.destroy(errCode(err, "ERR_PC_CONSTRUCTOR"));
-      return;
-    }
+    createPeerConnection(this.config).then(this._setupPc).onError((err, s) {
+      this.destroy(errCode(err, "ERR_PC_CONSTRUCTOR", s));
+    });
   }
 
   void _setupPc(RTCPeerConnection pc) {
     this._pc = pc;
-// We prefer feature detection whenever possible, but sometimes that's not
+    // We prefer feature detection whenever possible, but sometimes that's not
     // possible for certain implementations.
     // TODO:
     // this._isReactNativeWebrtc = typeof this._pc._peerConnectionId == "number";
@@ -382,8 +379,8 @@ class Peer {
         final remoteDescription = await this._pc.getRemoteDescription();
 
         if (remoteDescription?.type == "offer") this._createAnswer();
-      }).catchError((err) {
-        this.destroy(errCode(err, "ERR_SET_REMOTE_DESCRIPTION"));
+      }).onError((err, s) {
+        this.destroy(errCode(err, "ERR_SET_REMOTE_DESCRIPTION", s));
       });
     }
     if (data.sdp == null &&
@@ -397,7 +394,7 @@ class Peer {
   }
 
   void _addIceCandidate(RTCIceCandidate candidate) {
-    this._pc.addCandidate(candidate).catchError((err, _) {
+    this._pc.addCandidate(candidate).onError((err, s) {
       // TODO:
       // if (
       // !iceCandidateObj.address ||
@@ -405,7 +402,7 @@ class Peer {
       // ) {
       // warn("Ignoring unsupported ICE candidate.");
       // } else {
-      this.destroy(errCode(err, "ERR_ADD_ICE_CANDIDATE"));
+      this.destroy(errCode(err, "ERR_ADD_ICE_CANDIDATE", s));
       // }
     });
   }
@@ -414,9 +411,9 @@ class Peer {
    * Send text/binary data to the remote peer.
    * @param {ArrayBufferView|ArrayBuffer|Buffer|string|Blob} chunk
    */
-  void send(RTCDataChannelMessage message) {
+  Future<void> send(RTCDataChannelMessage message) async {
     if (this._checkIsDestroying('send')) return;
-    this._channel!.send(message);
+    return this._channel!.send(message);
     // if (chunk is String) {
     //   this._channel!.send(RTCDataChannelMessage(chunk));
     // } else if (chunk is Uint8List) {
@@ -424,8 +421,8 @@ class Peer {
     // }
   }
 
-  void sendBinary(Uint8List message) {
-    this.send(RTCDataChannelMessage.fromBinary(message));
+  Future<void> sendBinary(Uint8List message) {
+    return this.send(RTCDataChannelMessage.fromBinary(message));
     // if (chunk is String) {
     //   this._channel!.send(RTCDataChannelMessage(chunk));
     // } else if (chunk is Uint8List) {
@@ -433,8 +430,8 @@ class Peer {
     // }
   }
 
-  void sendString(String message) {
-    this.send(RTCDataChannelMessage(message));
+  Future<void> sendString(String message) {
+    return this.send(RTCDataChannelMessage(message));
     // if (chunk is String) {
     //   this._channel!.send(RTCDataChannelMessage(chunk));
     // } else if (chunk is Uint8List) {
@@ -447,16 +444,16 @@ class Peer {
    * @param {String} kind
    * @param {Object} init
    */
-  void addTransceiver(TransceiverRequest value) {
+  Future<void> addTransceiver(TransceiverRequest value) async {
     if (this._checkIsDestroying('addTransceiver')) return;
     this._debug("addTransceiver()");
 
     if (this.initiator) {
       try {
-        this._pc.addTransceiver(kind: value.kind, init: value.init);
+        await this._pc.addTransceiver(kind: value.kind, init: value.init);
         this._needsNegotiation();
-      } catch (err) {
-        this.destroy(errCode(err, "ERR_ADD_TRANSCEIVER"));
+      } catch (err, s) {
+        this.destroy(errCode(err, "ERR_ADD_TRANSCEIVER", s));
       }
     } else {
       this.emit(SimplePeerEvent.signal({
@@ -514,11 +511,11 @@ class Peer {
    * @param {MediaStreamTrack} newTrack
    * @param {MediaStream} stream
    */
-  void replaceTrack(
+  Future<void> replaceTrack(
     MediaStreamTrack oldTrack,
     MediaStreamTrack? newTrack,
     MediaStream stream,
-  ) {
+  ) async {
     if (this._checkIsDestroying('replaceTrack')) return;
     this._debug("replaceTrack()");
 
@@ -538,11 +535,13 @@ class Peer {
       return;
     }
     try {
-      _sender.replaceTrack(newTrack);
+      await _sender.replaceTrack(newTrack);
     } catch (e, s) {
       this.destroy(errCode(
-          Exception("replaceTrack is not supported in this browser. $e - $s"),
-          "ERR_UNSUPPORTED_REPLACETRACK"));
+        Exception("replaceTrack is not supported in this browser. $e - $s"),
+        "ERR_UNSUPPORTED_REPLACETRACK",
+        s,
+      ));
     }
   }
 
@@ -551,7 +550,7 @@ class Peer {
    * @param {MediaStreamTrack} track
    * @param {MediaStream} stream
    */
-  void removeTrack(MediaStreamTrack track, MediaStream stream) {
+  Future<void> removeTrack(MediaStreamTrack track, MediaStream stream) async {
     if (this._checkIsDestroying('removeTrack')) return;
     this._debug("removeSender()");
 
@@ -563,8 +562,8 @@ class Peer {
     }
     try {
       sender.removed = true;
-      this._pc.removeTrack(sender.sender);
-    } catch (err) {
+      await this._pc.removeTrack(sender.sender);
+    } catch (err, s) {
       String? name;
       try {
         name == (err as dynamic).name;
@@ -573,7 +572,7 @@ class Peer {
         this._sendersAwaitingStable.add(
             sender); // HACK: Firefox must wait until (signalingState == stable) https://bugzilla.mozilla.org/show_bug.cgi?id=1133874
       } else {
-        this.destroy(errCode(err, "ERR_REMOVE_TRACK"));
+        this.destroy(errCode(err, "ERR_REMOVE_TRACK", s));
       }
     }
     this._needsNegotiation();
@@ -663,7 +662,7 @@ class Peer {
 
     this._debug("destroying (error: $err)");
 
-    Future.delayed(Duration.zero, () {
+    Future.delayed(Duration.zero, () async {
       // allow events concurrent with the call to _destroy() to fire (see #692)
       this.destroyed = true;
       this.destroying = false;
@@ -689,7 +688,6 @@ class Peer {
       this._closingInterval = null;
 
       this._interval?.cancel();
-      ;
       this._interval = null;
       this._chunk = null;
       this._cb = null;
@@ -704,7 +702,7 @@ class Peer {
       if (this._channel != null) {
         final _channel = this._channel!;
         try {
-          _channel.close();
+          await _channel.close();
         } catch (_) {}
 
         // allow events concurrent with destruction to be handled
@@ -713,7 +711,7 @@ class Peer {
       }
       if (this._pcReadyCompleter.isCompleted) {
         try {
-          this._pc.close();
+          await this._pc.close();
         } catch (_) {}
 
         // allow events concurrent with destruction to be handled
@@ -727,7 +725,7 @@ class Peer {
       // this._pc = null;
       this._channel = null;
 
-      if (err != null) this.emit(SimplePeerEvent.error(err as Object));
+      if (err != null) this.emit(SimplePeerEvent.error(err));
       this.emit(const SimplePeerEvent.close());
       cb();
     });
@@ -778,8 +776,8 @@ class Peer {
       }
     };
     // TODO:
-    channel.messageStream.handleError((Object err, StackTrace stack) {
-      this.destroy(errCode(err, "ERR_DATA_CHANNEL"));
+    channel.messageStream.handleError((Object err, StackTrace s) {
+      this.destroy(errCode(err, "ERR_DATA_CHANNEL", s));
       throw err;
     });
 
@@ -912,13 +910,13 @@ class Peer {
         }
       };
 
-      final onError = (err) {
-        this.destroy(errCode(err, "ERR_SET_LOCAL_DESCRIPTION"));
+      final onError = (Object err, StackTrace s) {
+        this.destroy(errCode(err, "ERR_SET_LOCAL_DESCRIPTION", s));
       };
 
-      this._pc.setLocalDescription(offer).then(onSuccess).catchError(onError);
-    }).catchError((err) {
-      this.destroy(errCode(err, "ERR_CREATE_OFFER"));
+      this._pc.setLocalDescription(offer).then(onSuccess).onError(onError);
+    }).onError((err, s) {
+      this.destroy(errCode(err, "ERR_CREATE_OFFER", s));
     });
   }
 
@@ -980,13 +978,13 @@ class Peer {
         }
       };
 
-      final onError = (err) {
-        this.destroy(errCode(err, "ERR_SET_LOCAL_DESCRIPTION"));
+      final onError = (Object err, StackTrace s) {
+        this.destroy(errCode(err, "ERR_SET_LOCAL_DESCRIPTION", s));
       };
 
-      this._pc.setLocalDescription(answer).then(onSuccess).catchError(onError);
-    }).catchError((err) {
-      this.destroy(errCode(err, "ERR_CREATE_ANSWER"));
+      this._pc.setLocalDescription(answer).then(onSuccess).onError(onError);
+    }).onError((Object err, StackTrace s) {
+      this.destroy(errCode(err, "ERR_CREATE_ANSWER", s));
     });
   }
 
@@ -1108,7 +1106,7 @@ class Peer {
     void findCandidatePair() {
       if (this.destroyed) return;
 
-      this.getStats((err, items) {
+      this.getStats((err, items) async {
         if (this.destroyed) return;
 
         // Treat getStats error as non-fatal. It's not essential.
@@ -1233,9 +1231,9 @@ class Peer {
 
         if (this._chunk != null) {
           try {
-            this.send(RTCDataChannelMessage.fromBinary(this._chunk!));
-          } catch (err) {
-            return this.destroy(errCode(err, "ERR_DATA_CHANNEL"));
+            await this.send(RTCDataChannelMessage.fromBinary(this._chunk!));
+          } catch (err, s) {
+            return this.destroy(errCode(err, "ERR_DATA_CHANNEL", s));
           }
           this._chunk = null;
           this._debug('sent chunk from "write before connect"');
@@ -1257,7 +1255,6 @@ class Peer {
       });
     }
 
-    ;
     findCandidatePair();
   }
 
@@ -1411,8 +1408,29 @@ void warn(message) {
   _log.w(message);
 }
 
-Object errCode(Object? err, String code) {
-  return err ?? Exception(code);
+SimplePeerError errCode(Object? err, String code, [StackTrace? stackTrace]) {
+  return SimplePeerError(
+    code,
+    err ?? Exception(code),
+    stackTrace ?? StackTrace.current,
+  );
+}
+
+class SimplePeerError {
+  final Object error;
+  final StackTrace stackTrace;
+  final String code;
+
+  const SimplePeerError(
+    this.code,
+    this.error,
+    this.stackTrace,
+  );
+
+  @override
+  String toString() {
+    return 'SimplePeerError(code: $code, error: $error, stackTrace: $stackTrace)';
+  }
 }
 
 class SignalData {
