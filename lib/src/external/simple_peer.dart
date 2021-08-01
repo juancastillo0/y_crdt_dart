@@ -18,6 +18,8 @@ import 'package:y_crdt/src/lib0/prng.dart' as prng;
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:y_crdt/src/y_crdt_base.dart';
 
+// commit: d1c0ebe13233afb8d4eceafd2cbdd4000ffebea1
+
 // TODO:
 // export 'package:flutter_webrtc/flutter_webrtc.dart' show RTCDataChannelMessage;
 
@@ -213,10 +215,7 @@ class Peer {
     try {
       createPeerConnection(this.config).then(this._setupPc);
     } catch (err) {
-      Future.delayed(
-        Duration.zero,
-        () => this.destroy(errCode(err, "ERR_PC_CONSTRUCTOR")),
-      );
+      this.destroy(errCode(err, "ERR_PC_CONSTRUCTOR"));
       return;
     }
   }
@@ -249,6 +248,14 @@ class Peer {
     pc.onIceCandidate = (event) {
       this._onIceCandidate(event);
     };
+
+    // HACK: Fix for odd Firefox behavior, see: https://github.com/feross/simple-peer/pull/783
+    // TODO:
+    // if (typeof this._pc.peerIdentity === 'object') {
+    //   this._pc.peerIdentity.catch(err => {
+    //     this.destroy(errCode(err, 'ERR_PC_PEER_IDENTITY'))
+    //   })
+    // }
 
     // Other spec events, unused by this implementation:
     // - onconnectionstatechange
@@ -339,12 +346,7 @@ class Peer {
   }
 
   void signal(Map<String, Object?> _data) async {
-    if (this.destroyed) {
-      throw errCode(
-        Exception("cannot signal after peer is destroyed"),
-        "ERR_SIGNALING",
-      );
-    }
+    if (this._checkIsDestroying('signal')) return;
     this._debug("signal()");
     final data = SignalData.fromJson(_data);
     await this.pcReadyFutute;
@@ -413,6 +415,7 @@ class Peer {
    * @param {ArrayBufferView|ArrayBuffer|Buffer|string|Blob} chunk
    */
   void send(RTCDataChannelMessage message) {
+    if (this._checkIsDestroying('send')) return;
     this._channel!.send(message);
     // if (chunk is String) {
     //   this._channel!.send(RTCDataChannelMessage(chunk));
@@ -445,6 +448,7 @@ class Peer {
    * @param {Object} init
    */
   void addTransceiver(TransceiverRequest value) {
+    if (this._checkIsDestroying('addTransceiver')) return;
     this._debug("addTransceiver()");
 
     if (this.initiator) {
@@ -468,6 +472,7 @@ class Peer {
    * @param {MediaStream} stream
    */
   void addStream(MediaStream stream) {
+    if (this._checkIsDestroying('addStream')) return;
     this._debug("addStream()");
 
     stream.getTracks().forEach((track) {
@@ -481,6 +486,7 @@ class Peer {
    * @param {MediaStream} stream
    */
   void addTrack(MediaStreamTrack track, MediaStream stream) async {
+    if (this._checkIsDestroying('addTrack')) return;
     this._debug("addTrack()");
 
     final submap = this._senderMap.get(track) ??
@@ -508,8 +514,12 @@ class Peer {
    * @param {MediaStreamTrack} newTrack
    * @param {MediaStream} stream
    */
-  void replaceTrack(MediaStreamTrack oldTrack, MediaStreamTrack? newTrack,
-      MediaStream stream) {
+  void replaceTrack(
+    MediaStreamTrack oldTrack,
+    MediaStreamTrack? newTrack,
+    MediaStream stream,
+  ) {
+    if (this._checkIsDestroying('replaceTrack')) return;
     this._debug("replaceTrack()");
 
     final submap = this._senderMap.get(oldTrack);
@@ -542,6 +552,7 @@ class Peer {
    * @param {MediaStream} stream
    */
   void removeTrack(MediaStreamTrack track, MediaStream stream) {
+    if (this._checkIsDestroying('removeTrack')) return;
     this._debug("removeSender()");
 
     final submap = this._senderMap.get(track);
@@ -573,6 +584,7 @@ class Peer {
    * @param {MediaStream} stream
    */
   void removeStream(MediaStream stream) {
+    if (this._checkIsDestroying('removeStream')) return;
     this._debug("removeSenders()");
 
     stream.getTracks().forEach((track) {
@@ -597,6 +609,7 @@ class Peer {
   }
 
   void negotiate() {
+    if (this._checkIsDestroying('negotiate')) return;
     if (this.initiator) {
       if (this._isNegotiating) {
         this._queuedNegotiation = true;
@@ -624,14 +637,27 @@ class Peer {
     this._isNegotiating = true;
   }
 
+  bool _checkIsDestroying(String funcName) {
+    if (this.destroying) {
+      return true;
+    }
+    if (this.destroyed) {
+      throw errCode(
+        Exception('cannot $funcName after peer is destroyed'),
+        'ERR_DESTROYED',
+      );
+    }
+    return false;
+  }
+
   // TODO: Delete this method once readable-stream is updated to contain a default
   // implementation of destroy() that automatically calls _destroy()
   // See: https://github.com/nodejs/readable-stream/issues/283
-  void destroy([dynamic err]) {
+  void destroy([Object? err]) {
     this._destroy(err, () {});
   }
 
-  void _destroy(dynamic err, void Function() cb) {
+  void _destroy(Object? err, void Function() cb) {
     if (this.destroyed || this.destroying) return;
     this.destroying = true;
 
@@ -685,7 +711,7 @@ class Peer {
         _channel.onMessage = null;
         _channel.onDataChannelState = null;
       }
-      if (this._pc != null) {
+      if (this._pcReadyCompleter.isCompleted) {
         try {
           this._pc.close();
         } catch (_) {}
@@ -752,9 +778,10 @@ class Peer {
       }
     };
     // TODO:
-    // channel.onerror = (err) {
-    //   this.destroy(errCode(err, "ERR_DATA_CHANNEL"));
-    // };
+    channel.messageStream.handleError((Object err, StackTrace stack) {
+      this.destroy(errCode(err, "ERR_DATA_CHANNEL"));
+      throw err;
+    });
 
     // HACK: Chrome will sometimes get stuck in readyState "closing", let's check for this condition
     // https://bugs.chromium.org/p/chromium/issues/detail?id=882743
