@@ -189,19 +189,15 @@ class UndoManager extends Observable {
    * @param {UndoManagerOptions} options
    */
   UndoManager(
-    ValueOrList<AbstractType> typeScope, {
+    List<AbstractType> typeScope, {
     int captureTimeout = 500,
     this.deleteFilter = _defaultDeleteFilter,
-    this.trackedOrigins = const {
-      [null]
-    },
+    Set<dynamic>? trackedOrigins,
   }) {
-    this.scope = typeScope.when(
-      list: (v) => v,
-      value: (v) => [v],
-    );
+    this.scope = typeScope;
     this.doc = /** @type {Doc} */ (this.scope[0].doc!);
-    trackedOrigins.add(this);
+    this.trackedOrigins =
+        trackedOrigins == null ? {null, this} : {...trackedOrigins, this};
 
     this.doc.on("afterTransaction",
         /** @param {Transaction} transaction */ (args) {
@@ -212,8 +208,10 @@ class UndoManager extends Observable {
           (!this.trackedOrigins.contains(transaction.origin) &&
               (transaction.origin == null ||
                   !this
-                      .trackedOrigins
-                      .contains(transaction.origin.runtimeType)))) {
+                          .trackedOrigins
+                          .contains(transaction.origin.runtimeType) &&
+                      !this.trackedOrigins.whereType<TypeMatch>().any(
+                          (tracked) => tracked.isType(transaction.origin))))) {
         return;
       }
       final undoing = this.undoing;
@@ -263,7 +261,7 @@ class UndoManager extends Observable {
   }
 
   late final List<AbstractType<dynamic>> scope;
-  Set<dynamic> trackedOrigins;
+  late final Set<dynamic> trackedOrigins;
 
   final bool Function(Item) deleteFilter;
   /**
@@ -429,4 +427,10 @@ class _Value<V> extends ValueOrList<V> {
   const _Value(
     this.value,
   ) : super._();
+}
+
+class TypeMatch<T> {
+  const TypeMatch();
+
+  bool isType(dynamic v) => v is T;
 }
