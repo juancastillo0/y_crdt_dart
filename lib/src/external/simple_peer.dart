@@ -17,11 +17,9 @@ import 'package:y_crdt/src/external/simple_peer_event.dart';
 import 'package:y_crdt/src/lib0/prng.dart' as prng;
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:y_crdt/src/y_crdt_base.dart';
+export 'package:flutter_webrtc/flutter_webrtc.dart' show RTCDataChannelMessage;
 
 // commit: d1c0ebe13233afb8d4eceafd2cbdd4000ffebea1
-
-// TODO:
-// export 'package:flutter_webrtc/flutter_webrtc.dart' show RTCDataChannelMessage;
 
 const MAX_BUFFERED_AMOUNT = 64 * 1024;
 const ICECOMPLETE_TIMEOUT = 5 * 1000;
