@@ -12,6 +12,24 @@ import 'package:y_crdt/y_crdt.dart' as Y;
 import 'package:y_crdt/src/lib0/testing.dart' as t;
 import 'test_helper.dart';
 
+void main() async {
+  await t.runTests(
+    {
+      'undoredo': {
+        "testUndoText": testUndoText,
+        "testDoubleUndo": testDoubleUndo,
+        "testUndoMap": testUndoMap,
+        "testUndoArray": testUndoArray,
+        // "testUndoXml": testUndoXml,
+        "testUndoEvents": testUndoEvents,
+        "testTrackClass": testTrackClass,
+        "testTypeScope": testTypeScope,
+        "testUndoDeleteFilter": testUndoDeleteFilter,
+      }
+    },
+  );
+}
+
 /**
  * @param {t.TestCase} tc
  */
