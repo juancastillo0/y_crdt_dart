@@ -58,8 +58,10 @@
 
 import 'dart:convert' show jsonEncode;
 import 'dart:async' show FutureOr;
+import 'dart:io';
 import 'dart:math' show Random;
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:y_crdt/src/y_crdt_base.dart';
 
 import 'prng.dart' as global_prng;
@@ -142,9 +144,11 @@ _StringDiff simpleDiffString(String a, String b) {
 }
 
 class _Env {
-  bool hasConf(String conf) => false;
-  bool hasParam(String param) => false;
-  String getParam(String param, String def) => def;
+  bool hasConf(String conf) => hasParam('--' + conf);
+  bool hasParam(String param) =>
+      kIsWeb ? false : Platform.environment.containsKey(param);
+  String getParam(String param, String def) =>
+      kIsWeb ? def : Platform.environment.get(param) ?? def;
 }
 
 final env = _Env();
