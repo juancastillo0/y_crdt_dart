@@ -109,7 +109,7 @@ class _R {
 void keepItem(item, keep) {
   while (item != null && item.keep != keep) {
     item.keep = keep;
-    item = /** @type {AbstractType<any>} */ (item.parent)._item;
+    item = /** @type {AbstractType<any>} */ (item.parent as AbstractType).innerItem;
   }
 }
 

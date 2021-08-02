@@ -150,10 +150,11 @@ class ContentType implements AbstractContent {
     }
     this.type.innerStart = null;
     this.type.innerMap.values.forEach(
-        /** @param {Item | null} item */ (_item) {
+        /** @param {Item | null} item */ (item) {
+      Item? _item = item;
       while (_item != null) {
         _item.gc(store, true);
-        item = _item.left;
+        _item = _item.left;
       }
     });
     this.type.innerMap = {};
