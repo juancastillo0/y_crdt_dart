@@ -7,6 +7,11 @@ linter:
     slash_for_doc_comments: false
     avoid_print: true
 
+    prefer_is_empty: false
+    prefer_conditional_assignment: false
+    avoid_function_literals_in_foreach_calls: false
+    non_constant_identifier_names: false
+
     avoid_classes_with_only_static_members: false
     use_setters_to_change_properties: false
     prefer_constructors_over_static_methods: false
