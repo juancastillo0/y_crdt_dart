@@ -1,23 +1,44 @@
-# Defines a default set of lint rules enforced for
-# projects at Google. For details and rationale,
-# see https://github.com/dart-lang/pedantic#enabled-lints.
-include: package:pedantic/analysis_options.yaml
+include: package:lint/analysis_options_package.yaml
 
-# For lint rules and documentation, see http://dart-lang.github.io/linter/lints.
-# Uncomment to specify additional rules.
 linter:
   rules:
-    unnecessary_this: false
+    # different
     prefer_single_quotes: false
     slash_for_doc_comments: false
-    omit_local_variable_types: false
-    
+    avoid_print: true
+
+    avoid_classes_with_only_static_members: false
+    use_setters_to_change_properties: false
+    prefer_constructors_over_static_methods: false
+    unnecessary_this: false
+    prefer_interpolation_to_compose_strings: false
+    prefer_if_elements_to_conditional_expressions: false
+    unnecessary_brace_in_string_interps: false
+
+    type_annotate_public_apis: true
+    avoid_redundant_argument_values: false
+    # new
+    avoid_unused_constructor_parameters: true
+    prefer_const_constructors: true
+    lines_longer_than_80_chars: true
+    # prefer_single_quotes: true
+
+    avoid_dynamic_calls: true
+    prefer_adjacent_string_concatenation: true
+    unawaited_futures: true
+    use_named_constants: true
+    avoid_renaming_method_parameters: true
+    avoid_equals_and_hash_code_on_mutable_classes: true
 
 analyzer:
   strong-mode:
     implicit-casts: false
     # implicit-dynamic: false
+  exclude:
+    - lib/**.g.dart
+    - lib/**.freezed.dart
+    - lib/generated/**/*
   errors:
+    missing_return: error
     unrelated_type_equality_checks: error
-#   exclude:
-#     - path/to/excluded/files/**
+    null_check_on_nullable_type_parameter: warning
