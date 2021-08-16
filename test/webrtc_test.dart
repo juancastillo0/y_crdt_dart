@@ -22,11 +22,10 @@ Future<void> _spawnIsolate(String url) async {
 
   final arr = ydoc1.getArray('bi');
   arr.push(['a']);
-  await Future.delayed(Duration(seconds: 4));
-  return null;
+  await Future.delayed(const Duration(seconds: 4));
 }
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   late WebRtcSignalingServer server;
   setUp(() async {
@@ -34,7 +33,7 @@ void main() async {
   });
 
   tearDown(() async {
-    await server.inner.close(force: true);
+    await server.close(force: true);
   });
 
   test(
@@ -62,7 +61,7 @@ void main() async {
       arr2.observe((e, t) {
         final added = e.changes.added;
         expect(added.length, 1);
-        expect(added.first.content, TypeMatcher<ContentString>());
+        expect(added.first.content, const TypeMatcher<ContentString>());
         expect((added.first.content as ContentString).str, 'a');
         c.complete();
       });

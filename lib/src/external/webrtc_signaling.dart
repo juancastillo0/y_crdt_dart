@@ -58,15 +58,21 @@ const messageQueryAwareness = 3;
 const messageAwareness = 1;
 const messageBcPeerId = 4;
 
-/**
- * @type {Map<string, SignalingConn>}
- */
-final globalSignalingConns = <String, SignalingConn>{};
+final globalSignalingContext = SignalingContext();
 
-/**
- * @type {Map<string,Room>}
- */
-final rooms = <String, Room>{};
+class SignalingContext {
+  SignalingContext();
+
+  /**
+   * @type {Map<string,Room>}
+   */
+  final rooms = <String, Room>{};
+
+  /**
+   * @type {Map<string, SignalingConn>}
+   */
+  final signalingConns = <String, SignalingConn>{};
+}
 
 /**
  * @param {Room} room
@@ -81,7 +87,7 @@ void checkIsSynced(Room room) {
   if ((!synced && room.synced) || (synced && !room.synced)) {
     room.synced = synced;
     room.provider.emit("synced", [
-      {synced}
+      {'synced': synced}
     ]);
     Y.logger.i("synced with all ${room.name} peers");
   }
@@ -233,7 +239,7 @@ class WebrtcConn {
     bool initiator,
     this.remotePeerId,
     this.room,
-  ): peer = Peer(room.provider.peerOpts.copyWith(initiator: initiator)) {
+  ) : peer = Peer(room.provider.peerOpts.copyWith(initiator: initiator)) {
     Y.logger.i("establishing connection to $remotePeerId");
 
     /**
@@ -337,7 +343,8 @@ void broadcastRoomMessage(Room room, Uint8List m) {
  * @param {Room} room
  */
 void announceSignalingInfo(Room room) {
-  globalSignalingConns.values.forEach((conn) {
+  final signalingConns = room.provider.signalingContext.signalingConns;
+  signalingConns.values.forEach((conn) {
     // only subcribe if connection is established, otherwise the conn automatically subscribes to all rooms
     if (conn.connected) {
       conn.send({
@@ -516,7 +523,7 @@ class Room {
 
   void disconnect() {
     // signal through all available signaling connections
-    globalSignalingConns.values.forEach((conn) {
+    provider.signalingContext.signalingConns.values.forEach((conn) {
       if (conn.connected) {
         conn.send({
           "type": "unsubscribe",
@@ -558,6 +565,7 @@ class Room {
  */
 Room openRoom(Y.Doc doc, WebrtcProvider provider, String name, Object? key) {
   // there must only be one room
+  final rooms = provider.signalingContext.rooms;
   if (rooms.containsKey(name)) {
     throw Exception("A Yjs Doc connected to room '${name}' already exists!");
   }
@@ -611,8 +619,9 @@ class SignalingConn {
     _channel.sink.close();
   }
 
-  SignalingConn(this.url)
+  SignalingConn(this.url, SignalingContext signalingContext)
       : _channel = WebSocketChannel.connect(Uri.parse(url)) {
+    final rooms = signalingContext.rooms;
     _channel.sink.add(jsonEncode({"type": "publish"}));
     _channel.onOpen = () {
       if (!connected) {
@@ -766,6 +775,7 @@ class WebrtcProvider extends Observable<String> {
   final int maxConns;
   final PeerOptions peerOpts;
   final Future<Object?> key;
+  final SignalingContext signalingContext;
 
   /**
    * @type {Room|null}
@@ -793,12 +803,14 @@ class WebrtcProvider extends Observable<String> {
     ],
     String? password,
     awarenessProtocol.Awareness? awareness,
+    SignalingContext? signalingContext,
     int?
         maxConns, // the random factor reduces the chance that n clients form a cluster
     this.filterBcConns = true,
     this.peerOpts =
         const PeerOptions(), // simple-peer options. See https://github.com/feross/simple-peer#peer--new-peeropts
-  })  : signalingUrls = signaling,
+  })  : signalingContext = signalingContext ?? globalSignalingContext,
+        signalingUrls = signaling,
         maxConns = maxConns ?? 20 + (random.nextDouble() * 15).floor(),
         awareness = awareness ?? awarenessProtocol.Awareness(doc),
         key = Future.value(null) {
@@ -832,8 +844,8 @@ class WebrtcProvider extends Observable<String> {
   void connect() {
     this.shouldConnect = true;
     this.signalingUrls.forEach((url) {
-      final signalingConn =
-          globalSignalingConns.putIfAbsent(url, () => SignalingConn(url));
+      final signalingConn = signalingContext.signalingConns
+          .putIfAbsent(url, () => SignalingConn(url, signalingContext));
       this.signalingConns.add(signalingConn);
       signalingConn.providers.add(this);
     });
@@ -846,7 +858,7 @@ class WebrtcProvider extends Observable<String> {
       conn.providers.remove(this);
       if (conn.providers.length == 0) {
         conn.destroy();
-        globalSignalingConns.remove(conn.url);
+        signalingContext.signalingConns.remove(conn.url);
       }
     });
 
@@ -861,7 +873,7 @@ class WebrtcProvider extends Observable<String> {
     // need to wait for key before deleting room
     this.key.then((_) {
       /** @type {Room} */ (this.room!).destroy();
-      rooms.remove(this.roomName);
+      signalingContext.rooms.remove(this.roomName);
     });
     super.destroy();
   }
