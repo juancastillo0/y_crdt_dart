@@ -357,7 +357,7 @@ class Peer {
     this.signal(_data);
   }
 
-  void signal(Map<String, Object?> _data) async {
+  Future<void> signal(Map<String, Object?> _data) async {
     if (this._checkIsDestroying('signal')) return;
     this._debug("signal()");
     final data = SignalData.fromJson(_data);
@@ -369,13 +369,13 @@ class Peer {
     }
     if (data.transceiverRequest != null && this.initiator) {
       this._debug("got request for transceiver");
-      this.addTransceiver(data.transceiverRequest!);
+      await this.addTransceiver(data.transceiverRequest!);
     }
     if (data.candidate != null) {
       final remoteDescription = await this._pc.getRemoteDescription();
       if (remoteDescription != null &&
           (remoteDescription.type?.isNotEmpty ?? false)) {
-        this._addIceCandidate(data.candidate!);
+        await this._addIceCandidate(data.candidate!);
       } else {
         this._pendingCandidates.add(data.candidate!);
       }
@@ -408,8 +408,8 @@ class Peer {
     }
   }
 
-  void _addIceCandidate(RTCIceCandidate candidate) {
-    this._pc.addCandidate(candidate).onError((err, s) {
+  Future<void> _addIceCandidate(RTCIceCandidate candidate) {
+    return this._pc.addCandidate(candidate).onError((err, s) {
       // TODO:
       // if (
       // !iceCandidateObj.address ||
@@ -711,6 +711,7 @@ class Peer {
       // this.removeListener("finish", this._onFinish);
       // }
       // this._onFinishBound = null;
+      // ignore: unawaited_futures
       this._onFinishSubscription?.cancel();
       this._onFinishSubscription = null;
 
