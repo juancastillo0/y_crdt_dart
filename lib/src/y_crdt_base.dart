@@ -102,8 +102,9 @@ abstract class Either<L, R> {
   }) {
     final v = this;
     if (v is _Left<L, R>) return left != null ? left(v.value) : orElse?.call();
-    if (v is _Right<L, R>)
+    if (v is _Right<L, R>) {
       return right != null ? right(v.value) : orElse?.call();
+    }
     throw "";
   }
 

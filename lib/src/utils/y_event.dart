@@ -82,8 +82,8 @@ class YEvent {
    * @return {boolean}
    */
   bool adds(AbstractStruct struct) {
-    return (struct.id.clock >=
-        (this.transaction.beforeState.get(struct.id.client) ?? 0));
+    return struct.id.clock >=
+        (this.transaction.beforeState.get(struct.id.client) ?? 0);
   }
 
   /**
@@ -110,7 +110,7 @@ class YEvent {
         keys: keys,
       );
       final changed =
-          /** @type Set<string|null> */ (this.transaction.changed.get(target));
+          /** @type Set<string|null> */ this.transaction.changed.get(target);
       if (changed!.contains(null)) {
         /**
          * @type {any}
@@ -158,7 +158,7 @@ class YEvent {
       }
       changed.forEach((key) {
         if (key != null) {
-          final item = /** @type {Item} */ (target.innerMap.get(key));
+          final item = /** @type {Item} */ target.innerMap.get(key);
           /**
            * @type {'delete' | 'add' | 'update'}
            */
@@ -199,7 +199,7 @@ class YEvent {
       });
       this._changes = changes;
     }
-    return /** @type {any} */ (changes);
+    return /** @type {any} */ changes;
   }
 }
 
@@ -289,7 +289,7 @@ List getPathTo(AbstractType parent, AbstractType child) {
       }
       path.insert(0, i);
     }
-    child = /** @type {AbstractType<any>} */ (childItem.parent as AbstractType);
+    child = /** @type {AbstractType<any>} */ childItem.parent as AbstractType;
     childItem = child.innerItem;
   }
   return path;

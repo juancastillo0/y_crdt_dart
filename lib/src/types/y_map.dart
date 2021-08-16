@@ -84,6 +84,7 @@ class YMap<T> extends AbstractType<YMapEvent<T>> {
    * @param {Doc} y The Yjs instance
    * @param {Item} item
    */
+  @override
   void innerIntegrate(Doc y, Item? item) {
     super.innerIntegrate(y, item);
     /** @type {Map<string, any>} */ (this._prelimContent!)
@@ -93,6 +94,7 @@ class YMap<T> extends AbstractType<YMapEvent<T>> {
     this._prelimContent = null;
   }
 
+  @override
   YMap<T> innerCopy() {
     return YMap<T>();
   }
@@ -100,6 +102,7 @@ class YMap<T> extends AbstractType<YMapEvent<T>> {
   /**
    * @return {YMap<T>}
    */
+  @override
   YMap<T> clone() {
     final map = YMap<T>();
     this.forEach((value, key, _) {
@@ -114,6 +117,7 @@ class YMap<T> extends AbstractType<YMapEvent<T>> {
    * @param {Transaction} transaction
    * @param {Set<null|string>} parentSubs Keys changed on this type. `null` if list was modified.
    */
+  @override
   void innerCallObserver(Transaction transaction, Set<String?> parentSubs) {
     callTypeObservers<YMapEvent<T>>(
       this,
@@ -127,6 +131,7 @@ class YMap<T> extends AbstractType<YMapEvent<T>> {
    *
    * @return {Object<string,T>}
    */
+  @override
   Map<String, Object?> toJSON() {
     /**
      * @type {Object<string,T>}
@@ -245,7 +250,7 @@ class YMap<T> extends AbstractType<YMapEvent<T>> {
    * @return {T|undefined}
    */
   T? get(String key) {
-    return /** @type {any} */ (typeMapGet(this, key) as T?);
+    return /** @type {any} */ typeMapGet(this, key) as T?;
   }
 
   /**
@@ -261,6 +266,7 @@ class YMap<T> extends AbstractType<YMapEvent<T>> {
   /**
    * @param {AbstractUpdateEncoder} encoder
    */
+  @override
   void innerWrite(AbstractUpdateEncoder encoder) {
     encoder.writeTypeRef(YMapRefID);
   }

@@ -15,6 +15,8 @@
 //   ID, // eslint-disable-line
 // } from "../internals.js";
 
+import 'package:y_crdt/src/lib0/decoding.dart' as decoding;
+import 'package:y_crdt/src/lib0/encoding.dart' as encoding;
 // import * as array from "lib0/array.js";
 // import * as math from "lib0/math.js";
 // import * as map from "lib0/map.js";
@@ -29,8 +31,6 @@ import 'package:y_crdt/src/utils/transaction.dart';
 import 'package:y_crdt/src/utils/update_decoder.dart';
 import 'package:y_crdt/src/utils/update_encoder.dart';
 import 'package:y_crdt/src/y_crdt_base.dart';
-import 'package:y_crdt/src/lib0/decoding.dart' as decoding;
-import 'package:y_crdt/src/lib0/encoding.dart' as encoding;
 
 class DeleteItem {
   /**
@@ -75,9 +75,8 @@ class DeleteSet {
 void iterateDeletedStructs(Transaction transaction, DeleteSet ds,
         void Function(AbstractStruct) f) =>
     ds.clients.forEach((clientid, deletes) {
-      final structs = /** @type {List<GC|Item>} */ (transaction
-          .doc.store.clients
-          .get(clientid));
+      final structs = /** @type {List<GC|Item>} */ transaction.doc.store.clients
+          .get(clientid);
       for (var i = 0; i < deletes.length; i++) {
         final del = deletes[i];
         iterateStructs(transaction, structs!, del.clock, del.len, f);

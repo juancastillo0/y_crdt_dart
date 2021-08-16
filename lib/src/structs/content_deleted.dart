@@ -21,6 +21,7 @@ class ContentDeleted implements AbstractContent {
   /**
    * @return {number}
    */
+  @override
   getLength() {
     return this.len;
   }
@@ -28,6 +29,7 @@ class ContentDeleted implements AbstractContent {
   /**
    * @return {List<any>}
    */
+  @override
   getContent() {
     return [];
   }
@@ -35,6 +37,7 @@ class ContentDeleted implements AbstractContent {
   /**
    * @return {boolean}
    */
+  @override
   isCountable() {
     return false;
   }
@@ -42,6 +45,7 @@ class ContentDeleted implements AbstractContent {
   /**
    * @return {ContentDeleted}
    */
+  @override
   copy() {
     return ContentDeleted(this.len);
   }
@@ -50,6 +54,7 @@ class ContentDeleted implements AbstractContent {
    * @param {number} offset
    * @return {ContentDeleted}
    */
+  @override
   splice(offset) {
     final right = ContentDeleted(this.len - offset);
     this.len = offset;
@@ -60,6 +65,7 @@ class ContentDeleted implements AbstractContent {
    * @param {ContentDeleted} right
    * @return {boolean}
    */
+  @override
   mergeWith(right) {
     if (right is ContentDeleted) {
       this.len += right.len;
@@ -73,6 +79,7 @@ class ContentDeleted implements AbstractContent {
    * @param {Transaction} transaction
    * @param {Item} item
    */
+  @override
   integrate(transaction, item) {
     addToDeleteSet(
         transaction.deleteSet, item.id.client, item.id.clock, this.len);
@@ -82,15 +89,18 @@ class ContentDeleted implements AbstractContent {
   /**
    * @param {Transaction} transaction
    */
+  @override
   delete(transaction) {}
   /**
    * @param {StructStore} store
    */
+  @override
   gc(store) {}
   /**
    * @param {AbstractUpdateEncoder} encoder
    * @param {number} offset
    */
+  @override
   write(encoder, offset) {
     encoder.writeLen(this.len - offset);
   }
@@ -98,6 +108,7 @@ class ContentDeleted implements AbstractContent {
   /**
    * @return {number}
    */
+  @override
   getRef() {
     return 1;
   }

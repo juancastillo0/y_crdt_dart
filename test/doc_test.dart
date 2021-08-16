@@ -1,7 +1,7 @@
 // import * as Y from "../src/index.js";
 // import * as t from "lib0/testing.js";
-import 'package:y_crdt/y_crdt.dart' as Y;
 import 'package:y_crdt/src/lib0/testing.dart' as t;
+import 'package:y_crdt/y_crdt.dart' as Y;
 
 void main() async {
   await t.runTests(

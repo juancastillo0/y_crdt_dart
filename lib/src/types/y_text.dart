@@ -95,7 +95,7 @@ class ItemTextListPosition {
     } else if (_right.content is ContentFormat) {
       if (!_right.deleted) {
         updateCurrentAttributes(
-            this.currentAttributes, (_right.content as ContentFormat));
+            this.currentAttributes, _right.content as ContentFormat);
       }
     }
 
@@ -131,7 +131,7 @@ ItemTextListPosition findNextPosition(
       if (!_right.deleted) {
         updateCurrentAttributes(
             pos.currentAttributes,
-            /** @type {ContentFormat} */ (_right.content as ContentFormat));
+            /** @type {ContentFormat} */ _right.content as ContentFormat);
       }
     }
     pos.left = pos.right;
@@ -338,11 +338,11 @@ void _insertText(
       insertAttributes(transaction, parent, currPos, attributes);
   // insert content
   final content = text is String
-      ? ContentString(/** @type {string} */ (text))
+      ? ContentString(/** @type {string} */ text)
       : ContentEmbed(text as Map<String, dynamic>);
-  var index = currPos.index;
+  final index = currPos.index;
   var right = currPos.right;
-  var left = currPos.left;
+  final left = currPos.left;
   if (parent.innerSearchMarker != null &&
       parent.innerSearchMarker!.isNotEmpty) {
     updateMarkerChanges(
@@ -452,7 +452,7 @@ int cleanupFormattingGap(Transaction transaction, Item _start, Item? end,
     if (!end.deleted && end.content is ContentFormat) {
       updateCurrentAttributes(
           endAttributes,
-          /** @type {ContentFormat} */ (end.content as ContentFormat));
+          /** @type {ContentFormat} */ end.content as ContentFormat);
     }
     end = end.right;
   }
@@ -470,7 +470,7 @@ int cleanupFormattingGap(Transaction transaction, Item _start, Item? end,
       }
     }
 
-    start = /** @type {Item} */ (start.right);
+    start = /** @type {Item} */ start.right;
   }
   return cleanups;
 }
@@ -494,8 +494,8 @@ void cleanupContextlessFormattingGap(Transaction transaction, Item? item) {
       (item.deleted ||
           (item.content is! ContentString && item.content is! ContentEmbed))) {
     if (!item.deleted && item.content is ContentFormat) {
-      final key = /** @type {ContentFormat} */ (item.content as ContentFormat)
-          .key;
+      final key =
+          /** @type {ContentFormat} */ (item.content as ContentFormat).key;
       if (attrs.contains(key)) {
         item.delete(transaction);
       } else {
@@ -520,8 +520,8 @@ void cleanupContextlessFormattingGap(Transaction transaction, Item? item) {
  */
 int cleanupYTextFormatting(YText type) {
   var res = 0;
-  transact(/** @type {Doc} */ (type.doc!), (transaction) {
-    var start = /** @type {Item} */ (type.innerStart);
+  transact(/** @type {Doc} */ type.doc!, (transaction) {
+    var start = /** @type {Item} */ type.innerStart;
     var end = type.innerStart;
     var startAttributes = <String, dynamic>{};
     final currentAttributes = {...startAttributes};
@@ -530,7 +530,7 @@ int cleanupYTextFormatting(YText type) {
         if (end.content is ContentFormat) {
           updateCurrentAttributes(
               currentAttributes,
-              /** @type {ContentFormat} */ (end.content as ContentFormat));
+              /** @type {ContentFormat} */ end.content as ContentFormat);
         } else if (end.content is ContentEmbed ||
             end.content is ContentString) {
           res += cleanupFormattingGap(
@@ -582,9 +582,9 @@ ItemTextListPosition deleteText(
       {...currPos.currentAttributes},
     );
   }
-  final parent = /** @type {AbstractType<any>} */ (
+  final parent = /** @type {AbstractType<any>} */
       /** @type {Item} */ (currPos.left ?? currPos.right as Item).parent
-          as AbstractType);
+          as AbstractType;
   if (parent.innerSearchMarker != null &&
       parent.innerSearchMarker!.isNotEmpty) {
     updateMarkerChanges(
@@ -652,10 +652,10 @@ class YTextEvent extends YEvent {
    */
   List<DeltaItem> get delta {
     if (this._delta == null) {
-      final y = /** @type {Doc} */ (this.target.doc!);
+      final y = /** @type {Doc} */ this.target.doc!;
       this._delta = [];
       transact(y, (transaction) {
-        final delta = /** @type {List<DeltaItem>} */ (this._delta!);
+        final delta = /** @type {List<DeltaItem>} */ this._delta!;
         final currentAttributes =
             <String, dynamic>{}; // saves all current attributes for insert
         final oldAttributes = <String, dynamic>{};
@@ -713,16 +713,15 @@ class YTextEvent extends YEvent {
           }
         }
 
-        ;
         while (item != null) {
           if (item.content is ContentEmbed) {
             if (this.adds(item)) {
               if (!this.deletes(item)) {
                 addOp();
                 action = "insert";
-                insert = /** @type {ContentEmbed} */ (item.content
-                        as ContentEmbed)
-                    .embed;
+                insert =
+                    /** @type {ContentEmbed} */ (item.content as ContentEmbed)
+                        .embed;
                 addOp();
               }
             } else if (this.deletes(item)) {
@@ -745,9 +744,9 @@ class YTextEvent extends YEvent {
                   addOp();
                   action = "insert";
                 }
-                insert = (insert as String) + /** @type {ContentString} */ (item
-                        .content as ContentString)
-                    .str;
+                insert = (insert as String) +
+                    /** @type {ContentString} */ (item.content as ContentString)
+                        .str;
               }
             } else if (this.deletes(item)) {
               if (action != "delete") {
@@ -763,12 +762,12 @@ class YTextEvent extends YEvent {
               retain += item.length;
             }
           } else if (item.content is ContentFormat) {
-            final key = /** @type {ContentFormat} */ (item.content
-                    as ContentFormat)
-                .key;
-            final value = /** @type {ContentFormat} */ (item.content
-                    as ContentFormat)
-                .value;
+            final key =
+                /** @type {ContentFormat} */ (item.content as ContentFormat)
+                    .key;
+            final value =
+                /** @type {ContentFormat} */ (item.content as ContentFormat)
+                    .value;
             if (this.adds(item)) {
               if (!this.deletes(item)) {
                 final curVal = currentAttributes.get(key);
@@ -818,7 +817,7 @@ class YTextEvent extends YEvent {
               }
               updateCurrentAttributes(
                   currentAttributes,
-                  /** @type {ContentFormat} */ (item.content as ContentFormat));
+                  /** @type {ContentFormat} */ item.content as ContentFormat);
             }
           }
           item = item.right;
@@ -882,6 +881,7 @@ class YText extends AbstractType<YTextEvent> {
    * @param {Doc} y
    * @param {Item} item
    */
+  @override
   innerIntegrate(Doc y, Item? item) {
     super.innerIntegrate(y, item);
     try {
@@ -892,6 +892,7 @@ class YText extends AbstractType<YTextEvent> {
     this._pending = null;
   }
 
+  @override
   innerCopy() {
     return YText();
   }
@@ -899,6 +900,7 @@ class YText extends AbstractType<YTextEvent> {
   /**
    * @return {YText}
    */
+  @override
   clone() {
     final text = YText();
     text.applyDelta(this.toDelta());
@@ -911,6 +913,7 @@ class YText extends AbstractType<YTextEvent> {
    * @param {Transaction} transaction
    * @param {Set<null|string>} parentSubs Keys changed on this type. `null` if list was modified.
    */
+  @override
   void innerCallObserver(Transaction transaction, Set<String?> parentSubs) {
     super.innerCallObserver(transaction, parentSubs);
     final event = YTextEvent(this, transaction);
@@ -928,7 +931,7 @@ class YText extends AbstractType<YTextEvent> {
         }
         iterateStructs(
             transaction,
-            /** @type {List<Item|GC>} */ (doc.store.clients.get(client)!),
+            /** @type {List<Item|GC>} */ doc.store.clients.get(client)!,
             clock,
             afterClock, (item) {
           if (!item.deleted &&
@@ -980,6 +983,7 @@ class YText extends AbstractType<YTextEvent> {
    *
    * @public
    */
+  @override
   String toString() {
     var str = "";
     /**
@@ -1001,6 +1005,7 @@ class YText extends AbstractType<YTextEvent> {
    * @return {string}
    * @public
    */
+  @override
   String toJSON() {
     return this.toString();
   }
@@ -1083,7 +1088,7 @@ class YText extends AbstractType<YTextEvent> {
      */
     final ops = <Map<String, Object?>>[];
     final currentAttributes = <String, Object?>{};
-    final doc = /** @type {Doc} */ (this.doc);
+    final doc = /** @type {Doc} */ this.doc;
     var str = "";
     var n = this.innerStart;
     void packStr() {
@@ -1152,8 +1157,8 @@ class YText extends AbstractType<YTextEvent> {
               packStr();
               currentAttributes.remove("ychange");
             }
-            str += /** @type {ContentString} */ (_n.content as ContentString)
-                .str;
+            str +=
+                /** @type {ContentString} */ (_n.content as ContentString).str;
           } else if (_n.content is ContentEmbed) {
             packStr();
             /**
@@ -1164,7 +1169,7 @@ class YText extends AbstractType<YTextEvent> {
                   .embed,
             };
             if (currentAttributes.length > 0) {
-              final attrs = /** @type {Object<string,any>} */ ({});
+              final attrs = /** @type {Object<string,any>} */ {};
               op["attributes"] = attrs;
               currentAttributes.forEach((key, value) {
                 attrs[key] = value;
@@ -1176,7 +1181,7 @@ class YText extends AbstractType<YTextEvent> {
               packStr();
               updateCurrentAttributes(
                   currentAttributes,
-                  /** @type {ContentFormat} */ (_n.content as ContentFormat));
+                  /** @type {ContentFormat} */ _n.content as ContentFormat);
             }
           }
         }
@@ -1313,6 +1318,7 @@ class YText extends AbstractType<YTextEvent> {
   /**
    * @param {AbstractUpdateEncoder} encoder
    */
+  @override
   void innerWrite(AbstractUpdateEncoder encoder) {
     encoder.writeTypeRef(YTextRefID);
   }
@@ -1429,12 +1435,15 @@ abstract class DeltaItem {
     T Function(Object insert, Map<String, dynamic>? attributes)? insert,
   }) {
     final v = this;
-    if (v is _Delete)
+    if (v is _Delete) {
       return delete != null ? delete(v.delete, v.attributes) : orElse?.call();
-    if (v is _Retain)
+    }
+    if (v is _Retain) {
       return retain != null ? retain(v.retain, v.attributes) : orElse?.call();
-    if (v is _Insert)
+    }
+    if (v is _Insert) {
       return insert != null ? insert(v.insert, v.attributes) : orElse?.call();
+    }
     throw "";
   }
 
@@ -1466,6 +1475,7 @@ abstract class DeltaItem {
 
 class _Delete extends DeltaItem {
   final int delete;
+  @override
   final Map<String, dynamic>? attributes;
 
   _Delete(
@@ -1476,6 +1486,7 @@ class _Delete extends DeltaItem {
 
 class _Retain extends DeltaItem {
   final int retain;
+  @override
   final Map<String, dynamic>? attributes;
 
   _Retain(
@@ -1486,6 +1497,7 @@ class _Retain extends DeltaItem {
 
 class _Insert extends DeltaItem {
   final Object insert;
+  @override
   final Map<String, dynamic>? attributes;
 
   _Insert(

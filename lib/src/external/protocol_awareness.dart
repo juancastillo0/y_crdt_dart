@@ -5,21 +5,12 @@ import 'dart:typed_data';
 /**
  * @module awareness-protocol
  */
-
-// import * as encoding from "lib0/encoding.js";
-// import * as decoding from "lib0/decoding.js";
-// import * as time from "lib0/time.js";
-// import * as math from "lib0/math.js";
-// import { Observable } from "lib0/observable.js";
-// import * as f from "lib0/function.js";
-// import * as Y from "yjs"; // eslint-disable-line
-
 import 'package:y_crdt/src/utils/observable.dart';
 import 'package:y_crdt/src/y_crdt_base.dart';
-
-import "../lib0/encoding.dart" as encoding;
-import "../lib0/decoding.dart" as decoding;
 import 'package:y_crdt/y_crdt.dart' as Y;
+
+import "../lib0/decoding.dart" as decoding;
+import "../lib0/encoding.dart" as encoding;
 
 const outdatedTimeout = 30000;
 
@@ -209,8 +200,8 @@ void removeAwarenessStates(
     if (awareness.states.containsKey(clientID)) {
       awareness.states.remove(clientID);
       if (clientID == awareness.clientID) {
-        final curMeta = /** @type {MetaClientState} */ (awareness.meta
-            .get(clientID)!);
+        final curMeta =
+            /** @type {MetaClientState} */ awareness.meta.get(clientID)!;
         awareness.meta.set(
             clientID,
             MetaClientState(
@@ -246,8 +237,8 @@ Uint8List encodeAwarenessUpdate(Awareness awareness, List<int> clients) {
   for (int i = 0; i < len; i++) {
     final clientID = clients[i];
     final state = states.get(clientID);
-    final clock = /** @type {MetaClientState} */ (awareness.meta.get(clientID)!)
-        .clock;
+    final clock =
+        /** @type {MetaClientState} */ (awareness.meta.get(clientID)!).clock;
     encoding.writeVarUint(encoder, clientID);
     encoding.writeVarUint(encoder, clock);
     encoding.writeVarString(encoder, jsonEncode(state));

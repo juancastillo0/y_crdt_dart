@@ -13,7 +13,7 @@ import 'package:y_crdt/src/utils/struct_store.dart';
 import 'package:y_crdt/src/utils/transaction.dart';
 import 'package:y_crdt/src/utils/update_encoder.dart';
 
-final structGCRefNumber = 0;
+const structGCRefNumber = 0;
 
 /**
  * @private

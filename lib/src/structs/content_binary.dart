@@ -23,6 +23,7 @@ class ContentBinary implements AbstractContent {
   /**
    * @return {number}
    */
+  @override
   getLength() {
     return 1;
   }
@@ -30,6 +31,7 @@ class ContentBinary implements AbstractContent {
   /**
    * @return {List<any>}
    */
+  @override
   getContent() {
     return [this.content];
   }
@@ -37,6 +39,7 @@ class ContentBinary implements AbstractContent {
   /**
    * @return {boolean}
    */
+  @override
   isCountable() {
     return true;
   }
@@ -44,6 +47,7 @@ class ContentBinary implements AbstractContent {
   /**
    * @return {ContentBinary}
    */
+  @override
   copy() {
     return ContentBinary(this.content);
   }
@@ -52,6 +56,7 @@ class ContentBinary implements AbstractContent {
    * @param {number} offset
    * @return {ContentBinary}
    */
+  @override
   splice(offset) {
     throw UnimplementedError();
   }
@@ -60,6 +65,7 @@ class ContentBinary implements AbstractContent {
    * @param {ContentBinary} right
    * @return {boolean}
    */
+  @override
   mergeWith(right) {
     return false;
   }
@@ -68,19 +74,23 @@ class ContentBinary implements AbstractContent {
    * @param {Transaction} transaction
    * @param {Item} item
    */
+  @override
   integrate(transaction, item) {}
   /**
    * @param {Transaction} transaction
    */
+  @override
   delete(transaction) {}
   /**
    * @param {StructStore} store
    */
+  @override
   gc(store) {}
   /**
    * @param {AbstractUpdateEncoder} encoder
    * @param {number} offset
    */
+  @override
   write(encoder, offset) {
     encoder.writeBuf(this.content);
   }
@@ -88,6 +98,7 @@ class ContentBinary implements AbstractContent {
   /**
    * @return {number}
    */
+  @override
   getRef() {
     return 3;
   }

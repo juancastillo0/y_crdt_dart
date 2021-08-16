@@ -24,6 +24,7 @@ class ContentEmbed implements AbstractContent {
   /**
    * @return {number}
    */
+  @override
   getLength() {
     return 1;
   }
@@ -31,6 +32,7 @@ class ContentEmbed implements AbstractContent {
   /**
    * @return {List<any>}
    */
+  @override
   getContent() {
     return [this.embed];
   }
@@ -38,6 +40,7 @@ class ContentEmbed implements AbstractContent {
   /**
    * @return {boolean}
    */
+  @override
   isCountable() {
     return true;
   }
@@ -45,14 +48,16 @@ class ContentEmbed implements AbstractContent {
   /**
    * @return {ContentEmbed}
    */
+  @override
   copy() {
-    return new ContentEmbed(this.embed);
+    return ContentEmbed(this.embed);
   }
 
   /**
    * @param {number} offset
    * @return {ContentEmbed}
    */
+  @override
   splice(offset) {
     throw UnimplementedError();
   }
@@ -61,6 +66,7 @@ class ContentEmbed implements AbstractContent {
    * @param {ContentEmbed} right
    * @return {boolean}
    */
+  @override
   mergeWith(right) {
     return false;
   }
@@ -69,19 +75,23 @@ class ContentEmbed implements AbstractContent {
    * @param {Transaction} transaction
    * @param {Item} item
    */
+  @override
   integrate(transaction, item) {}
   /**
    * @param {Transaction} transaction
    */
+  @override
   delete(transaction) {}
   /**
    * @param {StructStore} store
    */
+  @override
   gc(store) {}
   /**
    * @param {AbstractUpdateEncoder} encoder
    * @param {number} offset
    */
+  @override
   write(encoder, offset) {
     encoder.writeJSON(this.embed);
   }
@@ -89,6 +99,7 @@ class ContentEmbed implements AbstractContent {
   /**
    * @return {number}
    */
+  @override
   getRef() {
     return 5;
   }

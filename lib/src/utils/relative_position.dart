@@ -19,14 +19,14 @@
 
 import 'dart:typed_data';
 
+import 'package:y_crdt/src/lib0/decoding.dart' as decoding;
+import 'package:y_crdt/src/lib0/encoding.dart' as encoding;
 import 'package:y_crdt/src/structs/content_type.dart';
 import 'package:y_crdt/src/structs/item.dart';
 import 'package:y_crdt/src/types/abstract_type.dart';
 import 'package:y_crdt/src/utils/doc.dart';
 import 'package:y_crdt/src/utils/id.dart';
 import 'package:y_crdt/src/utils/struct_store.dart';
-import 'package:y_crdt/src/lib0/decoding.dart' as decoding;
-import 'package:y_crdt/src/lib0/encoding.dart' as encoding;
 
 /**
  * A relative position is based on the Yjs model and is not affected by document changes.
@@ -262,10 +262,10 @@ AbsolutePosition? createAbsolutePositionFromRelativePosition(
     }
     final res = followRedone(store, rightID);
     final right = res.item;
-    if (!(right is Item)) {
+    if (right is! Item) {
       return null;
     }
-    type = /** @type {AbstractType<any>} */ (right.parent as AbstractType);
+    type = /** @type {AbstractType<any>} */ right.parent as AbstractType;
     if (type.innerItem == null || !type.innerItem!.deleted) {
       index = right.deleted || !right.countable ? 0 : res.diff;
       var n = right.left;

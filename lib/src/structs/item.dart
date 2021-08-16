@@ -24,6 +24,7 @@
 //   AbstractUpdateDecoder, AbstractUpdateEncoder, ContentType, ContentDeleted, StructStore, ID, AbstractType, Transaction // eslint-disable-line
 // } from '../internals.js'
 
+import 'package:y_crdt/src/lib0/binary.dart' as binary;
 // import * as error from 'lib0/error.js'
 // import * as binary from 'lib0/binary.js'
 
@@ -48,18 +49,16 @@ import 'package:y_crdt/src/utils/update_encoder.dart';
 import 'package:y_crdt/src/utils/y_event.dart';
 import 'package:y_crdt/src/y_crdt_base.dart';
 
-import 'package:y_crdt/src/lib0/binary.dart' as binary;
-
+export 'package:y_crdt/src/structs/content_any.dart' show readContentAny;
+export 'package:y_crdt/src/structs/content_binary.dart' show readContentBinary;
 export 'package:y_crdt/src/structs/content_deleted.dart'
     show readContentDeleted;
-export 'package:y_crdt/src/structs/content_json.dart' show readContentJSON;
-export 'package:y_crdt/src/structs/content_binary.dart' show readContentBinary;
-export 'package:y_crdt/src/structs/content_string.dart' show readContentString;
+export 'package:y_crdt/src/structs/content_doc.dart' show readContentDoc;
 export 'package:y_crdt/src/structs/content_embed.dart' show readContentEmbed;
 export 'package:y_crdt/src/structs/content_format.dart' show readContentFormat;
+export 'package:y_crdt/src/structs/content_json.dart' show readContentJSON;
+export 'package:y_crdt/src/structs/content_string.dart' show readContentString;
 export 'package:y_crdt/src/structs/content_type.dart' show readContentType;
-export 'package:y_crdt/src/structs/content_any.dart' show readContentAny;
-export 'package:y_crdt/src/structs/content_doc.dart' show readContentDoc;
 
 /**
  * @todo This should return several items
@@ -109,7 +108,8 @@ class _R {
 void keepItem(item, keep) {
   while (item != null && item.keep != keep) {
     item.keep = keep;
-    item = /** @type {AbstractType<any>} */ (item.parent as AbstractType).innerItem;
+    item = /** @type {AbstractType<any>} */ (item.parent as AbstractType)
+        .innerItem;
   }
 }
 
@@ -184,9 +184,8 @@ Item? redoItem(Transaction transaction, Item item, Set<Item> redoitems) {
   if (redone != null) {
     return getItemCleanStart(transaction, redone);
   }
-  Item? parentItem = /** @type {AbstractType<any>} */ (item.parent
-          as AbstractType)
-      .innerItem;
+  Item? parentItem =
+      /** @type {AbstractType<any>} */ (item.parent as AbstractType).innerItem;
   /**
    * @type {Item|null}
    */
@@ -211,10 +210,10 @@ Item? redoItem(Transaction transaction, Item item, Set<Item> redoitems) {
       }
     }
     if (left.right != null) {
-      left = /** @type {Item} */ (/** @type {AbstractType<any>} */ (item.parent
+      left = /** @type {Item} */ /** @type {AbstractType<any>} */ (item.parent
               as AbstractType)
           .innerMap
-          .get(item.parentSub!));
+          .get(item.parentSub!);
     }
     right = null;
   }
@@ -277,9 +276,9 @@ Item? redoItem(Transaction transaction, Item item, Set<Item> redoitems) {
   final redoneItem = Item(
       nextId,
       left,
-      left != null ? left.lastId : null,
+      left?.lastId,
       right,
-      right != null ? right.id : null,
+      right?.id,
       parentItem == null
           ? item.parent
           : /** @type {ContentType} */ (parentItem.content as ContentType).type,
@@ -397,6 +396,7 @@ class Item extends AbstractStruct {
    * Whether this item was deleted or not.
    * @type {Boolean}
    */
+  @override
   bool get deleted {
     return (this.info & binary.BIT3) > 0;
   }
@@ -483,6 +483,7 @@ class Item extends AbstractStruct {
    * @param {Transaction} transaction
    * @param {number} offset
    */
+  @override
   void integrate(Transaction transaction, int offset) {
     if (offset > 0) {
       this.id.clock += offset;
@@ -662,6 +663,7 @@ class Item extends AbstractStruct {
    * @param {Item} right
    * @return {boolean}
    */
+  @override
   bool mergeWith(AbstractStruct right) {
     if (right is! Item) {
       return false;
@@ -696,8 +698,8 @@ class Item extends AbstractStruct {
    */
   void delete(Transaction transaction) {
     if (!this.deleted) {
-      final parent = /** @type {AbstractType<any>} */ (this
-          .parent) as AbstractType<YEvent>;
+      final parent =
+          /** @type {AbstractType<any>} */ this.parent as AbstractType<YEvent>;
       // adjust the length of parent
       if (this.countable && this.parentSub == null) {
         parent.innerLength -= this.length;
@@ -740,6 +742,7 @@ class Item extends AbstractStruct {
    * @param {AbstractUpdateEncoder} encoder The encoder to write data to.
    * @param {number} offset
    */
+  @override
   void write(AbstractUpdateEncoder encoder, int offset) {
     final origin = offset > 0
         ? createID(this.id.client, this.id.clock + offset - 1)
@@ -758,8 +761,8 @@ class Item extends AbstractStruct {
       encoder.writeRightID(rightOrigin);
     }
     if (origin == null && rightOrigin == null) {
-      final parent = /** @type {AbstractType<any>} */ (this
-          .parent) as AbstractType;
+      final parent =
+          /** @type {AbstractType<any>} */ this.parent as AbstractType;
       final parentItem = parent.innerItem;
       if (parentItem == null) {
         // parent type on y._map

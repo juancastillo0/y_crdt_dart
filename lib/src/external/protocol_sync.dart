@@ -1,16 +1,11 @@
 import 'dart:typed_data';
 
+import 'package:y_crdt/src/lib0/decoding.dart' as decoding;
+import 'package:y_crdt/src/lib0/encoding.dart' as encoding;
 /**
  * @module sync-protocol
  */
-
-// import * as encoding from "lib0/encoding.js";
-// import * as decoding from "lib0/decoding.js";
-// import * as Y from "yjs";
-
 import 'package:y_crdt/y_crdt.dart' as Y;
-import 'package:y_crdt/src/lib0/decoding.dart' as decoding;
-import 'package:y_crdt/src/lib0/encoding.dart' as encoding;
 
 /**
  * @typedef {Map<number, number>} StateMap

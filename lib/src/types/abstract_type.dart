@@ -13,6 +13,7 @@
 //   ContentDoc, YText, YArray, AbstractUpdateEncoder, Doc, Snapshot, Transaction, EventHandler, YEvent, Item, // eslint-disable-line
 // } from '../internals.js'
 
+import 'dart:math' as math;
 // import * as map from 'lib0/map.js'
 // import * as iterator from 'lib0/iterator.js'
 // import * as error from 'lib0/error.js'
@@ -27,14 +28,13 @@ import 'package:y_crdt/src/structs/content_type.dart';
 import 'package:y_crdt/src/structs/item.dart';
 import 'package:y_crdt/src/utils/doc.dart';
 import 'package:y_crdt/src/utils/event_handler.dart';
-import 'package:y_crdt/src/utils/update_encoder.dart';
-import 'package:y_crdt/src/y_crdt_base.dart';
 import 'package:y_crdt/src/utils/id.dart';
 import 'package:y_crdt/src/utils/snapshot.dart';
 import 'package:y_crdt/src/utils/struct_store.dart';
 import 'package:y_crdt/src/utils/transaction.dart';
+import 'package:y_crdt/src/utils/update_encoder.dart';
 import 'package:y_crdt/src/utils/y_event.dart';
-import 'dart:math' as math;
+import 'package:y_crdt/src/y_crdt_base.dart';
 
 const maxSearchMarker = 80;
 
@@ -197,10 +197,10 @@ ArraySearchMarker? findMarker(AbstractType yarray, int index) {
     throw Exception("");
   }
   if (marker != null &&
-      (marker.index - pindex).abs() < /** @type {YText|YList<any>} */ (p.parent
-                  as AbstractType)
-              .innerLength /
-          maxSearchMarker) {
+      (marker.index - pindex).abs() <
+          /** @type {YText|YList<any>} */ (p.parent as AbstractType)
+                  .innerLength /
+              maxSearchMarker) {
     // adjust existing marker
     overwriteMarker(marker, p, pindex);
     return marker;
@@ -291,8 +291,8 @@ void callTypeObservers<EventType extends YEvent>(
     if (_type.innerItem == null) {
       break;
     }
-    _type = /** @type {AbstractType<any>} */ (_type.innerItem!.parent
-        as AbstractType<YEvent>);
+    _type = /** @type {AbstractType<any>} */ _type.innerItem!.parent
+        as AbstractType<YEvent>;
   }
   callEventHandlerListeners(changedType._eH, event, transaction);
 }
@@ -745,7 +745,7 @@ void typeListInsertGenericsAfter(
             right?.id,
             parent,
             null,
-            ContentDoc(/** @type {Doc} */ (c)));
+            ContentDoc(/** @type {Doc} */ c));
         left!.integrate(transaction, 0);
       } else if (c is AbstractType) {
         left = Item(createID(ownClientId, getState(store, ownClientId)), left,
@@ -915,9 +915,9 @@ void typeMapSet(
         value is String) {
       content = ContentAny(<dynamic>[value]);
     } else if (value is Uint8List) {
-      content = ContentBinary(/** @type {Uint8Array} */ (value));
+      content = ContentBinary(/** @type {Uint8Array} */ value);
     } else if (value is Doc) {
-      content = ContentDoc(/** @type {Doc} */ (value));
+      content = ContentDoc(/** @type {Doc} */ value);
     } else {
       if (value is AbstractType) {
         content = ContentType(value);

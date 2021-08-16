@@ -9,9 +9,10 @@
 import 'dart:math' show Random;
 
 import 'package:y_crdt/src/lib0/prng.dart' as prng;
+import 'package:y_crdt/src/lib0/testing.dart' as t;
 import 'package:y_crdt/src/types/y_map.dart';
 import 'package:y_crdt/y_crdt.dart' as Y;
-import 'package:y_crdt/src/lib0/testing.dart' as t;
+
 import 'test_helper.dart';
 
 void main() async {
@@ -227,7 +228,7 @@ void testGetAndSetOfMapPropertySyncs(t.TestCase tc) {
   t.compare(map0.get("stuff"), "stuffy");
   _data.testConnector.flushAllMessages();
   for (final user in _data.userInstances) {
-    var u = user.getMap("map");
+    final u = user.getMap("map");
     t.compare(u.get("stuff"), "stuffy");
   }
   compare(_data.userInstances);
@@ -243,7 +244,7 @@ void testGetAndSetOfMapPropertyWithConflict(t.TestCase tc) {
   _data.users[1].map.set("stuff", "c1");
   _data.testConnector.flushAllMessages();
   for (final user in _data.userInstances) {
-    var u = user.getMap("map");
+    final u = user.getMap("map");
     t.compare(u.get("stuff"), "c1");
   }
   compare(_data.userInstances);
@@ -275,7 +276,7 @@ void testGetAndSetAndDeleteOfMapProperty(t.TestCase tc) {
   _data.users[1].map.delete("stuff");
   _data.testConnector.flushAllMessages();
   for (final user in _data.userInstances) {
-    var u = user.getMap("map");
+    final u = user.getMap("map");
     t.check(u.get("stuff") == null);
   }
   compare(_data.userInstances);
@@ -292,7 +293,7 @@ void testGetAndSetOfMapPropertyWithThreeConflicts(t.TestCase tc) {
   _data.users[2].map.set("stuff", "c3");
   _data.testConnector.flushAllMessages();
   for (final user in _data.userInstances) {
-    var u = user.getMap("map");
+    final u = user.getMap("map");
     t.compare(u.get("stuff"), "c3");
   }
   compare(_data.userInstances);
@@ -320,7 +321,7 @@ void testGetAndSetAndDeleteOfMapPropertyWithThreeConflicts(t.TestCase tc) {
   map3.delete("stuff");
   _data.testConnector.flushAllMessages();
   for (final user in _data.userInstances) {
-    var u = user.getMap("map");
+    final u = user.getMap("map");
     t.check(u.get("stuff") == null);
   }
   compare(_data.userInstances);
@@ -400,7 +401,7 @@ void testObserversUsingObservedeep(t.TestCase tc) {
  * @param {Object<string,any>} should
  */
 void compareEvent(Map<String, Object?> iss, Map<String, Object?> should) {
-  for (var key in should.keys) {
+  for (final key in should.keys) {
     t.compare(should[key], iss[key]);
   }
 }

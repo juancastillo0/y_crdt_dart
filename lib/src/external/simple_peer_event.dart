@@ -51,12 +51,14 @@ abstract class SimplePeerEvent {
     if (v is _IceTimeout) return iceTimeout();
     if (v is _IceComplete) return iceComplete();
     if (v is _Signal) return signal(v.signal);
-    if (v is _IceStateChange)
+    if (v is _IceStateChange) {
       return iceStateChange(v.iceConnectionState, v.iceGatheringState);
+    }
     if (v is _Connect) return connect();
     if (v is _Negotiated) return negotiated();
-    if (v is _SignalingStateChange)
+    if (v is _SignalingStateChange) {
       return signalingStateChange(v.signalingState);
+    }
     if (v is _Track) return track(v.track, v.stream);
     if (v is _Stream) return stream(v.stream);
     throw "";
@@ -81,24 +83,30 @@ abstract class SimplePeerEvent {
     final v = this;
     if (v is _Error) return error != null ? error(v.error) : orElse.call();
     if (v is _Close) return close != null ? close() : orElse.call();
-    if (v is _IceTimeout)
+    if (v is _IceTimeout) {
       return iceTimeout != null ? iceTimeout() : orElse.call();
-    if (v is _IceComplete)
+    }
+    if (v is _IceComplete) {
       return iceComplete != null ? iceComplete() : orElse.call();
+    }
     if (v is _Signal) return signal != null ? signal(v.signal) : orElse.call();
-    if (v is _IceStateChange)
+    if (v is _IceStateChange) {
       return iceStateChange != null
           ? iceStateChange(v.iceConnectionState, v.iceGatheringState)
           : orElse.call();
+    }
     if (v is _Connect) return connect != null ? connect() : orElse.call();
-    if (v is _Negotiated)
+    if (v is _Negotiated) {
       return negotiated != null ? negotiated() : orElse.call();
-    if (v is _SignalingStateChange)
+    }
+    if (v is _SignalingStateChange) {
       return signalingStateChange != null
           ? signalingStateChange(v.signalingState)
           : orElse.call();
-    if (v is _Track)
+    }
+    if (v is _Track) {
       return track != null ? track(v.track, v.stream) : orElse.call();
+    }
     if (v is _Stream) return stream != null ? stream(v.stream) : orElse.call();
     throw "";
   }
@@ -148,20 +156,25 @@ abstract class SimplePeerEvent {
     final v = this;
     if (v is _Error) return error != null ? error(v) : orElse.call();
     if (v is _Close) return close != null ? close(v) : orElse.call();
-    if (v is _IceTimeout)
+    if (v is _IceTimeout) {
       return iceTimeout != null ? iceTimeout(v) : orElse.call();
-    if (v is _IceComplete)
+    }
+    if (v is _IceComplete) {
       return iceComplete != null ? iceComplete(v) : orElse.call();
+    }
     if (v is _Signal) return signal != null ? signal(v) : orElse.call();
-    if (v is _IceStateChange)
+    if (v is _IceStateChange) {
       return iceStateChange != null ? iceStateChange(v) : orElse.call();
+    }
     if (v is _Connect) return connect != null ? connect(v) : orElse.call();
-    if (v is _Negotiated)
+    if (v is _Negotiated) {
       return negotiated != null ? negotiated(v) : orElse.call();
-    if (v is _SignalingStateChange)
+    }
+    if (v is _SignalingStateChange) {
       return signalingStateChange != null
           ? signalingStateChange(v)
           : orElse.call();
+    }
     if (v is _Track) return track != null ? track(v) : orElse.call();
     if (v is _Stream) return stream != null ? stream(v) : orElse.call();
     throw "";

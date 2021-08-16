@@ -27,12 +27,11 @@ import 'package:y_crdt/src/types/abstract_type.dart';
 import 'package:y_crdt/src/utils/delete_set.dart';
 import 'package:y_crdt/src/utils/doc.dart';
 import 'package:y_crdt/src/utils/id.dart';
+import 'package:y_crdt/src/utils/is_parent_of.dart';
+import 'package:y_crdt/src/utils/observable.dart';
 import 'package:y_crdt/src/utils/struct_store.dart';
 import 'package:y_crdt/src/utils/transaction.dart';
-import 'package:y_crdt/src/utils/is_parent_of.dart';
 import 'package:y_crdt/src/y_crdt_base.dart';
-
-import 'package:y_crdt/src/utils/observable.dart';
 
 class StackItem {
   /**
@@ -68,7 +67,7 @@ StackItem? popStackItem(
   transact(doc, (transaction) {
     while (stack.length > 0 && result == null) {
       final store = doc.store;
-      final stackItem = /** @type {StackItem} */ (stack.removeLast());
+      final stackItem = /** @type {StackItem} */ stack.removeLast();
       /**
          * @type {Set<Item>}
          */
@@ -83,8 +82,7 @@ StackItem? popStackItem(
         final len = endClock - startClock;
 
         // @todo iterateStructs should not need the structs parameter
-        final structs = /** @type {List<GC|Item>} */ (store.clients
-            .get(client));
+        final structs = /** @type {List<GC|Item>} */ store.clients.get(client);
         if (startClock != endClock) {
           // make sure structs don't overlap with the range of created operations [stackItem.start, stackItem.start + stackItem.end)
           // this must be executed before deleted structs are iterated.
@@ -95,9 +93,9 @@ StackItem? popStackItem(
           iterateStructs(transaction, structs!, startClock, len, (struct) {
             if (struct is Item) {
               if (struct.redone != null) {
-                var _v = followRedone(store, struct.id);
+                final _v = followRedone(store, struct.id);
                 var item = _v.item;
-                var diff = _v.diff;
+                final diff = _v.diff;
                 if (diff > 0) {
                   item = getItemCleanStart(transaction,
                       createID(item.id.client, item.id.clock + diff));
@@ -111,7 +109,7 @@ StackItem? popStackItem(
               if (!struct.deleted &&
                   struct is Item &&
                   scope.any((type) =>
-                      isParentOf(type, /** @type {Item} */ (struct as Item)))) {
+                      isParentOf(type, /** @type {Item} */ struct as Item))) {
                 itemsToDelete.add(struct);
               }
             }
@@ -195,7 +193,7 @@ class UndoManager extends Observable {
     Set<dynamic>? trackedOrigins,
   }) {
     this.scope = typeScope;
-    this.doc = /** @type {Doc} */ (this.scope[0].doc!);
+    this.doc = /** @type {Doc} */ this.scope[0].doc!;
     this.trackedOrigins =
         trackedOrigins == null ? {null, this} : {...trackedOrigins, this};
 

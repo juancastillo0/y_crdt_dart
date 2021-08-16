@@ -47,7 +47,7 @@ class HtmlWebSocketChannel extends StreamChannelMixin
 
   @override
   int? get readyState => _webSocket.readyState;
-  
+
   @override
   void Function()? onOpen;
 

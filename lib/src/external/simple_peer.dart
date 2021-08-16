@@ -12,11 +12,12 @@ import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:logger/logger.dart';
 import 'package:y_crdt/src/external/simple_peer_event.dart';
 import 'package:y_crdt/src/lib0/prng.dart' as prng;
-import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:y_crdt/src/y_crdt_base.dart';
+
 export 'package:flutter_webrtc/flutter_webrtc.dart' show RTCDataChannelMessage;
 
 // commit: d1c0ebe13233afb8d4eceafd2cbdd4000ffebea1
@@ -535,7 +536,7 @@ class Peer {
     this._debug("replaceTrack()");
 
     final submap = this._senderMap.get(oldTrack);
-    final sender = submap != null ? submap.get(stream) : null;
+    final sender = submap?.get(stream);
     if (sender == null) {
       throw errCode(Exception("Cannot replace track that was never added."),
           "ERR_TRACK_NOT_ADDED");
@@ -570,7 +571,7 @@ class Peer {
     this._debug("removeSender()");
 
     final submap = this._senderMap.get(track);
-    final sender = submap != null ? submap.get(stream) : null;
+    final sender = submap?.get(stream);
     if (sender == null) {
       throw errCode(Exception("Cannot remove track that was never added."),
           "ERR_TRACK_NOT_ADDED");
@@ -1155,7 +1156,7 @@ class Peer {
 
         final setSelectedCandidatePair = (StatsReport selectedCandidatePair) {
           foundSelectedCandidatePair = true;
-          var local =
+          final local =
               localCandidates[selectedCandidatePair.values["localCandidateId"]];
 
           if (local != null &&
@@ -1183,7 +1184,7 @@ class Peer {
                 this.localAddress!.contains(":") ? "IPv6" : "IPv4";
           }
 
-          var remote = remoteCandidates[
+          final remote = remoteCandidates[
               selectedCandidatePair.values["remoteCandidateId"]];
 
           if (remote != null &&

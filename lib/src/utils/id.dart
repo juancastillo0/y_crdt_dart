@@ -1,12 +1,12 @@
 // import { AbstractType } from '../internals.js' // eslint-disable-line
 
+import 'package:y_crdt/src/lib0/decoding.dart' as decoding;
+import 'package:y_crdt/src/lib0/encoding.dart' as encoding;
 // import * as decoding from 'lib0/decoding.js'
 // import * as encoding from 'lib0/encoding.js'
 // import * as error from 'lib0/error.js'
 
 import 'package:y_crdt/src/types/abstract_type.dart';
-import 'package:y_crdt/src/lib0/encoding.dart' as encoding;
-import 'package:y_crdt/src/lib0/decoding.dart' as decoding;
 
 class ID {
   /**

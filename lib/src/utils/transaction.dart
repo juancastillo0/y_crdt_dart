@@ -20,17 +20,18 @@
 // import { callAll } from 'lib0/function.js'
 
 import 'dart:math' as math;
+
 import 'package:y_crdt/src/structs/abstract_struct.dart';
 import 'package:y_crdt/src/structs/item.dart';
 import 'package:y_crdt/src/types/abstract_type.dart';
 import 'package:y_crdt/src/utils/delete_set.dart';
 import 'package:y_crdt/src/utils/doc.dart';
+import 'package:y_crdt/src/utils/encoding.dart';
 import 'package:y_crdt/src/utils/event_handler.dart';
 import 'package:y_crdt/src/utils/id.dart';
 import 'package:y_crdt/src/utils/struct_store.dart';
 import 'package:y_crdt/src/utils/update_encoder.dart';
 import 'package:y_crdt/src/utils/y_event.dart';
-import 'package:y_crdt/src/utils/encoding.dart';
 import 'package:y_crdt/src/y_crdt_base.dart';
 
 /**
@@ -193,7 +194,7 @@ void tryToMergeWithLeft(List<AbstractStruct> structs, int pos) {
               right) {
         (right.parent as AbstractType)
             .innerMap
-            .set(right.parentSub!, /** @type {Item} */ (left as Item));
+            .set(right.parentSub!, /** @type {Item} */ left as Item);
       }
     }
   }
@@ -240,7 +241,7 @@ void tryMergeDeleteSet(DeleteSet ds, StructStore store) {
   // try to merge deleted / gc'd items
   // merge from right to left for better efficiecy and so we don't miss any merge targets
   ds.clients.forEach((client, deleteItems) {
-    final structs = /** @type {List<GC|Item>} */ (store.clients.get(client));
+    final structs = /** @type {List<GC|Item>} */ store.clients.get(client);
     if (structs != null) {
       for (var di = deleteItems.length - 1; di >= 0; di--) {
         final deleteItem = deleteItems[di];
@@ -348,8 +349,8 @@ void cleanupTransactions(List<Transaction> transactionCleanups, int i) {
       transaction.afterState.forEach((client, clock) {
         final beforeClock = transaction.beforeState.get(client) ?? 0;
         if (beforeClock != clock) {
-          final structs = /** @type {List<GC|Item>} */ (store.clients
-              .get(client));
+          final structs =
+              /** @type {List<GC|Item>} */ store.clients.get(client);
           // we iterate from right to left so we can safely remove entries
           if (structs != null) {
             final firstChangePos =
@@ -366,8 +367,7 @@ void cleanupTransactions(List<Transaction> transactionCleanups, int i) {
       for (var i = 0; i < mergeStructs.length; i++) {
         final client = mergeStructs[i].id.client;
         final clock = mergeStructs[i].id.clock;
-        final structs = /** @type {List<GC|Item>} */ (store.clients
-            .get(client));
+        final structs = /** @type {List<GC|Item>} */ store.clients.get(client);
         if (structs != null) {
           final replacedStructPos = findIndexSS(structs, clock);
           if (replacedStructPos + 1 < structs.length) {

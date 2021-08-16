@@ -22,6 +22,7 @@ class ContentAny implements AbstractContent {
   /**
    * @return {number}
    */
+  @override
   int getLength() {
     return this.arr.length;
   }
@@ -29,6 +30,7 @@ class ContentAny implements AbstractContent {
   /**
    * @return {List<any>}
    */
+  @override
   List<dynamic> getContent() {
     return this.arr;
   }
@@ -36,6 +38,7 @@ class ContentAny implements AbstractContent {
   /**
    * @return {boolean}
    */
+  @override
   bool isCountable() {
     return true;
   }
@@ -43,6 +46,7 @@ class ContentAny implements AbstractContent {
   /**
    * @return {ContentAny}
    */
+  @override
   ContentAny copy() {
     return ContentAny(this.arr);
   }
@@ -51,6 +55,7 @@ class ContentAny implements AbstractContent {
    * @param {number} offset
    * @return {ContentAny}
    */
+  @override
   ContentAny splice(int offset) {
     final right = ContentAny(this.arr.sublist(offset));
     this.arr = this.arr.sublist(0, offset);
@@ -61,6 +66,7 @@ class ContentAny implements AbstractContent {
    * @param {ContentAny} right
    * @return {boolean}
    */
+  @override
   bool mergeWith(AbstractContent right) {
     if (right is ContentAny) {
       this.arr = [...this.arr, ...right.arr];
@@ -74,19 +80,23 @@ class ContentAny implements AbstractContent {
    * @param {Transaction} transaction
    * @param {Item} item
    */
+  @override
   void integrate(transaction, item) {}
   /**
    * @param {Transaction} transaction
    */
+  @override
   void delete(Transaction transaction) {}
   /**
    * @param {StructStore} store
    */
+  @override
   void gc(StructStore store) {}
   /**
    * @param {AbstractUpdateEncoder} encoder
    * @param {number} offset
    */
+  @override
   void write(AbstractUpdateEncoder encoder, int offset) {
     final len = this.arr.length;
     encoder.writeLen(len - offset);
@@ -99,6 +109,7 @@ class ContentAny implements AbstractContent {
   /**
    * @return {number}
    */
+  @override
   int getRef() {
     return 8;
   }

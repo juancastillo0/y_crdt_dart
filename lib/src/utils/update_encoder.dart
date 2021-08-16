@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:y_crdt/src/utils/id.dart';
 import 'package:y_crdt/src/lib0/encoding.dart' as encoding;
+import 'package:y_crdt/src/utils/id.dart';
 import 'package:y_crdt/src/y_crdt_base.dart';
 
 // import * as error from "lib0/error.js";
@@ -41,6 +41,7 @@ abstract class AbstractUpdateEncoder extends AbstractDSEncoder {
   /**
    * @return {Uint8Array}
    */
+  @override
   Uint8List toUint8Array();
 
   /**
@@ -108,6 +109,7 @@ abstract class AbstractUpdateEncoder extends AbstractDSEncoder {
 }
 
 class DSEncoderV1 implements AbstractDSEncoder {
+  @override
   final restEncoder = encoding.Encoder();
 
   static DSEncoderV1 create() => DSEncoderV1();
@@ -144,6 +146,7 @@ class UpdateEncoderV1 extends DSEncoderV1 implements AbstractUpdateEncoder {
   /**
    * @param {ID} id
    */
+  @override
   void writeLeftID(id) {
     encoding.writeVarUint(this.restEncoder, id.client);
     encoding.writeVarUint(this.restEncoder, id.clock);
@@ -152,6 +155,7 @@ class UpdateEncoderV1 extends DSEncoderV1 implements AbstractUpdateEncoder {
   /**
    * @param {ID} id
    */
+  @override
   void writeRightID(id) {
     encoding.writeVarUint(this.restEncoder, id.client);
     encoding.writeVarUint(this.restEncoder, id.clock);
@@ -161,6 +165,7 @@ class UpdateEncoderV1 extends DSEncoderV1 implements AbstractUpdateEncoder {
    * Use writeClient and writeClock instead of writeID if possible.
    * @param {number} client
    */
+  @override
   void writeClient(client) {
     encoding.writeVarUint(this.restEncoder, client);
   }
@@ -168,6 +173,7 @@ class UpdateEncoderV1 extends DSEncoderV1 implements AbstractUpdateEncoder {
   /**
    * @param {number} info An unsigned 8-bit integer
    */
+  @override
   void writeInfo(info) {
     encoding.writeUint8(this.restEncoder, info);
   }
@@ -175,6 +181,7 @@ class UpdateEncoderV1 extends DSEncoderV1 implements AbstractUpdateEncoder {
   /**
    * @param {string} s
    */
+  @override
   void writeString(s) {
     encoding.writeVarString(this.restEncoder, s);
   }
@@ -182,6 +189,7 @@ class UpdateEncoderV1 extends DSEncoderV1 implements AbstractUpdateEncoder {
   /**
    * @param {boolean} isYKey
    */
+  @override
   void writeParentInfo(isYKey) {
     encoding.writeVarUint(this.restEncoder, isYKey ? 1 : 0);
   }
@@ -189,6 +197,7 @@ class UpdateEncoderV1 extends DSEncoderV1 implements AbstractUpdateEncoder {
   /**
    * @param {number} info An unsigned 8-bit integer
    */
+  @override
   void writeTypeRef(info) {
     encoding.writeVarUint(this.restEncoder, info);
   }
@@ -198,6 +207,7 @@ class UpdateEncoderV1 extends DSEncoderV1 implements AbstractUpdateEncoder {
    *
    * @param {number} len
    */
+  @override
   void writeLen(len) {
     encoding.writeVarUint(this.restEncoder, len);
   }
@@ -205,6 +215,7 @@ class UpdateEncoderV1 extends DSEncoderV1 implements AbstractUpdateEncoder {
   /**
    * @param {any} any
    */
+  @override
   void writeAny(dynamic any) {
     encoding.writeAny(this.restEncoder, any);
   }
@@ -212,6 +223,7 @@ class UpdateEncoderV1 extends DSEncoderV1 implements AbstractUpdateEncoder {
   /**
    * @param {Uint8Array} buf
    */
+  @override
   void writeBuf(buf) {
     encoding.writeVarUint8Array(this.restEncoder, buf);
   }
@@ -219,6 +231,7 @@ class UpdateEncoderV1 extends DSEncoderV1 implements AbstractUpdateEncoder {
   /**
    * @param {any} embed
    */
+  @override
   void writeJSON(embed) {
     encoding.writeVarString(this.restEncoder, jsonEncode(embed));
   }
@@ -226,6 +239,7 @@ class UpdateEncoderV1 extends DSEncoderV1 implements AbstractUpdateEncoder {
   /**
    * @param {string} key
    */
+  @override
   void writeKey(key) {
     encoding.writeVarString(this.restEncoder, key);
   }
@@ -234,13 +248,16 @@ class UpdateEncoderV1 extends DSEncoderV1 implements AbstractUpdateEncoder {
 class DSEncoderV2 implements AbstractDSEncoder {
   static DSEncoderV2 create() => DSEncoderV2();
   // encodes all the rest / non-optimized
-  final restEncoder = new encoding.Encoder();
+  @override
+  final restEncoder = encoding.Encoder();
   int dsCurrVal = 0;
 
+  @override
   Uint8List toUint8Array() {
     return encoding.toUint8Array(this.restEncoder);
   }
 
+  @override
   void resetDsCurVal() {
     this.dsCurrVal = 0;
   }
@@ -248,6 +265,7 @@ class DSEncoderV2 implements AbstractDSEncoder {
   /**
    * @param {number} clock
    */
+  @override
   void writeDsClock(int clock) {
     final diff = clock - this.dsCurrVal;
     this.dsCurrVal = clock;
@@ -315,6 +333,7 @@ class UpdateEncoderV2 extends DSEncoderV2 implements AbstractUpdateEncoder {
   /**
    * @param {ID} id
    */
+  @override
   void writeLeftID(ID id) {
     this.clientEncoder.write(id.client);
     this.leftClockEncoder.write(id.clock);
@@ -323,6 +342,7 @@ class UpdateEncoderV2 extends DSEncoderV2 implements AbstractUpdateEncoder {
   /**
    * @param {ID} id
    */
+  @override
   void writeRightID(ID id) {
     this.clientEncoder.write(id.client);
     this.rightClockEncoder.write(id.clock);
@@ -331,6 +351,7 @@ class UpdateEncoderV2 extends DSEncoderV2 implements AbstractUpdateEncoder {
   /**
    * @param {number} client
    */
+  @override
   void writeClient(int client) {
     this.clientEncoder.write(client);
   }
@@ -338,6 +359,7 @@ class UpdateEncoderV2 extends DSEncoderV2 implements AbstractUpdateEncoder {
   /**
    * @param {number} info An unsigned 8-bit integer
    */
+  @override
   void writeInfo(int info) {
     this.infoEncoder.write(info);
   }
@@ -345,6 +367,7 @@ class UpdateEncoderV2 extends DSEncoderV2 implements AbstractUpdateEncoder {
   /**
    * @param {string} s
    */
+  @override
   void writeString(String s) {
     this.stringEncoder.write(s);
   }
@@ -352,6 +375,7 @@ class UpdateEncoderV2 extends DSEncoderV2 implements AbstractUpdateEncoder {
   /**
    * @param {boolean} isYKey
    */
+  @override
   void writeParentInfo(isYKey) {
     this.parentInfoEncoder.write(isYKey ? 1 : 0);
   }
@@ -359,6 +383,7 @@ class UpdateEncoderV2 extends DSEncoderV2 implements AbstractUpdateEncoder {
   /**
    * @param {number} info An unsigned 8-bit integer
    */
+  @override
   void writeTypeRef(int info) {
     this.typeRefEncoder.write(info);
   }
@@ -368,6 +393,7 @@ class UpdateEncoderV2 extends DSEncoderV2 implements AbstractUpdateEncoder {
    *
    * @param {number} len
    */
+  @override
   void writeLen(int len) {
     this.lenEncoder.write(len);
   }
@@ -375,6 +401,7 @@ class UpdateEncoderV2 extends DSEncoderV2 implements AbstractUpdateEncoder {
   /**
    * @param {any} any
    */
+  @override
   void writeAny(dynamic any) {
     encoding.writeAny(this.restEncoder, any);
   }
@@ -382,6 +409,7 @@ class UpdateEncoderV2 extends DSEncoderV2 implements AbstractUpdateEncoder {
   /**
    * @param {Uint8Array} buf
    */
+  @override
   void writeBuf(Uint8List buf) {
     encoding.writeVarUint8Array(this.restEncoder, buf);
   }
@@ -393,6 +421,7 @@ class UpdateEncoderV2 extends DSEncoderV2 implements AbstractUpdateEncoder {
    *
    * @param {any} embed
    */
+  @override
   void writeJSON(dynamic embed) {
     encoding.writeAny(this.restEncoder, embed);
   }
@@ -405,6 +434,7 @@ class UpdateEncoderV2 extends DSEncoderV2 implements AbstractUpdateEncoder {
    *
    * @param {string} key
    */
+  @override
   void writeKey(String key) {
     final clock = this.keyMap.get(key);
     if (clock == null) {

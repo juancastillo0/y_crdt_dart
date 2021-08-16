@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+
 import 'package:uuid/uuid.dart';
 import 'package:y_crdt/src/structs/content_doc.dart';
 import 'package:y_crdt/src/structs/item.dart';
@@ -6,10 +7,10 @@ import 'package:y_crdt/src/types/abstract_type.dart';
 import 'package:y_crdt/src/types/y_array.dart';
 import 'package:y_crdt/src/types/y_map.dart';
 import 'package:y_crdt/src/types/y_text.dart';
+import 'package:y_crdt/src/utils/observable.dart';
 import 'package:y_crdt/src/utils/struct_store.dart';
 import 'package:y_crdt/src/utils/transaction.dart' show Transaction, transact;
 import 'package:y_crdt/src/utils/y_event.dart';
-import 'package:y_crdt/src/utils/observable.dart';
 import 'package:y_crdt/src/y_crdt_base.dart';
 
 const globalTransact = transact;
@@ -281,6 +282,7 @@ class Doc extends Observable<String> {
   /**
    * Emit `destroy` event and unregister all event handlers.
    */
+  @override
   void destroy() {
     this.subdocs.toList().forEach((subdoc) => subdoc.destroy());
     final item = this.item;
@@ -321,6 +323,7 @@ class Doc extends Observable<String> {
    * @param {string} eventName
    * @param {function(...any):any} f
    */
+  @override
   void on(String eventName, void Function(List<dynamic>) f) {
     super.on(eventName, f);
   }
@@ -329,6 +332,7 @@ class Doc extends Observable<String> {
    * @param {string} eventName
    * @param {function} f
    */
+  @override
   void off(String eventName, void Function(List<dynamic>) f) {
     super.off(eventName, f);
   }

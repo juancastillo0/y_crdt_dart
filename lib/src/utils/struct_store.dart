@@ -190,7 +190,7 @@ AbstractStruct find(StructStore store, ID id) {
  * @private
  * @function
  */
-final getItem = /** @type {function(StructStore,ID):Item} */ (find);
+const getItem = /** @type {function(StructStore,ID):Item} */ find;
 
 /**
  * @param {Transaction} transaction
@@ -220,8 +220,8 @@ int findIndexCleanStart(
  * @function
  */
 Item getItemCleanStart(Transaction transaction, ID id) {
-  final structs = /** @type {List<Item>} */ (transaction.doc.store.clients
-      .get(id.client))!;
+  final structs =
+      /** @type {List<Item>} */ (transaction.doc.store.clients.get(id.client))!;
   return structs[findIndexCleanStart(transaction, structs, id.clock)] as Item;
 }
 
@@ -262,8 +262,8 @@ Item getItemCleanEnd(Transaction transaction, StructStore store, ID id) {
  */
 void replaceStruct(
     StructStore store, AbstractStruct struct, AbstractStruct newStruct) {
-  final structs = /** @type {List<GC|Item>} */ (store.clients
-      .get(struct.id.client))!;
+  final structs =
+      /** @type {List<GC|Item>} */ (store.clients.get(struct.id.client))!;
   structs[findIndexSS(structs, struct.id.clock)] = newStruct;
 }
 

@@ -10,10 +10,11 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:y_crdt/src/lib0/prng.dart' as prng;
-import 'package:y_crdt/src/types/y_text.dart';
 // import 'package:y_crdt/y_crdt.dart' as Y;
 import 'package:y_crdt/src/lib0/testing.dart' as t;
+import 'package:y_crdt/src/types/y_text.dart';
 import 'package:y_crdt/y_crdt.dart' as Y;
+
 import 'test_helper.dart';
 
 void main() async {
@@ -219,7 +220,7 @@ void testSnapshot(t.TestCase tc) {
   final _data = init(tc, users: 1, gc: false);
   final text0 = _data.users[0].text;
 
-  final doc0 = /** @type {Y.Doc} */ (text0.doc!);
+  final doc0 = /** @type {Y.Doc} */ text0.doc!;
   // doc0.gc = false;
   text0.applyDelta([
     {
@@ -294,7 +295,7 @@ void testSnapshotDeleteAfter(t.TestCase tc) {
   final _data = init(tc, users: 1, gc: false);
   final text0 = _data.users[0].text;
 
-  final doc0 = /** @type {Y.Doc} */ (text0.doc!);
+  final doc0 = /** @type {Y.Doc} */ text0.doc!;
   // doc0.gc = false;
   text0.applyDelta([
     {
@@ -410,7 +411,7 @@ void testFormattingRemovedInMidText(t.TestCase tc) {
  * @param {t.TestCase} tc
  */
 void testInsertAndDeleteAtRandomPositions(t.TestCase tc) {
-  final N = 100000;
+  const N = 100000;
   final _data = init(tc, users: 1);
   final text0 = _data.users[0].text;
   final gen = tc.prng;
@@ -441,7 +442,7 @@ void testInsertAndDeleteAtRandomPositions(t.TestCase tc) {
  * @param {t.TestCase} tc
  */
 void testAppendChars(t.TestCase tc) {
-  final N = 10000;
+  const N = 10000;
   final _data = init(tc, users: 1);
   final text0 = _data.users[0].text;
 
@@ -461,10 +462,10 @@ final c = Y.ContentString("a");
  * @param {t.TestCase} tc
  */
 void testBestCase(t.TestCase tc) {
-  final N = largeDocumentSize;
+  const N = largeDocumentSize;
   final items = List<Y.Item?>.filled(N, null);
   t.measureTime("time to create two million items in the best case", () {
-    final parent = /** @type {any} */ ({});
+    final parent = /** @type {any} */ {};
     Y.Item? prevItem;
     for (var i = 0; i < N; i++) {
       /**
@@ -499,7 +500,7 @@ void tryGc() {
  * @param {t.TestCase} tc
  */
 void testLargeFragmentedDocument(t.TestCase tc) {
-  final itemsToInsert = largeDocumentSize;
+  const itemsToInsert = largeDocumentSize;
   Uint8List? update;
   (() {
     final doc1 = Y.Doc();

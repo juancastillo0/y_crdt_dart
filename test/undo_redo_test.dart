@@ -4,12 +4,13 @@
 //   UndoManager
 // } from '../src/internals.js'
 
+import 'package:y_crdt/src/lib0/testing.dart' as t;
 // import * as Y from '../src/index.js'
 // import * as t from 'lib0/testing.js'
 
 import 'package:y_crdt/src/utils/undo_manager.dart';
 import 'package:y_crdt/y_crdt.dart' as Y;
-import 'package:y_crdt/src/lib0/testing.dart' as t;
+
 import 'test_helper.dart';
 
 void main() async {
@@ -136,19 +137,17 @@ void testUndoMap(t.TestCase tc) {
   final subType = Y.YMap();
   map0.set('a', subType);
   subType.set('x', 42);
-  t.compare(
-      map0.toJSON(),
-      /** @type {any} */ ({
+  t.compare(map0.toJSON(),
+      /** @type {any} */ {
         'a': {'x': 42}
-      }));
+      });
   undoManager.undo();
   t.check(map0.get('a') == 1);
   undoManager.redo();
-  t.compare(
-      map0.toJSON(),
-      /** @type {any} */ ({
+  t.compare(map0.toJSON(),
+      /** @type {any} */ {
         'a': {'x': 42}
-      }));
+      });
   testConnector.syncAll();
   // if content is overwritten by another user, undo operations should be skipped
   map1.set('a', 44);
@@ -339,7 +338,7 @@ void testUndoDeleteFilter(t.TestCase tc) {
   final array0 = _data.users[0].array;
   final undoManager = UndoManager([array0],
       deleteFilter: (item) =>
-          !(item is Y.Item) ||
+          item is! Y.Item ||
           (item.content is Y.ContentType &&
               (item.content as Y.ContentType).type.innerMap.length == 0));
   final map0 = Y.YMap();

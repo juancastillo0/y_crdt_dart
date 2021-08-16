@@ -14,12 +14,13 @@
 
 import 'dart:math' show Random;
 import 'dart:typed_data';
+
+import 'package:y_crdt/src/external/protocol_sync.dart' as syncProtocol;
 import 'package:y_crdt/src/lib0/decoding.dart' as decoding;
 import 'package:y_crdt/src/lib0/encoding.dart' as encoding;
 import 'package:y_crdt/src/lib0/prng.dart' as prng;
-import 'package:y_crdt/y_crdt.dart' as Y;
-import 'package:y_crdt/src/external/protocol_sync.dart' as syncProtocol;
 import 'package:y_crdt/src/lib0/testing.dart' as t;
+import 'package:y_crdt/y_crdt.dart' as Y;
 
 /**
  * @param {TestYInstance} y // publish message created by `y` to all other online clients
@@ -399,8 +400,8 @@ bool compareItemIDs(Y.Item? a, Y.Item? b) =>
 void compareStructStores(Y.StructStore ss1, Y.StructStore ss2) {
   t.check(ss1.clients.length == ss2.clients.length);
   for (final entry in ss1.clients.entries) {
-    final structs2 = /** @type {Array<Y.AbstractStruct>} */ (ss2.clients
-        .get(entry.key));
+    final structs2 =
+        /** @type {Array<Y.AbstractStruct>} */ ss2.clients.get(entry.key);
     final structs1 = entry.value;
     t.check(structs2 != null && structs1.length == structs2.length);
     for (var i = 0; i < structs1.length; i++) {
@@ -415,7 +416,7 @@ void compareStructStores(Y.StructStore ss1, Y.StructStore ss2) {
         t.fail("Structs dont match");
       }
       if (s1 is Y.Item) {
-        if (!(s2 is Y.Item) ||
+        if (s2 is! Y.Item ||
             !((s1.left == null && s2.left == null) ||
                 (s1.left != null &&
                     s2.left != null &&
@@ -443,8 +444,8 @@ void compareStructStores(Y.StructStore ss1, Y.StructStore ss2) {
 void compareDS(Y.DeleteSet ds1, Y.DeleteSet ds2) {
   t.check(ds1.clients.length == ds2.clients.length);
   ds1.clients.forEach((client, deleteItems1) {
-    final deleteItems2 = /** @type {Array<Y.DeleteItem>} */ (ds2.clients
-        .get(client));
+    final deleteItems2 =
+        /** @type {Array<Y.DeleteItem>} */ ds2.clients.get(client);
     t.check(deleteItems2 != null && deleteItems1.length == deleteItems2.length);
     for (var i = 0; i < deleteItems1.length; i++) {
       final di1 = deleteItems1[i];

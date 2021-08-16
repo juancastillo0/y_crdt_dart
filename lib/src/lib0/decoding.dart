@@ -25,14 +25,10 @@
  *
  * @module decoding
  */
-
-// import * as buffer from './buffer.js'
-// import * as binary from './binary.js'
-// import * as math from './math.js'
-
 import 'dart:typed_data';
-import 'package:y_crdt/src/lib0/binary.dart' as binary;
+
 import 'package:fixnum/fixnum.dart' show Int64;
+import 'package:y_crdt/src/lib0/binary.dart' as binary;
 
 bool isNegativeZero(num n) => n != 0 ? n < 0 : 1 / n < 0;
 
@@ -169,10 +165,10 @@ int readUint16(Decoder decoder) {
  */
 int readUint32(Decoder decoder) {
   final uint = rightShift(
-      (decoder.arr[decoder.pos] +
+      decoder.arr[decoder.pos] +
           (decoder.arr[decoder.pos + 1] << 8) +
           (decoder.arr[decoder.pos + 2] << 16) +
-          (decoder.arr[decoder.pos + 3] << 24)),
+          (decoder.arr[decoder.pos + 3] << 24),
       0);
   decoder.pos += 4;
   return uint;
@@ -188,10 +184,10 @@ int readUint32(Decoder decoder) {
  */
 int readUint32BigEndian(Decoder decoder) {
   final uint = rightShift(
-      (decoder.arr[decoder.pos + 3] +
+      decoder.arr[decoder.pos + 3] +
           (decoder.arr[decoder.pos + 2] << 8) +
           (decoder.arr[decoder.pos + 1] << 16) +
-          (decoder.arr[decoder.pos] << 24)),
+          (decoder.arr[decoder.pos] << 24),
       0);
   decoder.pos += 4;
   return uint;
@@ -227,10 +223,10 @@ int peekUint16(Decoder decoder) =>
  * @return {number} An unsigned integer.
  */
 int peekUint32(Decoder decoder) => rightShift(
-    (decoder.arr[decoder.pos] +
+    decoder.arr[decoder.pos] +
         (decoder.arr[decoder.pos + 1] << 8) +
         (decoder.arr[decoder.pos + 2] << 16) +
-        (decoder.arr[decoder.pos + 3] << 24)),
+        (decoder.arr[decoder.pos + 3] << 24),
     0);
 
 /**
@@ -354,7 +350,7 @@ String readVarString(Decoder decoder) {
         final bytes = decoder.arr.sublist(decoder.pos, decoder.pos + nextLen);
         decoder.pos += nextLen;
         // Starting with ES5.1 we can supply a generic array-like object as arguments
-        encodedString += String.fromCharCodes(/** @type {any} */ (bytes));
+        encodedString += String.fromCharCodes(/** @type {any} */ bytes);
         remainingLen -= nextLen;
       }
     }
@@ -405,16 +401,14 @@ double readFloat64(Decoder decoder) =>
 /**
  * @param {Decoder} decoder
  */
-int readBigInt64(Decoder decoder) => /** @type {any} */ (readFromDataView(
-        decoder, 8))
-    .getInt64(0);
+int readBigInt64(Decoder decoder) =>
+    /** @type {any} */ (readFromDataView(decoder, 8)).getInt64(0);
 
 /**
  * @param {Decoder} decoder
  */
-int readBigUint64(Decoder decoder) => /** @type {any} */ (readFromDataView(
-        decoder, 8))
-    .getUint64(0);
+int readBigUint64(Decoder decoder) =>
+    /** @type {any} */ (readFromDataView(decoder, 8)).getUint64(0);
 
 /**
  * @type {Array<function(Decoder):any>}
@@ -495,7 +489,7 @@ class RleDecoder<T extends Object> extends Decoder {
       }
     }
     this.count--;
-    return /** @type {T} */ (this.s);
+    return /** @type {T} */ this.s;
   }
 }
 
@@ -547,7 +541,7 @@ class RleIntDiffDecoder extends Decoder {
       }
     }
     this.count--;
-    return /** @type {number} */ (this.s);
+    return /** @type {number} */ this.s;
   }
 }
 
@@ -574,7 +568,7 @@ class UintOptRleDecoder extends Decoder {
       }
     }
     this.count--;
-    return /** @type {number} */ (this.s);
+    return /** @type {number} */ this.s;
   }
 }
 
@@ -601,7 +595,7 @@ class IncUintOptRleDecoder extends Decoder {
       }
     }
     this.count--;
-    return /** @type {number} */ (this.s++);
+    return /** @type {number} */ this.s++;
   }
 }
 

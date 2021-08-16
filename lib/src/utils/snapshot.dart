@@ -33,19 +33,18 @@
 
 import 'dart:typed_data';
 
+import 'package:y_crdt/src/lib0/decoding.dart' as decoding;
+import 'package:y_crdt/src/lib0/encoding.dart' as encoding;
 import 'package:y_crdt/src/structs/item.dart';
 import 'package:y_crdt/src/utils/delete_set.dart';
 import 'package:y_crdt/src/utils/doc.dart';
+import 'package:y_crdt/src/utils/encoding.dart';
 import 'package:y_crdt/src/utils/id.dart';
 import 'package:y_crdt/src/utils/struct_store.dart';
 import 'package:y_crdt/src/utils/transaction.dart';
 import 'package:y_crdt/src/utils/update_decoder.dart';
 import 'package:y_crdt/src/utils/update_encoder.dart';
-import 'package:y_crdt/src/utils/encoding.dart';
 import 'package:y_crdt/src/y_crdt_base.dart';
-
-import 'package:y_crdt/src/lib0/decoding.dart' as decoding;
-import 'package:y_crdt/src/lib0/encoding.dart' as encoding;
 
 class Snapshot {
   /**
@@ -142,7 +141,7 @@ Snapshot decodeSnapshot(Uint8List buf) =>
  */
 Snapshot createSnapshot(DeleteSet ds, Map<int, int> sm) => Snapshot(ds, sm);
 
-final emptySnapshot = createSnapshot(createDeleteSet(), Map());
+final emptySnapshot = createSnapshot(createDeleteSet(), {});
 
 /**
  * @param {Doc} doc

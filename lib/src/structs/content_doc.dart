@@ -66,6 +66,7 @@ class ContentDoc implements AbstractContent {
   /**
    * @return {number}
    */
+  @override
   getLength() {
     return 1;
   }
@@ -73,6 +74,7 @@ class ContentDoc implements AbstractContent {
   /**
    * @return {List<any>}
    */
+  @override
   getContent() {
     return [this.doc];
   }
@@ -80,6 +82,7 @@ class ContentDoc implements AbstractContent {
   /**
    * @return {boolean}
    */
+  @override
   isCountable() {
     return true;
   }
@@ -87,14 +90,16 @@ class ContentDoc implements AbstractContent {
   /**
    * @return {ContentDoc}
    */
+  @override
   copy() {
-    return new ContentDoc(this.doc);
+    return ContentDoc(this.doc);
   }
 
   /**
    * @param {number} offset
    * @return {ContentDoc}
    */
+  @override
   splice(offset) {
     throw UnimplementedError();
   }
@@ -103,6 +108,7 @@ class ContentDoc implements AbstractContent {
    * @param {ContentDoc} right
    * @return {boolean}
    */
+  @override
   mergeWith(right) {
     return false;
   }
@@ -111,6 +117,7 @@ class ContentDoc implements AbstractContent {
    * @param {Transaction} transaction
    * @param {Item} item
    */
+  @override
   integrate(transaction, item) {
     // this needs to be reflected in doc.destroy as well
     final doc = this.doc;
@@ -126,6 +133,7 @@ class ContentDoc implements AbstractContent {
   /**
    * @param {Transaction} transaction
    */
+  @override
   delete(transaction) {
     if (transaction.subdocsAdded.contains(this.doc)) {
       transaction.subdocsAdded.remove(this.doc);
@@ -137,12 +145,14 @@ class ContentDoc implements AbstractContent {
   /**
    * @param {StructStore} store
    */
+  @override
   gc(store) {}
 
   /**
    * @param {AbstractUpdateEncoder} encoder
    * @param {number} offset
    */
+  @override
   write(encoder, offset) {
     encoder.writeString(this.doc!.guid);
     encoder.writeAny(this.opts.toMap());
@@ -151,6 +161,7 @@ class ContentDoc implements AbstractContent {
   /**
    * @return {number}
    */
+  @override
   getRef() {
     return 9;
   }

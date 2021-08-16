@@ -51,12 +51,12 @@ class WebSocketChannel extends StreamChannelMixin {
   /// Before the connection has been closed, this will be `null`.
   String? get closeReason => _webSocket.closeReason;
 
-  /// 
+  ///
   /// Returns the current state of the connection.
-  /// 
+  ///
   int? get readyState => _webSocket.readyState;
 
-  /// 
+  ///
   void Function()? onOpen;
 
   @override

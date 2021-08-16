@@ -1,5 +1,5 @@
-import 'package:y_crdt/y_crdt.dart';
 import 'package:test/test.dart';
+import 'package:y_crdt/y_crdt.dart';
 
 void main() {
   group('A group of tests', () {

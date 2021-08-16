@@ -18,20 +18,19 @@ import 'dart:typed_data';
 
 import 'package:flutter/cupertino.dart';
 import 'package:uuid/uuid.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:y_crdt/src/external/broadcast_channel/broadcast_channel_web.dart';
 import 'package:y_crdt/src/external/simple_peer.dart';
 import 'package:y_crdt/src/utils/observable.dart';
-
-import "../lib0/encoding.dart" as encoding;
-import "../lib0/decoding.dart" as decoding;
 import 'package:y_crdt/y_crdt.dart' as Y;
 
+import "./protocol_awareness.dart" as awarenessProtocol;
 // import * as Y from "yjs"; // eslint-disable-line
 // import Peer from "simple-peer/simplepeer.min.js";
 
 import "./protocol_sync.dart" as syncProtocol;
-import "./protocol_awareness.dart" as awarenessProtocol;
-import 'package:web_socket_channel/web_socket_channel.dart';
+import "../lib0/decoding.dart" as decoding;
+import "../lib0/encoding.dart" as encoding;
 
 // import * as cryptoutils from "./crypto.js";
 
@@ -570,7 +569,7 @@ Room openRoom(Y.Doc doc, WebrtcProvider provider, String name, Object? key) {
     throw Exception("A Yjs Doc connected to room '${name}' already exists!");
   }
   final room = Room(doc, provider, name, key);
-  rooms.set(name, /** @type {Room} */ (room));
+  rooms.set(name, /** @type {Room} */ room);
   return room;
 }
 

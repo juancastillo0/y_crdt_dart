@@ -19,6 +19,7 @@
 
 import 'dart:typed_data';
 
+import 'package:y_crdt/src/lib0/decoding.dart' as decoding;
 import 'package:y_crdt/src/types/y_array.dart';
 import 'package:y_crdt/src/types/y_map.dart';
 import 'package:y_crdt/src/utils/delete_set.dart';
@@ -28,8 +29,6 @@ import 'package:y_crdt/src/utils/transaction.dart';
 import 'package:y_crdt/src/utils/update_decoder.dart';
 import 'package:y_crdt/src/utils/update_encoder.dart';
 import 'package:y_crdt/src/y_crdt_base.dart';
-
-import 'package:y_crdt/src/lib0/decoding.dart' as decoding;
 
 bool _defaultFilter(_, __) => true;
 

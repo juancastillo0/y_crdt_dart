@@ -48,7 +48,7 @@ class YArrayEvent<T> extends YEvent {
       : _transaction = transaction,
         super(target, transaction);
 
-  Transaction _transaction;
+  final Transaction _transaction;
 }
 
 /**
@@ -69,6 +69,7 @@ class YArray<T> extends AbstractType<YArrayEvent<T>> with IterableMixin<T> {
   /**
      * @type {List<ArraySearchMarker>}
      */
+  @override
   List<ArraySearchMarker>? innerSearchMarker = [];
 
   /**
@@ -93,12 +94,14 @@ class YArray<T> extends AbstractType<YArrayEvent<T>> with IterableMixin<T> {
    * @param {Doc} y The Yjs instance
    * @param {Item} item
    */
+  @override
   void innerIntegrate(Doc y, Item? item) {
     super.innerIntegrate(y, item);
-    this.insert(0, /** @type {List<any>} */ (this._prelimContent!));
+    this.insert(0, /** @type {List<any>} */ this._prelimContent!);
     this._prelimContent = null;
   }
 
+  @override
   YArray<T> innerCopy() {
     return YArray();
   }
@@ -106,18 +109,20 @@ class YArray<T> extends AbstractType<YArrayEvent<T>> with IterableMixin<T> {
   /**
    * @return {YList<T>}
    */
+  @override
   YArray<T> clone() {
     final arr = YArray<T>();
     arr.insert(
         0,
         this
             .toArray()
-            .map((el) => (el is AbstractType ? el.clone() : el))
+            .map((el) => el is AbstractType ? el.clone() : el)
             .toList()
             .cast());
     return arr;
   }
 
+  @override
   int get length {
     return this._prelimContent == null
         ? this.innerLength
@@ -130,6 +135,7 @@ class YArray<T> extends AbstractType<YArrayEvent<T>> with IterableMixin<T> {
    * @param {Transaction} transaction
    * @param {Set<null|string>} parentSubs Keys changed on this type. `null` if list was modified.
    */
+  @override
   void innerCallObserver(Transaction transaction, Set<String?> parentSubs) {
     super.innerCallObserver(transaction, parentSubs);
     callTypeObservers(this, transaction, YArrayEvent(this, transaction));
@@ -231,8 +237,9 @@ class YArray<T> extends AbstractType<YArrayEvent<T>> with IterableMixin<T> {
    *
    * @return {List<any>}
    */
+  @override
   List<dynamic> toJSON() {
-    return this.map((c) => (c is AbstractType ? c.toJSON() : c)).toList();
+    return this.map((c) => c is AbstractType ? c.toJSON() : c).toList();
   }
 
   // /**
@@ -260,6 +267,7 @@ class YArray<T> extends AbstractType<YArrayEvent<T>> with IterableMixin<T> {
   /**
    * @return {IterableIterator<T>}
    */
+  @override
   Iterator<T> get iterator {
     return typeListCreateIterator<T>(this);
   }
@@ -267,6 +275,7 @@ class YArray<T> extends AbstractType<YArrayEvent<T>> with IterableMixin<T> {
   /**
    * @param {AbstractUpdateEncoder} encoder
    */
+  @override
   void innerWrite(AbstractUpdateEncoder encoder) {
     encoder.writeTypeRef(YArrayRefID);
   }

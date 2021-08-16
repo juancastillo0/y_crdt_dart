@@ -1,8 +1,8 @@
 /* eslint-env browser */
 
-import 'dart:math' as math;
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:y_crdt/src/utils/observable.dart';

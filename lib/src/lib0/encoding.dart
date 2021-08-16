@@ -25,14 +25,9 @@
  *
  * @module encoding
  */
-
-// import * as buffer from './buffer.js'
-// import * as math from './math.js'
-// import * as number from './number.js'
-// import * as binary from './binary.js'
-
-import 'dart:typed_data';
 import 'dart:math' as math;
+import 'dart:typed_data';
+
 import 'package:y_crdt/src/lib0/binary.dart' as binary;
 import 'package:y_crdt/src/lib0/decoding.dart' show isNegativeZero, rightShift;
 
@@ -222,7 +217,7 @@ void writeUint32(Encoder encoder, int number) {
  */
 void writeUint32BigEndian(Encoder encoder, int number) {
   for (var i = 3; i >= 0; i--) {
-    write(encoder, rightShift(number, (8 * i)) & binary.BITS8);
+    write(encoder, rightShift(number, 8 * i) & binary.BITS8);
   }
 }
 
@@ -307,7 +302,7 @@ void writeVarString(Encoder encoder, String str) {
   final len = encodedString.length;
   writeVarUint(encoder, len);
   for (var i = 0; i < len; i++) {
-    write(encoder, /** @type {number} */ (encodedString.codeUnitAt(i)));
+    write(encoder, /** @type {number} */ encodedString.codeUnitAt(i));
   }
 }
 
@@ -405,19 +400,17 @@ void writeFloat64(Encoder encoder, double number) =>
  * @param {Encoder} encoder
  * @param {bigint} num
  */
-void writeBigInt64(
-    Encoder encoder, BigInt number) => /** @type {any} */ (writeOnDataView(
-        encoder, 8))
-    .setInt64(0, number.toInt());
+void writeBigInt64(Encoder encoder, BigInt number) =>
+    /** @type {any} */ (writeOnDataView(encoder, 8))
+        .setInt64(0, number.toInt());
 
 /**
  * @param {Encoder} encoder
  * @param {bigint} num
  */
-void writeBigUint64(
-    Encoder encoder, BigInt number) => /** @type {any} */ (writeOnDataView(
-        encoder, 8))
-    .setUint64(0, number.toInt());
+void writeBigUint64(Encoder encoder, BigInt number) =>
+    /** @type {any} */ (writeOnDataView(encoder, 8))
+        .setUint64(0, number.toInt());
 
 final floatTestBed = ByteData(4);
 /**
@@ -710,16 +703,20 @@ class UintOptRleEncoder {
  */
 class IncUintOptRleEncoder implements UintOptRleEncoder {
   IncUintOptRleEncoder();
+  @override
   final encoder = Encoder();
   /**
      * @type {number}
      */
+  @override
   int s = 0;
+  @override
   int count = 0;
 
   /**
    * @param {number} v
    */
+  @override
   void write(int v) {
     if (this.s + this.count == v) {
       this.count++;
@@ -730,6 +727,7 @@ class IncUintOptRleEncoder implements UintOptRleEncoder {
     }
   }
 
+  @override
   Uint8List toUint8Array() {
     flushUintOptRleEncoder(this);
     return _toUint8Array(this.encoder);

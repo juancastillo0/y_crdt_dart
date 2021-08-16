@@ -28,6 +28,7 @@ class ContentFormat implements AbstractContent {
   /**
    * @return {number}
    */
+  @override
   getLength() {
     return 1;
   }
@@ -35,6 +36,7 @@ class ContentFormat implements AbstractContent {
   /**
    * @return {List<any>}
    */
+  @override
   getContent() {
     return [];
   }
@@ -42,6 +44,7 @@ class ContentFormat implements AbstractContent {
   /**
    * @return {boolean}
    */
+  @override
   isCountable() {
     return false;
   }
@@ -49,6 +52,7 @@ class ContentFormat implements AbstractContent {
   /**
    * @return {ContentFormat}
    */
+  @override
   copy() {
     return ContentFormat(this.key, this.value);
   }
@@ -57,6 +61,7 @@ class ContentFormat implements AbstractContent {
    * @param {number} offset
    * @return {ContentFormat}
    */
+  @override
   splice(offset) {
     throw UnimplementedError();
   }
@@ -65,6 +70,7 @@ class ContentFormat implements AbstractContent {
    * @param {ContentFormat} right
    * @return {boolean}
    */
+  @override
   mergeWith(right) {
     return false;
   }
@@ -73,6 +79,7 @@ class ContentFormat implements AbstractContent {
    * @param {Transaction} transaction
    * @param {Item} item
    */
+  @override
   integrate(transaction, item) {
     // @todo searchmarker are currently unsupported for rich text documents
     /** @type {AbstractType<any>} */ (item.parent as AbstractType)
@@ -82,15 +89,18 @@ class ContentFormat implements AbstractContent {
   /**
    * @param {Transaction} transaction
    */
+  @override
   delete(transaction) {}
   /**
    * @param {StructStore} store
    */
+  @override
   gc(store) {}
   /**
    * @param {AbstractUpdateEncoder} encoder
    * @param {number} offset
    */
+  @override
   write(encoder, offset) {
     encoder.writeKey(this.key);
     encoder.writeJSON(this.value);
@@ -99,6 +109,7 @@ class ContentFormat implements AbstractContent {
   /**
    * @return {number}
    */
+  @override
   getRef() {
     return 6;
   }

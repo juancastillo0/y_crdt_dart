@@ -62,6 +62,7 @@ class ContentType implements AbstractContent {
   /**
    * @return {number}
    */
+  @override
   getLength() {
     return 1;
   }
@@ -69,6 +70,7 @@ class ContentType implements AbstractContent {
   /**
    * @return {List<any>}
    */
+  @override
   getContent() {
     return [this.type];
   }
@@ -76,6 +78,7 @@ class ContentType implements AbstractContent {
   /**
    * @return {boolean}
    */
+  @override
   isCountable() {
     return true;
   }
@@ -83,6 +86,7 @@ class ContentType implements AbstractContent {
   /**
    * @return {ContentType}
    */
+  @override
   copy() {
     return ContentType(this.type.innerCopy());
   }
@@ -91,6 +95,7 @@ class ContentType implements AbstractContent {
    * @param {number} offset
    * @return {ContentType}
    */
+  @override
   splice(offset) {
     throw UnimplementedError();
   }
@@ -99,6 +104,7 @@ class ContentType implements AbstractContent {
    * @param {ContentType} right
    * @return {boolean}
    */
+  @override
   mergeWith(right) {
     return false;
   }
@@ -107,6 +113,7 @@ class ContentType implements AbstractContent {
    * @param {Transaction} transaction
    * @param {Item} item
    */
+  @override
   integrate(transaction, item) {
     this.type.innerIntegrate(transaction.doc, item);
   }
@@ -114,6 +121,7 @@ class ContentType implements AbstractContent {
   /**
    * @param {Transaction} transaction
    */
+  @override
   delete(transaction) {
     var item = this.type.innerStart;
     while (item != null) {
@@ -142,6 +150,7 @@ class ContentType implements AbstractContent {
   /**
    * @param {StructStore} store
    */
+  @override
   gc(store) {
     var item = this.type.innerStart;
     while (item != null) {
@@ -164,6 +173,7 @@ class ContentType implements AbstractContent {
    * @param {AbstractUpdateEncoder} encoder
    * @param {number} offset
    */
+  @override
   write(encoder, offset) {
     this.type.innerWrite(encoder);
   }
@@ -171,6 +181,7 @@ class ContentType implements AbstractContent {
   /**
    * @return {number}
    */
+  @override
   getRef() {
     return 7;
   }

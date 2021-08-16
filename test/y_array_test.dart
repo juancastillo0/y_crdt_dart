@@ -21,8 +21,9 @@ import 'dart:math' show Random;
 import 'dart:math' as math;
 
 import 'package:y_crdt/src/lib0/prng.dart' as prng;
-import 'package:y_crdt/y_crdt.dart' as Y;
 import 'package:y_crdt/src/lib0/testing.dart' as t;
+import 'package:y_crdt/y_crdt.dart' as Y;
+
 import 'test_helper.dart';
 
 void main() async {
@@ -215,7 +216,7 @@ void testInsertAndDeleteEvents(t.TestCase tc) {
   /**
    * @type {Object<string,any>?}
    */
-  var event = null;
+  var event;
   _data.users[0].array.observe((e, _) {
     event = e;
   });
@@ -265,11 +266,11 @@ void testInsertAndDeleteEventsForTypes(t.TestCase tc) {
   /**
    * @type {Object<string,any>|null}
    */
-  var event = null;
+  var event;
   _data.users[0].array.observe((e, _) {
     event = e;
   });
-  _data.users[0].array.insert(0, [new Y.YArray()]);
+  _data.users[0].array.insert(0, [Y.YArray()]);
   t.check(event != null);
   event = null;
   _data.users[0].array.delete(0);
@@ -360,7 +361,7 @@ void testInsertAndDeleteEventsForTypes2(t.TestCase tc) {
   _data.users[0].array.observe((e, _) {
     events.add(e);
   });
-  _data.users[0].array.insert(0, ["hi", new Y.YMap()]);
+  _data.users[0].array.insert(0, ["hi", Y.YMap()]);
   t.check(events.length == 1,
       "Event is triggered exactly once for insertion of two elements");
   _data.users[0].array.delete(1);
@@ -445,7 +446,7 @@ void testEventTargetIsSetCorrectlyOnRemote(t.TestCase tc) {
 void testIteratingArrayContainingTypes(t.TestCase tc) {
   final y = Y.Doc();
   final arr = y.getArray<Y.YMap>("arr");
-  final numItems = 10;
+  const numItems = 10;
   for (var i = 0; i < numItems; i++) {
     final map = Y.YMap();
     map.set("value", i);
@@ -506,7 +507,7 @@ void __delete(Y.Doc user, Random gen, dynamic _) {
     var somePos = prng.int32(gen, 0, length - 1);
     var delLength = prng.int32(gen, 1, math.min(2, length - somePos));
     if (gen.nextBool()) {
-      var type = yarray.get(somePos);
+      final type = yarray.get(somePos);
       final _typeLength = type.length as int;
       if (_typeLength > 0) {
         somePos = prng.int32(gen, 0, _typeLength - 1);

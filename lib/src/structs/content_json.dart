@@ -27,6 +27,7 @@ class ContentJSON implements AbstractContent {
   /**
    * @return {number}
    */
+  @override
   getLength() {
     return this.arr.length;
   }
@@ -34,6 +35,7 @@ class ContentJSON implements AbstractContent {
   /**
    * @return {List<any>}
    */
+  @override
   getContent() {
     return this.arr;
   }
@@ -41,6 +43,7 @@ class ContentJSON implements AbstractContent {
   /**
    * @return {boolean}
    */
+  @override
   isCountable() {
     return true;
   }
@@ -48,14 +51,16 @@ class ContentJSON implements AbstractContent {
   /**
    * @return {ContentJSON}
    */
+  @override
   copy() {
-    return new ContentJSON(this.arr);
+    return ContentJSON(this.arr);
   }
 
   /**
    * @param {number} offset
    * @return {ContentJSON}
    */
+  @override
   splice(offset) {
     final right = ContentJSON(this.arr.sublist(offset));
     this.arr = this.arr.sublist(0, offset);
@@ -66,6 +71,7 @@ class ContentJSON implements AbstractContent {
    * @param {ContentJSON} right
    * @return {boolean}
    */
+  @override
   mergeWith(right) {
     if (right is ContentJSON) {
       this.arr = [...this.arr, ...right.arr];
@@ -79,19 +85,23 @@ class ContentJSON implements AbstractContent {
    * @param {Transaction} transaction
    * @param {Item} item
    */
+  @override
   integrate(transaction, item) {}
   /**
    * @param {Transaction} transaction
    */
+  @override
   delete(transaction) {}
   /**
    * @param {StructStore} store
    */
+  @override
   gc(store) {}
   /**
    * @param {AbstractUpdateEncoder} encoder
    * @param {number} offset
    */
+  @override
   write(encoder, offset) {
     final len = this.arr.length;
     encoder.writeLen(len - offset);
@@ -104,6 +114,7 @@ class ContentJSON implements AbstractContent {
   /**
    * @return {number}
    */
+  @override
   getRef() {
     return 2;
   }

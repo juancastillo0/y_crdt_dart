@@ -2,10 +2,11 @@
 // import * as t from "lib0/testing.js";
 // import { init } from "./testHelper";
 
+import 'package:y_crdt/src/lib0/testing.dart' as t;
 import 'package:y_crdt/src/y_crdt_base.dart';
 import 'package:y_crdt/y_crdt.dart'
     show Doc, snapshot, YMap, createDocFromSnapshot;
-import 'package:y_crdt/src/lib0/testing.dart' as t;
+
 import 'test_helper.dart' show init;
 
 void main() async {

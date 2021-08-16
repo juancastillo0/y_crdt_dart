@@ -7,9 +7,8 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:y_crdt/src/lib0/decoding.dart';
-import 'package:y_crdt/src/utils/id.dart';
-
 import 'package:y_crdt/src/lib0/decoding.dart' as decoding;
+import 'package:y_crdt/src/utils/id.dart';
 
 abstract class AbstractDSDecoder {
   /**
@@ -109,9 +108,11 @@ class DSDecoderV1 implements AbstractDSDecoder {
    * @param {decoding.Decoder} decoder
    */
   DSDecoderV1(this.restDecoder);
+  @override
   final decoding.Decoder restDecoder;
   static DSDecoderV1 create(decoding.Decoder decoder) => DSDecoderV1(decoder);
 
+  @override
   resetDsCurVal() {
     // nop
   }
@@ -119,6 +120,7 @@ class DSDecoderV1 implements AbstractDSDecoder {
   /**
    * @return {number}
    */
+  @override
   int readDsClock() {
     return decoding.readVarUint(this.restDecoder);
   }
@@ -126,6 +128,7 @@ class DSDecoderV1 implements AbstractDSDecoder {
   /**
    * @return {number}
    */
+  @override
   int readDsLen() {
     return decoding.readVarUint(this.restDecoder);
   }
@@ -139,6 +142,7 @@ class UpdateDecoderV1 extends DSDecoderV1 implements AbstractUpdateDecoder {
   /**
    * @return {ID}
    */
+  @override
   ID readLeftID() {
     return createID(decoding.readVarUint(this.restDecoder),
         decoding.readVarUint(this.restDecoder));
@@ -147,6 +151,7 @@ class UpdateDecoderV1 extends DSDecoderV1 implements AbstractUpdateDecoder {
   /**
    * @return {ID}
    */
+  @override
   ID readRightID() {
     return createID(decoding.readVarUint(this.restDecoder),
         decoding.readVarUint(this.restDecoder));
@@ -156,6 +161,7 @@ class UpdateDecoderV1 extends DSDecoderV1 implements AbstractUpdateDecoder {
    * Read the next client id.
    * Use this in favor of readID whenever possible to reduce the number of objects created.
    */
+  @override
   int readClient() {
     return decoding.readVarUint(this.restDecoder);
   }
@@ -163,6 +169,7 @@ class UpdateDecoderV1 extends DSDecoderV1 implements AbstractUpdateDecoder {
   /**
    * @return {number} info An unsigned 8-bit integer
    */
+  @override
   int readInfo() {
     return decoding.readUint8(this.restDecoder);
   }
@@ -170,6 +177,7 @@ class UpdateDecoderV1 extends DSDecoderV1 implements AbstractUpdateDecoder {
   /**
    * @return {string}
    */
+  @override
   String readString() {
     return decoding.readVarString(this.restDecoder);
   }
@@ -177,6 +185,7 @@ class UpdateDecoderV1 extends DSDecoderV1 implements AbstractUpdateDecoder {
   /**
    * @return {boolean} isKey
    */
+  @override
   bool readParentInfo() {
     return decoding.readVarUint(this.restDecoder) == 1;
   }
@@ -184,6 +193,7 @@ class UpdateDecoderV1 extends DSDecoderV1 implements AbstractUpdateDecoder {
   /**
    * @return {number} info An unsigned 8-bit integer
    */
+  @override
   int readTypeRef() {
     return decoding.readVarUint(this.restDecoder);
   }
@@ -193,6 +203,7 @@ class UpdateDecoderV1 extends DSDecoderV1 implements AbstractUpdateDecoder {
    *
    * @return {number} len
    */
+  @override
   int readLen() {
     return decoding.readVarUint(this.restDecoder);
   }
@@ -200,6 +211,7 @@ class UpdateDecoderV1 extends DSDecoderV1 implements AbstractUpdateDecoder {
   /**
    * @return {any}
    */
+  @override
   dynamic readAny() {
     return decoding.readAny(this.restDecoder);
   }
@@ -207,6 +219,7 @@ class UpdateDecoderV1 extends DSDecoderV1 implements AbstractUpdateDecoder {
   /**
    * @return {Uint8Array}
    */
+  @override
   Uint8List readBuf() {
     // TODO:
     return Uint8List.fromList(decoding.readVarUint8Array(this.restDecoder));
@@ -217,6 +230,7 @@ class UpdateDecoderV1 extends DSDecoderV1 implements AbstractUpdateDecoder {
    *
    * @return {any}
    */
+  @override
   dynamic readJSON() {
     return jsonDecode(decoding.readVarString(this.restDecoder));
   }
@@ -224,6 +238,7 @@ class UpdateDecoderV1 extends DSDecoderV1 implements AbstractUpdateDecoder {
   /**
    * @return {string}
    */
+  @override
   String readKey() {
     return decoding.readVarString(this.restDecoder);
   }
@@ -235,18 +250,22 @@ class DSDecoderV2 implements AbstractDSDecoder {
    */
   DSDecoderV2(this.restDecoder);
   int dsCurrVal = 0;
+  @override
   final decoding.Decoder restDecoder;
   static DSDecoderV2 create(decoding.Decoder decoder) => DSDecoderV2(decoder);
 
+  @override
   void resetDsCurVal() {
     this.dsCurrVal = 0;
   }
 
+  @override
   int readDsClock() {
     this.dsCurrVal += decoding.readVarUint(this.restDecoder);
     return this.dsCurrVal;
   }
 
+  @override
   int readDsLen() {
     final diff = decoding.readVarUint(this.restDecoder) + 1;
     this.dsCurrVal += diff;
@@ -301,6 +320,7 @@ class UpdateDecoderV2 extends DSDecoderV2 implements AbstractUpdateDecoder {
   /**
    * @return {ID}
    */
+  @override
   ID readLeftID() {
     return ID(this.clientDecoder.read(), this.leftClockDecoder.read());
   }
@@ -308,6 +328,7 @@ class UpdateDecoderV2 extends DSDecoderV2 implements AbstractUpdateDecoder {
   /**
    * @return {ID}
    */
+  @override
   ID readRightID() {
     return ID(this.clientDecoder.read(), this.rightClockDecoder.read());
   }
@@ -316,6 +337,7 @@ class UpdateDecoderV2 extends DSDecoderV2 implements AbstractUpdateDecoder {
    * Read the next client id.
    * Use this in favor of readID whenever possible to reduce the number of objects created.
    */
+  @override
   readClient() {
     return this.clientDecoder.read();
   }
@@ -323,13 +345,15 @@ class UpdateDecoderV2 extends DSDecoderV2 implements AbstractUpdateDecoder {
   /**
    * @return {number} info An unsigned 8-bit integer
    */
+  @override
   int readInfo() {
-    return /** @type {number} */ (this.infoDecoder.read() as int);
+    return /** @type {number} */ this.infoDecoder.read() as int;
   }
 
   /**
    * @return {string}
    */
+  @override
   String readString() {
     return this.stringDecoder.read();
   }
@@ -337,6 +361,7 @@ class UpdateDecoderV2 extends DSDecoderV2 implements AbstractUpdateDecoder {
   /**
    * @return {boolean}
    */
+  @override
   bool readParentInfo() {
     return this.parentInfoDecoder.read() == 1;
   }
@@ -344,6 +369,7 @@ class UpdateDecoderV2 extends DSDecoderV2 implements AbstractUpdateDecoder {
   /**
    * @return {number} An unsigned 8-bit integer
    */
+  @override
   int readTypeRef() {
     return this.typeRefDecoder.read();
   }
@@ -353,6 +379,7 @@ class UpdateDecoderV2 extends DSDecoderV2 implements AbstractUpdateDecoder {
    *
    * @return {number}
    */
+  @override
   int readLen() {
     return this.lenDecoder.read();
   }
@@ -360,6 +387,7 @@ class UpdateDecoderV2 extends DSDecoderV2 implements AbstractUpdateDecoder {
   /**
    * @return {any}
    */
+  @override
   dynamic readAny() {
     return decoding.readAny(this.restDecoder);
   }
@@ -367,6 +395,7 @@ class UpdateDecoderV2 extends DSDecoderV2 implements AbstractUpdateDecoder {
   /**
    * @return {Uint8Array}
    */
+  @override
   Uint8List readBuf() {
     return decoding.readVarUint8Array(this.restDecoder);
   }
@@ -378,6 +407,7 @@ class UpdateDecoderV2 extends DSDecoderV2 implements AbstractUpdateDecoder {
    *
    * @return {any}
    */
+  @override
   dynamic readJSON() {
     return decoding.readAny(this.restDecoder);
   }
@@ -385,6 +415,7 @@ class UpdateDecoderV2 extends DSDecoderV2 implements AbstractUpdateDecoder {
   /**
    * @return {string}
    */
+  @override
   String readKey() {
     final keyClock = this.keyClockDecoder.read();
     if (keyClock < this.keys.length) {

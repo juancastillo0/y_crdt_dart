@@ -25,6 +25,7 @@ class ContentString implements AbstractContent {
   /**
    * @return {number}
    */
+  @override
   getLength() {
     return this.str.length;
   }
@@ -32,6 +33,7 @@ class ContentString implements AbstractContent {
   /**
    * @return {List<any>}
    */
+  @override
   getContent() {
     return this.str.split("");
   }
@@ -39,6 +41,7 @@ class ContentString implements AbstractContent {
   /**
    * @return {boolean}
    */
+  @override
   isCountable() {
     return true;
   }
@@ -46,14 +49,16 @@ class ContentString implements AbstractContent {
   /**
    * @return {ContentString}
    */
+  @override
   copy() {
-    return new ContentString(this.str);
+    return ContentString(this.str);
   }
 
   /**
    * @param {number} offset
    * @return {ContentString}
    */
+  @override
   splice(offset) {
     final right = ContentString(this.str.substring(offset));
     this.str = this.str.substring(0, offset);
@@ -75,6 +80,7 @@ class ContentString implements AbstractContent {
    * @param {ContentString} right
    * @return {boolean}
    */
+  @override
   mergeWith(right) {
     if (right is ContentString) {
       this.str += right.str;
@@ -88,19 +94,23 @@ class ContentString implements AbstractContent {
    * @param {Transaction} transaction
    * @param {Item} item
    */
+  @override
   integrate(transaction, item) {}
   /**
    * @param {Transaction} transaction
    */
+  @override
   delete(transaction) {}
   /**
    * @param {StructStore} store
    */
+  @override
   gc(store) {}
   /**
    * @param {AbstractUpdateEncoder} encoder
    * @param {number} offset
    */
+  @override
   write(encoder, offset) {
     encoder.writeString(offset == 0 ? this.str : this.str.substring(offset));
   }
@@ -108,6 +118,7 @@ class ContentString implements AbstractContent {
   /**
    * @return {number}
    */
+  @override
   getRef() {
     return 4;
   }

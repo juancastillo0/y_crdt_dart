@@ -1,8 +1,13 @@
 import 'dart:typed_data';
 
+import 'package:y_crdt/src/lib0/binary.dart' as binary;
+/**
+ * @module encoding
+ */
+import "package:y_crdt/src/lib0/decoding.dart" as decoding;
+import "package:y_crdt/src/lib0/encoding.dart" as encoding;
 import 'package:y_crdt/src/structs/abstract_struct.dart';
 import 'package:y_crdt/src/structs/gc.dart';
-import 'package:y_crdt/src/y_crdt_base.dart';
 import 'package:y_crdt/src/structs/item.dart';
 import 'package:y_crdt/src/utils/delete_set.dart';
 import 'package:y_crdt/src/utils/doc.dart';
@@ -11,62 +16,7 @@ import 'package:y_crdt/src/utils/struct_store.dart';
 import 'package:y_crdt/src/utils/transaction.dart';
 import 'package:y_crdt/src/utils/update_decoder.dart';
 import 'package:y_crdt/src/utils/update_encoder.dart';
-
-/**
- * @module encoding
- */
-/*
- * We use the first five bits in the info flag for determining the type of the struct.
- *
- * 0: GC
- * 1: Item with Deleted content
- * 2: Item with JSON content
- * 3: Item with Binary content
- * 4: Item with String content
- * 5: Item with Embed content (for richtext content)
- * 6: Item with Format content (a formatting marker for richtext content)
- * 7: Item with Type
- */
-
-// import {
-//   findIndexSS,
-//   getState,
-//   createID,
-//   getStateVector,
-//   readAndApplyDeleteSet,
-//   writeDeleteSet,
-//   createDeleteSetFromStructStore,
-//   transact,
-//   readItemContent,
-//   UpdateDecoderV1,
-//   UpdateDecoderV2,
-//   UpdateEncoderV1,
-//   UpdateEncoderV2,
-//   DSDecoderV2,
-//   DSEncoderV2,
-//   DSDecoderV1,
-//   DSEncoderV1,
-//   AbstractDSEncoder,
-//   AbstractDSDecoder,
-//   AbstractUpdateEncoder,
-//   AbstractUpdateDecoder,
-//   AbstractContent,
-//   Doc,
-//   Transaction,
-//   GC,
-//   Item,
-//   StructStore,
-//   ID, // eslint-disable-line
-// } from "../internals.js";
-
-// import * as encoding from "lib0/encoding.js";
-// import * as decoding from "lib0/decoding.js";
-// import * as binary from "lib0/binary.js";
-// import * as map from "lib0/map.js";
-
-import "package:y_crdt/src/lib0/decoding.dart" as decoding;
-import "package:y_crdt/src/lib0/encoding.dart" as encoding;
-import 'package:y_crdt/src/lib0/binary.dart' as binary;
+import 'package:y_crdt/src/y_crdt_base.dart';
 
 AbstractDSEncoder Function() DefaultDSEncoder = DSEncoderV1.create;
 AbstractDSDecoder Function(decoding.Decoder) DefaultDSDecoder =
@@ -280,13 +230,15 @@ void _resumeStructIntegration(Transaction transaction, StructStore store) {
     return;
   }
   final getNextStructTarget = () {
-    var nextStructsTarget = /** @type {{i:number,refs:List<GC|Item>}} */ (clientsStructRefs
-        .get(clientsStructRefsIds[clientsStructRefsIds.length - 1]));
+    var nextStructsTarget =
+        /** @type {{i:number,refs:List<GC|Item>}} */ clientsStructRefs
+            .get(clientsStructRefsIds[clientsStructRefsIds.length - 1]);
     while (nextStructsTarget!.refs.length == nextStructsTarget.i) {
       clientsStructRefsIds.removeLast();
       if (clientsStructRefsIds.length > 0) {
-        nextStructsTarget = /** @type {{i:number,refs:List<GC|Item>}} */ (clientsStructRefs
-            .get(clientsStructRefsIds[clientsStructRefsIds.length - 1]));
+        nextStructsTarget =
+            /** @type {{i:number,refs:List<GC|Item>}} */ clientsStructRefs
+                .get(clientsStructRefsIds[clientsStructRefsIds.length - 1]);
       } else {
         store.pendingClientsStructRefs.clear();
         return null;
@@ -304,7 +256,7 @@ void _resumeStructIntegration(Transaction transaction, StructStore store) {
   var stackHead = stack.length > 0
       ? /** @type {GC|Item} */ (stack.removeLast())
       : /** @type {any} */ (curStructsTarget!).refs[
-          /** @type {any} */ (curStructsTarget).i++];
+          /** @type {any} */ curStructsTarget.i++];
   // caching the state because it is used very often
   final state = <int, int>{};
   // iterate over all struct readers until we are done
@@ -334,7 +286,7 @@ void _resumeStructIntegration(Transaction transaction, StructStore store) {
           structRefs.refs = structRefs.refs
               .getRange(structRefs.i, structRefs.refs.length)
               .toList()
-                ..sort((r1, r2) => r1.id.clock - r2.id.clock);
+            ..sort((r1, r2) => r1.id.clock - r2.id.clock);
           structRefs.i = 0;
           continue;
         }
@@ -358,19 +310,19 @@ void _resumeStructIntegration(Transaction transaction, StructStore store) {
       }
       // iterate to next stackHead
       if (stack.length > 0) {
-        stackHead = /** @type {GC|Item} */ (stack.removeLast());
+        stackHead = /** @type {GC|Item} */ stack.removeLast();
       } else if (curStructsTarget != null &&
           curStructsTarget.i < curStructsTarget.refs.length) {
-        stackHead = /** @type {GC|Item} */ (curStructsTarget
-            .refs[curStructsTarget.i++]);
+        stackHead =
+            /** @type {GC|Item} */ curStructsTarget.refs[curStructsTarget.i++];
       } else {
         curStructsTarget = getNextStructTarget();
         if (curStructsTarget == null) {
           // we are done!
           break;
         } else {
-          stackHead = /** @type {GC|Item} */ (curStructsTarget
-              .refs[curStructsTarget.i++]);
+          stackHead = /** @type {GC|Item} */ curStructsTarget
+              .refs[curStructsTarget.i++];
         }
       }
     } else {
