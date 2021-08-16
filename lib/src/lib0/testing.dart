@@ -42,6 +42,7 @@
 //  * @module testing
 //  */
 
+import 'dart:async' show FutureOr;
 // import * as log from "./logging.js";
 // import { simpleDiff } from "./diff.js";
 // import * as object from "./object.js";
@@ -57,13 +58,13 @@
 // import * as promise from "./promise.js";
 
 import 'dart:convert' show jsonEncode;
-import 'dart:async' show FutureOr;
 import 'dart:io';
 import 'dart:math' show Random;
 import 'dart:typed_data';
+
 import 'package:flutter/foundation.dart';
 import 'package:y_crdt/src/y_crdt_base.dart';
-
+import 'package:test/test.dart' as test;
 import 'prng.dart' as global_prng;
 
 // import { performance } from "./isomorphic.js";
@@ -219,7 +220,7 @@ final testFilter =
 final testFilterRegExp =
     testFilter != null ? RegExp(testFilter!) : RegExp(".*");
 
-final repeatTestRegex = RegExp("^(repeat|repeating)\s");
+final repeatTestRegex = RegExp("^(repeat|repeating)s");
 
 /**
  * @param {string} moduleName
@@ -428,7 +429,7 @@ int measureTime(String message, void Function() f) {
   } finally {
     duration = performance.now() - start;
     logger.i(message);
-    logger.i("${time.humanizeDuration(duration)}");
+    logger.i(time.humanizeDuration(duration));
   }
   return duration;
 }
@@ -459,7 +460,7 @@ Future<int> measureTimeAsync(String message, Future<void> Function() f) async {
   } finally {
     duration = performance.now() - start;
     logger.i(message);
-    logger.i("${time.humanizeDuration(duration)}");
+    logger.i(time.humanizeDuration(duration));
   }
   return duration;
 }
@@ -681,7 +682,7 @@ Future<bool> runTests(
     Map<String, Map<String, FutureOr<void> Function(TestCase)?>> tests) async {
   final numberOfTests = tests.values
       .expand<int>((mod) =>
-          mod.values.map((f) => (/* istanbul ignore next */ f != null ? 1 : 0)))
+          mod.values.map((f) => /* istanbul ignore next */ f != null ? 1 : 0))
       .reduce((l, r) => l + r);
   var successfulTests = 0;
   var testnumber = 0;
@@ -692,11 +693,13 @@ Future<bool> runTests(
       final f = mod[fname];
       /* istanbul ignore else */
       if (f != null) {
-        final repeatEachTest = 1;
+        const repeatEachTest = 1;
         var success = true;
-        for (var i = 0; success && i < repeatEachTest; i++) {
-          success = await run(modName, fname, f, testnumber, numberOfTests);
-        }
+        test.test(fname, () async {
+          for (var i = 0; success && i < repeatEachTest; i++) {
+            success = await run(modName, fname, f, testnumber, numberOfTests);
+          }
+        });
         testnumber++;
         /* istanbul ignore else */
         if (success) {
