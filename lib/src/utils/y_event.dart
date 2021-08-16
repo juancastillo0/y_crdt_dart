@@ -109,10 +109,8 @@ class YEvent {
         delta: delta,
         keys: keys,
       );
-      final changed = /** @type Set<string|null> */ (this
-          .transaction
-          .changed
-          .get(target));
+      final changed =
+          /** @type Set<string|null> */ (this.transaction.changed.get(target));
       if (changed!.contains(null)) {
         /**
          * @type {any}
@@ -217,6 +215,12 @@ class YChanges {
     required this.keys,
     required this.delta,
   });
+
+  @override
+  String toString() {
+    return 'YChanges(added: $added, deleted: $deleted,'
+        ' keys: $keys, delta: $delta)';
+  }
 }
 
 enum YChangeType { add, update, delete }
@@ -274,9 +278,9 @@ List getPathTo(AbstractType parent, AbstractType child) {
     } else {
       // parent is array-ish
       var i = 0;
-      var c = /** @type {AbstractType<any>} */ (childItem.parent
-              as AbstractType)
-          .innerStart;
+      var c =
+          /** @type {AbstractType<any>} */ (childItem.parent as AbstractType)
+              .innerStart;
       while (c != childItem && c != null) {
         if (!c.deleted) {
           i++;

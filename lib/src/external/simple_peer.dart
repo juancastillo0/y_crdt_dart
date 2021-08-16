@@ -102,6 +102,14 @@ class PeerOptions {
       iceCompleteTimeout: iceCompleteTimeout ?? this.iceCompleteTimeout,
     );
   }
+
+  @override
+  String toString() {
+    return 'PeerOptions(initiator: $initiator, channelName: $channelName, config: $config, '
+        'channelConfig: $channelConfig, offerOptions: $offerOptions, answerOptions: $answerOptions, '
+        'streams: $streams, trickle: $trickle, allowHalfTrickle: $allowHalfTrickle, objectMode: $objectMode, '
+        'iceCompleteTimeout: $iceCompleteTimeout)';
+  }
 }
 
 class Peer {
@@ -235,12 +243,21 @@ class Peer {
       this._onIceStateChange();
     };
     pc.onConnectionState = (_) {
+      this._debug(
+        "onConnectionState ($_)",
+      );
       this._onConnectionStateChange();
     };
     pc.onSignalingState = (_) {
+      this._debug(
+        "onSignalingState ($_)",
+      );
       this._onSignalingStateChange();
     };
     pc.onIceCandidate = (event) {
+      this._debug(
+        "onIceCandidate",
+      );
       this._onIceCandidate(event);
     };
 
